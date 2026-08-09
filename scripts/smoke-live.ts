@@ -111,7 +111,7 @@ async function main(): Promise<void> {
 
   const projectId = projects[0]?.id;
   const started = await client.startTimer({
-    description: "smoke-live: clockify-mcp-server",
+    description: "smoke-live: @dustinestes/clockify-mcp-server",
     projectId,
   });
   assert(started.id, "startTimer: missing id");

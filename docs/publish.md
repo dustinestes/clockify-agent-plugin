@@ -28,7 +28,7 @@ Repo `mcp.json` for publish must use npx (see `mcp.publish.json`). `npm run dev:
   "mcpServers": {
     "clockify": {
       "command": "npx",
-      "args": ["-y", "clockify-mcp-server"],
+      "args": ["-y", "@dustinestes/clockify-mcp-server"],
       "env": {
         "CLOCKIFY_API_KEY": "${CLOCKIFY_API_KEY}",
         "CLOCKIFY_WORKSPACE_ID": "${CLOCKIFY_WORKSPACE_ID}"
@@ -45,7 +45,7 @@ npm login
 npm publish --access public
 ```
 
-Verify `npx -y clockify-mcp-server` starts over stdio.
+Verify `npx -y @dustinestes/clockify-mcp-server` starts over stdio.
 
 <br>
 

@@ -2,7 +2,7 @@
   "mcpServers": {
     "clockify": {
       "command": "npx",
-      "args": ["-y", "clockify-mcp-server"],
+      "args": ["-y", "@dustinestes/clockify-mcp-server"],
       "env": {
         "CLOCKIFY_API_KEY": "${CLOCKIFY_API_KEY}",
         "CLOCKIFY_WORKSPACE_ID": "${CLOCKIFY_WORKSPACE_ID}"

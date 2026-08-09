@@ -116,7 +116,7 @@ A repo `.env` is not loaded automatically by the server. Without `envFile` or `e
 ```json
 {
   "command": "npx",
-  "args": ["-y", "clockify-mcp-server"],
+  "args": ["-y", "@dustinestes/clockify-mcp-server"],
   "env": {
     "CLOCKIFY_API_KEY": "your_key_here"
   }
@@ -145,7 +145,7 @@ Same as Claude once published, or absolute `node` + `dist/index.js` while develo
 | Server not listed under Customize → MCP | Unloaded path; invalid json; Node not on PATH |
 | `CLOCKIFY_API_KEY is required` | Missing `env` / `envFile` |
 | Workspace ID not found | Typo in `CLOCKIFY_WORKSPACE_ID` |
-| `npx -y clockify-mcp-server` fails | Not published yet, or PATH issue |
+| `npx -y @dustinestes/clockify-mcp-server` fails | Not published yet, or PATH issue |
 
 <br>
 

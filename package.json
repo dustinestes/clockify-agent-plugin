@@ -1,5 +1,5 @@
 {
-  "name": "clockify-mcp-server",
+  "name": "@dustinestes/clockify-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for Clockify time tracking - start/stop timers, list projects, and summarize coding sessions",
   "type": "module",
@@ -7,6 +7,9 @@
     "clockify-mcp-server": "dist/index.js"
   },
   "main": "./dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
     "skills",
