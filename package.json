@@ -4,7 +4,7 @@
   "description": "MCP server for Clockify time tracking - start/stop timers, list projects, and summarize coding sessions",
   "type": "module",
   "bin": {
-    "clockify-mcp-server": "./dist/index.js"
+    "clockify-mcp-server": "dist/index.js"
   },
   "main": "./dist/index.js",
   "files": [
@@ -52,7 +52,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dustinestes/clockify-mcp-server.git"
+    "url": "git+https://github.com/dustinestes/clockify-mcp-server.git"
   },
   "homepage": "https://github.com/dustinestes/clockify-mcp-server",
   "bugs": {
