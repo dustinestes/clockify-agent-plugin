@@ -1,0 +1,31 @@
+{
+  "name": "clockify",
+  "displayName": "Clockify",
+  "version": "0.1.0",
+  "description": "Unofficial Clockify time tracking for coding sessions - MCP tools plus workflow skills. Not affiliated with Clockify/Cake.com.",
+  "author": {
+    "name": "Dustin Estes",
+    "email": "GitHub.Projects@dustinestes.com"
+  },
+  "homepage": "https://github.com/dustinestes/clockify-mcp-server",
+  "repository": "https://github.com/dustinestes/clockify-mcp-server",
+  "license": "MIT",
+  "keywords": ["clockify", "mcp", "time-tracking", "productivity"],
+  "logo": "assets/logo.svg",
+  "skills": "./skills/",
+  "mcpServers": "mcp.json",
+  "variables": {
+    "type": "object",
+    "properties": {
+      "CLOCKIFY_API_KEY": {
+        "type": "string",
+        "description": "Clockify API key from Profile Settings"
+      },
+      "CLOCKIFY_WORKSPACE_ID": {
+        "type": "string",
+        "description": "Optional default workspace ID"
+      }
+    },
+    "required": ["CLOCKIFY_API_KEY"]
+  }
+}

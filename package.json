@@ -1,0 +1,71 @@
+{
+  "name": "clockify-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for Clockify time tracking - start/stop timers, list projects, and summarize coding sessions",
+  "type": "module",
+  "bin": {
+    "clockify-mcp-server": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "skills",
+    "mcp.json",
+    "plugin.json",
+    ".cursor-plugin",
+    "assets",
+    "docs",
+    ".clockify.yml.example",
+    "mcp.dev.json",
+    "mcp.publish.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "smoke:live": "tsx scripts/smoke-live.ts",
+    "smoke:handshake": "tsx scripts/handshake.ts",
+    "test:config": "tsx scripts/check-config.ts",
+    "dev:status": "node scripts/dev-mode.mjs status",
+    "dev:link": "node scripts/dev-mode.mjs link",
+    "dev:unlink": "node scripts/dev-mode.mjs unlink",
+    "sandbox": "node scripts/dev-mode.mjs sandbox",
+    "sandbox:teardown": "node scripts/dev-mode.mjs sandbox-teardown",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "clockify",
+    "time-tracking",
+    "cursor",
+    "claude",
+    "agent-skills"
+  ],
+  "author": "Dustin Estes <GitHub.Projects@dustinestes.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dustinestes/clockify-mcp-server.git"
+  },
+  "homepage": "https://github.com/dustinestes/clockify-mcp-server",
+  "bugs": {
+    "url": "https://github.com/dustinestes/clockify-mcp-server/issues"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "yaml": "^2.9.0",
+    "zod": "^3.25.28"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
