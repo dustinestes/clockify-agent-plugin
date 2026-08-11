@@ -5,7 +5,7 @@
   "description": "Unofficial Clockify time tracking for coding sessions - MCP tools plus workflow skills. Not affiliated with Clockify/Cake.com.",
   "author": {
     "name": "Dustin Estes",
-    "email": "GitHub.Projects@dustinestes.com"
+    "email": "clockify.mcpserver@dustinestes.com"
   },
   "homepage": "https://github.com/dustinestes/clockify-mcp-server",
   "repository": "https://github.com/dustinestes/clockify-mcp-server",
