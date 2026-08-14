@@ -18,7 +18,7 @@
     ".cursor-plugin",
     "assets",
     "docs",
-    ".clockify.yml.example",
+    ".clockify/config.yml.example",
     "mcp.dev.json",
     "mcp.publish.json",
     "README.md",

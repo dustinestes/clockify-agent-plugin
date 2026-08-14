@@ -66,7 +66,7 @@ Credentials detail and non-Cursor hosts: [docs/setup.md](docs/setup.md). Full do
 
 | Tool | Purpose |
 |------|---------|
-| `clockify_get_config` | Effective `.clockify.yml` standards |
+| `clockify_get_config` | Effective `.clockify/config.yml` standards |
 | `clockify_get_user` | Authenticated user + workspace IDs |
 | `clockify_list_workspaces` | List workspaces |
 | `clockify_list_projects` | List / filter projects |
@@ -85,9 +85,10 @@ Credentials detail and non-Cursor hosts: [docs/setup.md](docs/setup.md). Full do
 
 | Skill | Purpose |
 |-------|---------|
-| [`clockify-coding-time`](skills/clockify-coding-time/SKILL.md) | Daily start/stop/summary; honors `.clockify.yml` |
-| [`clockify-project-init`](skills/clockify-project-init/SKILL.md) | Bootstrap yaml + project + label→task sync |
+| [`clockify-coding-time`](skills/clockify-coding-time/SKILL.md) | Daily start/stop/summary; honors `.clockify/config.yml` |
+| [`clockify-project-init`](skills/clockify-project-init/SKILL.md) | Bootstrap config + ignore defaults + project + label→task sync |
 | [`clockify-project-init-automated`](skills/clockify-project-init-automated/SKILL.md) | Wire Cursor rules/hooks from yaml triggers |
+| [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Remove project Clockify artifacts (keep plugin unless asked) |
 
 <br>
 

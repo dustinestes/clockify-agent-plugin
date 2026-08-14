@@ -262,6 +262,7 @@ function sandbox() {
     "clockify-coding-time",
     "clockify-project-init",
     "clockify-project-init-automated",
+    "clockify-uninit",
   ];
   for (const name of skills) {
     const dest = join(sandboxRoot, ".cursor", "skills", name);
@@ -269,9 +270,10 @@ function sandbox() {
     symlinkSync(join(root, "skills", name), dest);
   }
 
-  const example = join(root, ".clockify.yml.example");
+  const example = join(root, ".clockify", "config.yml.example");
   if (existsSync(example)) {
-    cpSync(example, join(sandboxRoot, ".clockify.yml"));
+    mkdirSync(join(sandboxRoot, ".clockify"), { recursive: true });
+    cpSync(example, join(sandboxRoot, ".clockify", "config.yml"));
   }
 
   const node = whichNode();
@@ -297,7 +299,7 @@ Disposable workspace for testing Clockify MCP skills/tools without mutating the 
 
 - Skills: symlinked from \`${root}/skills\` (should appear under \`/\` immediately)
 - MCP: \`clockify-dev\` → that checkout's \`dist/index.js\` + its \`.env\`
-- Config root: this sandbox (safe to write \`.clockify.yml\` / rules here)
+- Config root: this sandbox (safe to write \`.clockify/config.yml\` / rules here)
 
 ## Enable MCP (required once)
 

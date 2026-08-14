@@ -4,6 +4,7 @@ dist/
 .env.*
 !.env.example
 .cursor/
-.clockify.yml
+.clockify/*
+!.clockify/config.yml.example
 *.log
 .DS_Store
