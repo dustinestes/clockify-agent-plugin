@@ -4,7 +4,8 @@ description: >-
   Integrates coding work with Clockify time tracking via MCP tools. Use when
   starting or stopping focused coding sessions, mapping a repo or branch to a
   Clockify project, logging completed work, summarizing time today, or honoring
-  a repo .clockify.yml automation contract (issue start/finish/switch, inactivity).
+  a repo .clockify/config.yml automation contract (issue start/finish/switch,
+  inactivity).
 ---
 
 # Clockify coding time
@@ -15,7 +16,7 @@ Use the Clockify MCP tools to connect coding effort with time tracking.
 
 - `CLOCKIFY_API_KEY` configured for the MCP server (see repo README → Setup → Clockify credentials)
 - Optional `CLOCKIFY_WORKSPACE_ID`
-- Optional repo `.clockify.yml` (see `docs/config.md`) - call `clockify_get_config` first when present
+- Optional repo `.clockify/config.yml` (see `docs/config.md`) - call `clockify_get_config` first when present
 
 ## Config-aware behavior
 
@@ -29,7 +30,7 @@ Use the Clockify MCP tools to connect coding effort with time tracking.
 
 1. `clockify_get_running_timer`. If running and `inactivity.pastThreshold`, stop it (or ask) per config.
 2. If another issue’s timer is running and the user is switching, stop first (`issue_switch` → stop_then_start).
-3. Resolve project: user name, `.clockify.yml` repo name, or `clockify_list_projects` / `clockify_ensure_project`.
+3. Resolve project: user name, config repo name, or `clockify_list_projects` / `clockify_ensure_project`.
 4. Resolve task when `mapping.task_from` is `github_label`: `clockify_ensure_task` with the label name.
 5. `clockify_start_timer` with `project_id`, optional `task_id`, and `issue_number` / `issue_title`.
 
@@ -50,7 +51,7 @@ Use the Clockify MCP tools to connect coding effort with time tracking.
 
 | Coding signal | Clockify field |
 |---------------|----------------|
-| Git repo name | Project (often via `.clockify.yml`) |
+| Git repo name | Project (often via `.clockify/config.yml`) |
 | GitHub label | Task when `task_from: github_label` |
 | Issue number + title | Description via template |
 

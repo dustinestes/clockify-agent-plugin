@@ -35,7 +35,7 @@ cp .env.example .env
 # edit .env
 ```
 
-Per-repo standards (`.clockify.yml`): [config.md](./config.md).
+Per-repo standards (`.clockify/config.yml`): [config.md](./config.md).
 
 <br>
 

@@ -1,44 +1,33 @@
 ---
 name: clockify-project-init-automated
 description: >-
-  Extend Clockify project init with AI automation: after .clockify.yml exists,
-  install Cursor rules/hooks that start/stop timers on issue_start, issue_finish,
-  issue_switch, and pr_ship per automation.triggers. Use when the user wants
-  agent-mediated time tracking wired into their issue/PR workflow.
+  Run clockify-project-init, then wire Cursor rules/hooks so the agent starts
+  and stops timers per automation.triggers (issue_start, issue_finish,
+  issue_switch, pr_ship). Use when the user wants agent-mediated time tracking
+  in their issue/PR workflow.
 ---
 
 # Clockify project init (automated)
 
-Builds on `clockify-project-init`. Run that first (or ensure `.clockify.yml` + project/tasks already exist).
+Composition: **perform [`clockify-project-init`](../clockify-project-init/SKILL.md) in full** (it is idempotent — existing config is not overwritten), then only the steps below. Do not restate or fork that skill’s config/ignore/project/task steps.
 
-## Contract
+## After init
 
-Automation is **AI-mediated**. Triggers in `.clockify.yml` are the standard the agent/hooks agree to. Without an agent, the user tracks manually.
-
-Typical issue-centric guardrails (align rules with the user’s git workflow when known):
-
-- New issue per concern; one issue per PR
-- Start timer when beginning work or planning against an issue
-- Stop when finishing that issue or switching issues
-- Stop on ship (`pr_ship`) during the agent session
-- `pr_merged` without an agent → phase 2 GitHub Action (document only; do not pretend local MCP receives webhooks)
-
-## Steps
-
-1. `clockify_get_config` - read `automation.triggers` and `inactivity`.
-2. Ensure init completed (project + tasks). If not, run `clockify-project-init` flow first.
-3. Add or update a Cursor project rule (e.g. `.cursor/rules/clockify-time.mdc`) that instructs the agent to:
+1. `clockify_get_config` — read `automation.triggers` and `inactivity`.
+2. Add or update `.cursor/rules/clockify-time.mdc` so the agent:
    - On starting work / planning for an issue → `clockify_start_timer` with issue fields
    - On finishing issue work or shipping a PR in-session → `clockify_stop_timer`
    - On switching issues → stop then start
    - On session start / resume → `clockify_get_running_timer`; if `inactivity.pastThreshold`, stop (or ask)
-4. Optionally add Cursor hooks (`sessionStart` / `sessionEnd` / `stop`) that remind or script the inactivity check - keep fail-open so hooks never block coding if Clockify is down.
-5. Tell the user phase 2: merge-without-agent needs a GitHub Action (see `docs/config.md`).
+3. Optionally add Cursor hooks (`sessionStart` / `sessionEnd` / `stop`) for the inactivity check — fail-open so hooks never block coding if Clockify is down. Prefer entries clearly owned by Clockify so `clockify-uninit` can remove them surgically.
+4. Note phase 2: merge-without-agent needs a GitHub Action (`docs/config.md`). Local MCP does not receive webhooks.
 
-## Rule snippet (adapt to their yaml)
+Cursor glue is personal (init already gitignores the rule path). Do not commit rules/hooks unless the team opts in; do not gitignore all of `.cursor/`.
+
+## Rule snippet
 
 ```markdown
-# Clockify time (from .clockify.yml)
+# Clockify time (from .clockify/config.yml)
 
 When the user starts work or planning on a GitHub issue, start a Clockify timer
 (issue_number + issue_title; project/task from repo config).
@@ -51,6 +40,7 @@ Use Clockify MCP tools only; never invent project/task ids.
 
 ## Do not
 
-- Claim timers will stop on GitHub merge without an Action
+- Duplicate `clockify-project-init` steps here
+- Claim timers stop on GitHub merge without an Action
 - Install a background daemon
-- Skip writing/verifying `.clockify.yml`
+- Skip init (config, ignore defaults, project, tasks)

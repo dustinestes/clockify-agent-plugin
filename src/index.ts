@@ -91,7 +91,7 @@ server.registerTool(
   {
     title: "Get project Clockify config",
     description:
-      "Returns the effective .clockify.yml standards (templates, rounding, automation triggers, inactivity). Set CLOCKIFY_CONFIG_ROOT to the repo root if needed.",
+      "Returns the effective .clockify/config.yml standards (templates, rounding, automation triggers, inactivity). Set CLOCKIFY_CONFIG_ROOT to the repo root if needed.",
     inputSchema: {},
   },
   async () => {
@@ -105,7 +105,7 @@ server.registerTool(
         config: loaded.config,
         hint: loaded.found
           ? undefined
-          : "No .clockify.yml found. Add one via clockify-project-init, or set CLOCKIFY_CONFIG_ROOT / CLOCKIFY_CONFIG_PATH.",
+          : "No .clockify/config.yml found. Add one via clockify-project-init, or set CLOCKIFY_CONFIG_ROOT / CLOCKIFY_CONFIG_PATH.",
       });
     } catch (error) {
       return errorResult(error);
@@ -180,12 +180,12 @@ server.registerTool(
   {
     title: "Ensure Clockify project",
     description:
-      "Finds a project by name or creates it. Defaults to the repo name from .clockify.yml / folder when name omitted.",
+      "Finds a project by name or creates it. Defaults to the repo name from .clockify/config.yml / folder when name omitted.",
     inputSchema: {
       name: z
         .string()
         .optional()
-        .describe("Project name. Defaults from .clockify.yml / repo folder."),
+        .describe("Project name. Defaults from .clockify/config.yml / repo folder."),
       workspace_id: z.string().optional().describe("Workspace ID override."),
     },
   },
@@ -196,7 +196,7 @@ server.registerTool(
         name?.trim() || resolveProjectName(loaded.config, loaded.root);
       if (!resolved) {
         throw new Error(
-          "Project name required (pass name, or add .clockify.yml / set CLOCKIFY_CONFIG_ROOT).",
+          "Project name required (pass name, or add .clockify/config.yml / set CLOCKIFY_CONFIG_ROOT).",
         );
       }
       return textResult(await client().ensureProject(resolved, workspace_id));
@@ -271,7 +271,7 @@ server.registerTool(
   {
     title: "Get running timer",
     description:
-      "Returns the currently running timer for the user, if any. Includes inactivity hint from .clockify.yml when configured.",
+      "Returns the currently running timer for the user, if any. Includes inactivity hint from .clockify/config.yml when configured.",
     inputSchema: {
       workspace_id: z.string().optional().describe("Workspace ID override."),
     },
@@ -293,7 +293,7 @@ server.registerTool(
             loaded.config.automation.inactivity.stop_after_minutes,
           pastThreshold: pastInactivity,
           recommendation: pastInactivity
-            ? "Timer exceeded inactivity threshold - stop it (or ask the user) per .clockify.yml."
+            ? "Timer exceeded inactivity threshold - stop it (or ask the user) per .clockify/config.yml."
             : undefined,
         },
       });
@@ -308,7 +308,7 @@ server.registerTool(
   {
     title: "Start timer",
     description:
-      "Starts a new running timer. Prefer stopping any existing timer first unless the user wants overlapping entries. Pass issue_number/issue_title to apply .clockify.yml description.template when description is omitted.",
+      "Starts a new running timer. Prefer stopping any existing timer first unless the user wants overlapping entries. Pass issue_number/issue_title to apply .clockify/config.yml description.template when description is omitted.",
     inputSchema: {
       workspace_id: z.string().optional().describe("Workspace ID override."),
       description: z
@@ -372,13 +372,13 @@ server.registerTool(
   {
     title: "Stop timer",
     description:
-      "Stops the currently running timer. Applies .clockify.yml rounding to the end time when enabled.",
+      "Stops the currently running timer. Applies .clockify/config.yml rounding to the end time when enabled.",
     inputSchema: {
       workspace_id: z.string().optional().describe("Workspace ID override."),
       apply_rounding: z
         .boolean()
         .optional()
-        .describe("Override config rounding (default: use .clockify.yml)."),
+        .describe("Override config rounding (default: use .clockify/config.yml)."),
     },
   },
   async ({ workspace_id, apply_rounding }) => {
@@ -432,7 +432,7 @@ server.registerTool(
   {
     title: "Create time entry",
     description:
-      "Creates a completed time entry with explicit start and end (ISO-8601). Applies .clockify.yml rounding when enabled. Supports description template fields.",
+      "Creates a completed time entry with explicit start and end (ISO-8601). Applies .clockify/config.yml rounding when enabled. Supports description template fields.",
     inputSchema: {
       start: z.string().describe("Start time in ISO-8601 / yyyy-MM-ddThh:mm:ssZ."),
       end: z.string().describe("End time in ISO-8601 / yyyy-MM-ddThh:mm:ssZ."),
@@ -448,7 +448,7 @@ server.registerTool(
       apply_rounding: z
         .boolean()
         .optional()
-        .describe("Override config rounding (default: use .clockify.yml)."),
+        .describe("Override config rounding (default: use .clockify/config.yml)."),
     },
   },
   async ({

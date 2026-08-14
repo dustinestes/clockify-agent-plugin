@@ -2,11 +2,19 @@
  * Fast checks for config helpers (no Clockify API).
  */
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   applyDescriptionTemplate,
   applyRoundingToInterval,
   clockifyConfigSchema,
+  findProjectRoot,
   isTimerPastInactivity,
+  loadClockifyConfig,
+  projectRootFromConfigPath,
+  resolveConfigPathInRoot,
+  resolveProjectName,
   roundDate,
 } from "../src/config.js";
 
@@ -47,5 +55,67 @@ assert.equal(
   isTimerPastInactivity(started, cfg.automation.inactivity),
   true,
 );
+
+const sampleYaml = `version: 1
+project:
+  name_from: fixed
+  name: FixtureRepo
+`;
+
+function withFixture(run: (dir: string) => void): void {
+  const dir = mkdtempSync(join(tmpdir(), "clockify-config-"));
+  const prevPath = process.env.CLOCKIFY_CONFIG_PATH;
+  const prevRoot = process.env.CLOCKIFY_CONFIG_ROOT;
+  delete process.env.CLOCKIFY_CONFIG_PATH;
+  delete process.env.CLOCKIFY_CONFIG_ROOT;
+  try {
+    run(dir);
+  } finally {
+    if (prevPath === undefined) delete process.env.CLOCKIFY_CONFIG_PATH;
+    else process.env.CLOCKIFY_CONFIG_PATH = prevPath;
+    if (prevRoot === undefined) delete process.env.CLOCKIFY_CONFIG_ROOT;
+    else process.env.CLOCKIFY_CONFIG_ROOT = prevRoot;
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+withFixture((dir) => {
+  mkdirSync(join(dir, ".clockify"), { recursive: true });
+  writeFileSync(join(dir, ".clockify", "config.yml"), sampleYaml);
+  const loaded = loadClockifyConfig(dir);
+  assert.equal(loaded.found, true);
+  assert.equal(loaded.path, join(dir, ".clockify", "config.yml"));
+  assert.equal(loaded.root, dir);
+  assert.equal(resolveProjectName(loaded.config, loaded.root), "FixtureRepo");
+  assert.equal(resolveConfigPathInRoot(dir), loaded.path);
+});
+
+withFixture((dir) => {
+  mkdirSync(join(dir, ".clockify"), { recursive: true });
+  const configPath = join(dir, ".clockify", "config.yml");
+  writeFileSync(configPath, sampleYaml);
+  process.env.CLOCKIFY_CONFIG_PATH = configPath;
+  const loaded = loadClockifyConfig("/tmp");
+  assert.equal(loaded.found, true);
+  assert.equal(loaded.path, configPath);
+  assert.equal(loaded.root, dir);
+  assert.equal(projectRootFromConfigPath(configPath), dir);
+});
+
+withFixture((dir) => {
+  mkdirSync(join(dir, "nested", "deep"), { recursive: true });
+  mkdirSync(join(dir, ".clockify"), { recursive: true });
+  writeFileSync(join(dir, ".clockify", "config.yml"), sampleYaml);
+  assert.equal(findProjectRoot(join(dir, "nested", "deep")), dir);
+});
+
+withFixture((dir) => {
+  mkdirSync(join(dir, ".git"));
+  assert.equal(findProjectRoot(dir), dir);
+  assert.equal(resolveConfigPathInRoot(dir), null);
+  const loaded = loadClockifyConfig(dir);
+  assert.equal(loaded.found, false);
+  assert.equal(loaded.root, dir);
+});
 
 console.log("OK: config unit checks");

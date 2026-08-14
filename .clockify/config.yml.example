@@ -1,6 +1,6 @@
 # Example project standards for Clockify MCP.
-# Copy to the consumer repo as `.clockify.yml` (or run the clockify-project-init skill).
-# See docs/config.md for the full schema.
+# Init writes this as `.clockify/config.yml` in the consumer repo (or copy manually).
+# Personal by default — see docs/config.md (git hygiene). Never put API keys here.
 version: 1
 project:
   name_from: repo

@@ -74,11 +74,38 @@ export type LoadedConfig = {
   config: ClockifyConfig;
 };
 
+/** Canonical consumer config path under the project root. */
+export const CANONICAL_CONFIG_REL = join(".clockify", "config.yml");
+
 export function defaultConfig(): ClockifyConfig {
   return clockifyConfigSchema.parse({});
 }
 
-/** Walk upward from startDir looking for .git or .clockify.yml. */
+/** Project root for a config file path (parent of `.clockify/` when nested). */
+export function projectRootFromConfigPath(configPath: string): string {
+  const resolved = resolve(configPath);
+  const parent = dirname(resolved);
+  if (basename(parent) === ".clockify") {
+    return dirname(parent);
+  }
+  return parent;
+}
+
+function isProjectRootMarker(dir: string): boolean {
+  return (
+    existsSync(join(dir, CANONICAL_CONFIG_REL)) ||
+    existsSync(join(dir, ".clockify")) ||
+    existsSync(join(dir, ".git"))
+  );
+}
+
+/** Resolve config file under a known project root. */
+export function resolveConfigPathInRoot(root: string): string | null {
+  const canonical = join(root, CANONICAL_CONFIG_REL);
+  return existsSync(canonical) ? canonical : null;
+}
+
+/** Walk upward from startDir looking for .git or `.clockify/`. */
 export function findProjectRoot(startDir = process.cwd()): string | null {
   const envRoot = process.env.CLOCKIFY_CONFIG_ROOT?.trim();
   if (envRoot && existsSync(envRoot)) {
@@ -87,10 +114,7 @@ export function findProjectRoot(startDir = process.cwd()): string | null {
 
   let dir = resolve(startDir);
   for (;;) {
-    if (
-      existsSync(join(dir, ".clockify.yml")) ||
-      existsSync(join(dir, ".git"))
-    ) {
+    if (isProjectRootMarker(dir)) {
       return dir;
     }
     const parent = dirname(dir);
@@ -105,18 +129,19 @@ export function loadClockifyConfig(
   const explicit = process.env.CLOCKIFY_CONFIG_PATH?.trim();
   if (explicit) {
     const path = resolve(explicit);
+    const root = projectRootFromConfigPath(path);
     if (!existsSync(path)) {
       return {
         found: false,
         path,
-        root: dirname(path),
+        root,
         config: defaultConfig(),
       };
     }
     return {
       found: true,
       path,
-      root: dirname(path),
+      root,
       config: parseConfigFile(path),
     };
   }
@@ -125,8 +150,8 @@ export function loadClockifyConfig(
   if (!root) {
     return { found: false, path: null, root: null, config: defaultConfig() };
   }
-  const path = join(root, ".clockify.yml");
-  if (!existsSync(path)) {
+  const path = resolveConfigPathInRoot(root);
+  if (!path) {
     return { found: false, path: null, root, config: defaultConfig() };
   }
   return {
