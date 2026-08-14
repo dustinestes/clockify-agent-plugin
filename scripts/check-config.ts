@@ -9,6 +9,7 @@ import {
   applyDescriptionTemplate,
   applyRoundingToInterval,
   clockifyConfigSchema,
+  defaultConfig,
   findProjectRoot,
   isTimerPastInactivity,
   loadClockifyConfig,
@@ -21,20 +22,32 @@ import {
 const cfg = clockifyConfigSchema.parse({
   version: 1,
   rounding: { enabled: true, increment_minutes: 15, mode: "nearest" },
-  description: { template: "{issue_number} {issue_title}" },
   automation: {
     triggers: [{ event: "issue_start", action: "start_timer" }],
     inactivity: { enabled: true, stop_after_minutes: 45 },
   },
 });
 assert.equal(cfg.rounding.increment_minutes, 15);
+assert.equal(cfg.description.template, "{issue_number} - {issue_title}");
+assert.equal(
+  defaultConfig().description.template,
+  "{issue_number} - {issue_title}",
+);
 
 assert.equal(
   applyDescriptionTemplate(cfg.description.template, {
     issue_number: 42,
     issue_title: "Login bug",
   }),
-  "#42 Login bug",
+  "#42 - Login bug",
+);
+
+assert.equal(
+  applyDescriptionTemplate("#{issue_number} - {issue_title}", {
+    issue_number: 1,
+    issue_title: "Wire Clockify MCP",
+  }),
+  "##1 - Wire Clockify MCP",
 );
 
 const d = new Date("2026-08-09T19:07:00.000Z");
@@ -87,6 +100,10 @@ withFixture((dir) => {
   assert.equal(loaded.path, join(dir, ".clockify", "config.yml"));
   assert.equal(loaded.root, dir);
   assert.equal(resolveProjectName(loaded.config, loaded.root), "FixtureRepo");
+  assert.equal(
+    loaded.config.description.template,
+    "{issue_number} - {issue_title}",
+  );
   assert.equal(resolveConfigPathInRoot(dir), loaded.path);
 });
 

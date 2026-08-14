@@ -81,10 +81,19 @@ Project root is the git/workspace root (parent of `.clockify/`), not the `.clock
 |-----|---------|
 | `project.name_from` | `repo` (folder name) or `fixed` with `project.name` |
 | `rounding` | `enabled`, `increment_minutes`, `mode` (`nearest` \| `up` \| `down`) |
-| `description.template` | e.g. `{issue_number} {issue_title}` - also `{github_label}`, `{repo}` |
+| `description.template` | Default `{issue_number} - {issue_title}` (renders `#N - title`). Also `{github_label}`, `{repo}` |
 | `mapping.task_from` | `github_label` → Clockify tasks named like labels; `none` to skip |
 | `automation.triggers` | AI/hook contract: `issue_start`, `issue_finish`, `issue_switch`, `pr_ship`, `pr_merged` |
 | `automation.inactivity` | Stop guidance when a timer exceeds `stop_after_minutes` |
+
+### Description placeholders
+
+```yaml
+description:
+  template: "{issue_number} - {issue_title}"
+```
+
+With `issue_number: 1` and `issue_title: Wire Clockify MCP` that becomes `#1 - Wire Clockify MCP`.
 
 ### AI contract
 
