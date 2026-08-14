@@ -9,7 +9,7 @@ rounding:
   increment_minutes: 15
   mode: nearest
 description:
-  template: "{issue_number} {issue_title}"
+  template: "{issue_number} - {issue_title}"
 mapping:
   project: repo_name
   task_from: github_label

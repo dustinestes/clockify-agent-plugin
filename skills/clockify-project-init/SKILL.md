@@ -60,7 +60,7 @@ Re-runs are expected (e.g. from `clockify-project-init-automated`). Treat existi
 ## Default yaml (unless user overrides)
 
 - Project from repo name
-- Description `{issue_number} {issue_title}`
+- Description `{issue_number} - {issue_title}` (renders `#N - title`; do not write `#{issue_number}`)
 - Rounding nearest 15 minutes
 - Triggers: issue_start → start; issue_finish / pr_ship → stop; issue_switch → stop_then_start
 - Inactivity stop after 45 minutes (skill/hook enforced)

@@ -34,7 +34,7 @@ export const clockifyConfigSchema = z.object({
     .default({}),
   description: z
     .object({
-      template: z.string().default("{issue_number} {issue_title}"),
+      template: z.string().default("{issue_number} - {issue_title}"),
     })
     .default({}),
   mapping: z

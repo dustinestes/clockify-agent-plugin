@@ -22,7 +22,7 @@ Use the Clockify MCP tools to connect coding effort with time tracking.
 
 1. Call `clockify_get_config`. If `found`, honor templates, rounding, triggers, and inactivity.
 2. Never invent project/task ids - list or `ensure_*` first.
-3. Prefer structured fields on start/create: `issue_number`, `issue_title`, `github_label` so the description template applies when `description` is omitted.
+3. Prefer structured fields on start/create: `issue_number`, `issue_title`, `github_label` so the description template applies when `description` is omitted. Default template is `{issue_number} - {issue_title}` → `#N - title`. Do not put a literal `#` before `{issue_number}`.
 
 ## Workflow
 
@@ -61,7 +61,7 @@ Use the Clockify MCP tools to connect coding effort with time tracking.
 
 1. `clockify_get_config` / `clockify_get_running_timer`
 2. Ensure project + optional task
-3. `clockify_start_timer` with `issue_number: 42`, `issue_title: Login redirect bug`
+3. `clockify_start_timer` with `issue_number: 42`, `issue_title: Login redirect bug` (default description: `#42 - Login redirect bug`)
 
 **User:** "Stop tracking" / "We shipped the PR"
 
