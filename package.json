@@ -14,6 +14,7 @@
     "dist",
     "skills",
     "mcp.json",
+    ".mcp.json",
     "plugin.json",
     ".cursor-plugin",
     "assets",

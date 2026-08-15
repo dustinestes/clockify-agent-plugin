@@ -20,10 +20,10 @@ Index of documentation for the unofficial Clockify MCP server and Cursor plugin.
 
 | Doc | Description |
 |-----|-------------|
-| [setup.md](./setup.md) | Credentials, Marketplace vs clone, PATH, other MCP hosts |
+| [setup.md](./setup.md) | Credentials, Directory / npx vs clone, PATH, other MCP hosts |
 | [develop.md](./develop.md) | Local development: `dev:link` / `dev:unlink` / sandbox |
 | [config.md](./config.md) | `.clockify/config.yml` taxonomy, rounding, automation triggers |
-| [publish.md](./publish.md) | npm publish and Cursor Marketplace submission |
+| [publish.md](./publish.md) | npm publish and cursor.directory submission |
 
 Root product overview and install happy path: [README](../README.md).
 

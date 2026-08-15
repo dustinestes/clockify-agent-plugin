@@ -34,7 +34,7 @@ Surgical cleanup of Clockify-owned files in a **consumer** repo. Confirm with th
 
 - Wipe unrelated Cursor hooks or rules
 - Delete the user’s entire `.gitignore`
-- Uninstall Marketplace / local plugin or clear `CLOCKIFY_API_KEY` unless asked
+- Uninstall Directory / local plugin or clear `CLOCKIFY_API_KEY` unless asked
 - Invent paths outside the well-known set above
 
 ## After

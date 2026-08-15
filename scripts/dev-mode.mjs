@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Toggle this machine between plugin developer and marketplace-style consumer.
+ * Toggle this machine between plugin developer and Directory/npx-style consumer.
  *
  *   node scripts/dev-mode.mjs status
  *   node scripts/dev-mode.mjs link      # enable local plugin + project MCP (clockify-dev)
@@ -210,7 +210,7 @@ Next:
   3. Customize → Plugins: enable "${pluginId}" (skills via /)
   4. Customize → MCP: "${pluginId}" / project "clockify-dev" (tools from this checkout)
 
-Do not treat this as Marketplace proof. Use npm run dev:unlink for subscriber-like checks.
+Do not treat this as a consumer install. Use npm run dev:unlink, then Directory or npx.
 `);
 }
 
@@ -243,7 +243,7 @@ Consumer-like mode:
   - No ${pluginId} / clockify local plugin symlink
   - No local-dist MCP in user or this project config
   - Reload Cursor
-  - Install from Marketplace (or add npx mcp.json) to test as a subscriber
+  - Install from cursor.directory (or add npx mcp.json) to test as a subscriber
 
 Re-enter development: npm run dev:link
 `);

@@ -3,7 +3,7 @@
 <h1>Setup</h1>
 <br clear="both">
 
-Install and configure the unofficial Clockify MCP for Cursor and other hosts. Marketplace happy path lives in the [root README](../README.md); this page covers credentials, clones, PATH issues, and alternatives.
+Install and configure the unofficial Clockify MCP for Cursor and other hosts. Directory / npx happy path lives in the [root README](../README.md); this page covers credentials, clones, PATH issues, and alternatives.
 
 <br>
 
@@ -45,7 +45,7 @@ Per-repo standards (`.clockify/config.yml`): [config.md](./config.md).
 
 ## Develop this repo
 
-Use explicit developer vs consumer-like modes so local paths do not fake a Marketplace install — see [develop.md](./develop.md).
+Use explicit developer vs consumer-like modes so local paths do not fake a Directory / npx install — see [develop.md](./develop.md).
 
 ```bash
 cp .env.example .env
@@ -156,7 +156,7 @@ Same as Claude once published, or absolute `node` + `dist/index.js` while develo
 ## See also
 
 - [develop.md](./develop.md) - local plugin modes
-- [publish.md](./publish.md) - npm and Marketplace
+- [publish.md](./publish.md) - npm and cursor.directory
 - [Docs index](./README.md)
 - [Clockify API](https://docs.clockify.me)
 
