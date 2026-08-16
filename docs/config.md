@@ -17,7 +17,6 @@ Clockify files are **local/personal by default**. Init gitignores `.clockify/` s
 - [Discovery](#discovery)
 - [Schema](#schema)
 - [Tools that honor config](#tools-that-honor-config)
-- [Phase 2 GitHub Action](#phase-2-github-action)
 - [See also](#see-also)
 
 ---
@@ -88,8 +87,8 @@ Root keys: `version`, `project`, `timer`, `manual`, `automated`. Method blocks h
 | `*.task.if_missing` | When the Clockify task does not exist: `prompt`, `create` (`ensure_task`), or `none`. Automated: `create` or `none` |
 | `timer.rounding` / `automated.rounding` | `enabled`, `increment_minutes`, `mode` (`nearest` \| `up` \| `down`), optional `start_mode` / `stop_mode` / `minimum_minutes` |
 | `*.overlap.on_conflict` | `prompt` or `override` when a completed interval overlaps another entry |
-| `automated.triggers` | AI/hook contract: `issue_start`, `issue_finish`, `issue_switch`, `pr_ship`, `pr_merged` |
-| `automated.inactivity` | Stop guidance when a timer exceeds `stop_after_minutes` |
+| `automated.triggers` | Local AI/hook contract: `issue_start`, `issue_finish`, `issue_switch`, `pr_ship`, `pr_closed` |
+| `automated.inactivity` | Stop guidance when a timer exceeds `stop_after_minutes` (positive int; default 45) |
 
 See [`.clockify/config.yml.example`](../.clockify/config.yml.example) for a full file.
 
@@ -121,13 +120,37 @@ Timers still cannot stack: Clockify allows one running timer. Overlap checks app
 
 ### AI contract
 
-Triggers run when an agent or Cursor hook is in the loop. Coding without AI means start/stop timer or enter an explicit range. That is expected.
+Triggers are a **local** agent/hook contract. They fire when you (or the agent) do the work in this session — not when GitHub or Clockify change on their own. Coding without AI means start/stop timer or enter an explicit range. That is expected.
 
-`pr_merged` is for **phase 2** GitHub Actions (no local MCP). Phase 1 binds other events via skills/rules.
+| Event | When (in this session) | Typical action |
+|-------|------------------------|----------------|
+| `issue_start` | Start work or planning on an issue | `start_timer` |
+| `issue_finish` | Finish issue work | `stop_timer` |
+| `issue_switch` | Move to a different issue | `stop_then_start` |
+| `pr_ship` | Open or push a PR | `stop_timer` |
+| `pr_closed` | Close or abandon a PR | `stop_timer` |
+
+`pr_ship` is shipping (open/push). `pr_closed` is closing or abandoning in this session. `pr_merged` is not supported: GitHub merge is an unwatched action.
+
+Invalid events fail validation with the field path and the allowed list (`issue_start`, `issue_finish`, `issue_switch`, `pr_ship`, `pr_closed`).
 
 ### Inactivity
 
-Phase 1 is best-effort on agent/session boundaries (`clockify_get_running_timer` returns `inactivity.pastThreshold` from `automated.inactivity`). No background daemon while Cursor is closed.
+Best-effort on agent/session boundaries (`clockify_get_running_timer` returns `inactivity.pastThreshold` from `automated.inactivity`). No background daemon while Cursor is closed.
+
+`stop_after_minutes` is a positive integer (YAML `15` or `"15"`). Default is 45.
+
+```yaml
+timer:
+  rounding:
+    enabled: true
+    increment_minutes: 15
+    mode: down
+automated:
+  inactivity:
+    enabled: true
+    stop_after_minutes: 15
+```
 
 <br>
 
@@ -143,22 +166,6 @@ Phase 1 is best-effort on agent/session boundaries (`clockify_get_running_timer`
 - `clockify_create_time_entry` - `manual`/`automated` description + overlap (no rounding)
 - `clockify_get_running_timer` - `automated.inactivity`
 - `clockify_ensure_project` / `clockify_ensure_task` - taxonomy bootstrap
-
-<br>
-
----
-
-<br>
-
-## Phase 2 GitHub Action
-
-Stop-on-merge without an agent needs a workflow calling the Clockify API with a secret (stdio MCP cannot receive webhooks):
-
-1. Store `CLOCKIFY_API_KEY` (and workspace/user ids) as Actions secrets
-2. On `pull_request` `closed` + `merged`, stop the running timer (or create a rounded entry)
-3. Keep `.clockify/config.yml` `pr_merged` as documentation of intent
-
-A full example can land under `examples/github-action/` later.
 
 <br>
 

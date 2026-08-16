@@ -22,6 +22,7 @@ import {
   latestCompletedEnd,
   loadClockifyConfig,
   overlapShouldProceed,
+  parseClockifyConfig,
   prepareStartInstant,
   projectRootFromConfigPath,
   resolveConfigPathInRoot,
@@ -314,5 +315,128 @@ const stopped = applyStopRounding(
 );
 assert.equal(stopped.applied, true);
 assert.equal(stopped.end, "2026-08-09T13:15:00.000Z");
+
+const customMinutes = parseClockifyConfig(
+  parseYaml(`
+version: 1
+timer:
+  rounding:
+    enabled: true
+    increment_minutes: 15
+    mode: down
+automated:
+  inactivity:
+    enabled: true
+    stop_after_minutes: 15
+  triggers:
+    - event: pr_closed
+      action: stop_timer
+`),
+);
+assert.equal(customMinutes.timer.rounding.mode, "down");
+assert.equal(customMinutes.automated.inactivity.stop_after_minutes, 15);
+assert.equal(customMinutes.automated.triggers[0]?.event, "pr_closed");
+
+const quotedMinutes = parseClockifyConfig(
+  parseYaml(`
+timer:
+  rounding:
+    increment_minutes: "30"
+    minimum_minutes: "20"
+automated:
+  inactivity:
+    stop_after_minutes: "15"
+`),
+);
+assert.equal(quotedMinutes.timer.rounding.increment_minutes, 30);
+assert.equal(quotedMinutes.timer.rounding.minimum_minutes, 20);
+assert.equal(quotedMinutes.automated.inactivity.stop_after_minutes, 15);
+
+const shortInactivity = {
+  enabled: true,
+  stop_after_minutes: 15,
+};
+assert.equal(
+  isTimerPastInactivity(
+    new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    shortInactivity,
+  ),
+  true,
+);
+assert.equal(
+  isTimerPastInactivity(
+    new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    shortInactivity,
+  ),
+  false,
+);
+
+function assertInvalidConfig(raw: unknown, ...needles: string[]): void {
+  try {
+    parseClockifyConfig(raw);
+    assert.fail("expected parseClockifyConfig to throw");
+  } catch (error) {
+    assert.ok(error instanceof Error);
+    for (const needle of needles) {
+      assert.ok(
+        error.message.includes(needle),
+        `expected ${JSON.stringify(error.message)} to include ${JSON.stringify(needle)}`,
+      );
+    }
+  }
+}
+
+const allowedEvents =
+  "issue_start | issue_finish | issue_switch | pr_ship | pr_closed";
+const prMergedUnsupported =
+  "pr_merged is not supported: GitHub merge is an unwatched action.";
+assertInvalidConfig(
+  {
+    automated: {
+      triggers: [{ event: "pr_merged", action: "stop_timer" }],
+    },
+  },
+  "automated.triggers.0.event",
+  allowedEvents,
+  prMergedUnsupported,
+);
+assertInvalidConfig(
+  {
+    automated: {
+      triggers: [{ event: "nope", action: "stop_timer" }],
+    },
+  },
+  "automated.triggers.0.event",
+  allowedEvents,
+);
+try {
+  parseClockifyConfig({
+    automated: {
+      triggers: [{ event: "nope", action: "stop_timer" }],
+    },
+  });
+  assert.fail("expected parseClockifyConfig to throw");
+} catch (error) {
+  assert.ok(error instanceof Error);
+  assert.equal(error.message.includes(prMergedUnsupported), false);
+}
+
+withFixture((dir) => {
+  mkdirSync(join(dir, ".clockify"), { recursive: true });
+  writeFileSync(
+    join(dir, ".clockify", "config.yml"),
+    `automated:\n  triggers:\n    - event: pr_merged\n      action: stop_timer\n`,
+  );
+  try {
+    loadClockifyConfig(dir);
+    assert.fail("expected loadClockifyConfig to throw");
+  } catch (error) {
+    assert.ok(error instanceof Error);
+    assert.ok(error.message.includes("automated.triggers.0.event"));
+    assert.ok(error.message.includes(allowedEvents));
+    assert.ok(error.message.includes(prMergedUnsupported));
+    assert.ok(error.message.includes(join(dir, ".clockify", "config.yml")));
+  }
+});
 
 console.log("OK: config unit checks");

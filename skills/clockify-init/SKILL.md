@@ -63,4 +63,4 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 
 ## Default yaml (unless user overrides)
 
-Copy the plugin `.clockify/config.yml.example`. That file has `timer` / `manual` / `automated` blocks: project from repo name, prompt vs template descriptions, nearest-15 rounding on timer and automated, overlap `prompt`, automated triggers (issue_start → start; issue_finish / pr_ship → stop; issue_switch → stop_then_start), inactivity 45 minutes.
+Copy the plugin `.clockify/config.yml.example`. That file has `timer` / `manual` / `automated` blocks: project from repo name, prompt vs template descriptions, nearest-15 rounding on timer and automated, overlap `prompt`, automated triggers (issue_start → start; issue_finish / pr_ship / pr_closed → stop; issue_switch → stop_then_start), inactivity 45 minutes (`stop_after_minutes` is a positive int you can set to 15 or any other value).

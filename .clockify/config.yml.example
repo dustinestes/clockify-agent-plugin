@@ -59,6 +59,8 @@ automated:
       action: stop_then_start
     - event: pr_ship
       action: stop_timer
+    - event: pr_closed
+      action: stop_timer
   inactivity:
     enabled: true
     stop_after_minutes: 45
