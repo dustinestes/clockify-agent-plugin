@@ -2,7 +2,7 @@
 name: clockify-project-init-automated
 description: >-
   Run clockify-project-init, then wire Cursor rules/hooks so the agent starts
-  and stops timers per automation.triggers (issue_start, issue_finish,
+  and stops timers per automated.triggers (issue_start, issue_finish,
   issue_switch, pr_ship). Use when the user wants agent-mediated time tracking
   in their issue/PR workflow.
 ---
@@ -13,7 +13,7 @@ Composition: **perform [`clockify-project-init`](../clockify-project-init/SKILL.
 
 ## After init
 
-1. `clockify_get_config` — read `automation.triggers` and `inactivity`.
+1. `clockify_get_config` — read `automated.triggers` and `automated.inactivity`.
 2. Add or update `.cursor/rules/clockify-time.mdc` so the agent:
    - On starting work / planning for an issue → `clockify_start_timer` with issue fields
    - On finishing issue work or shipping a PR in-session → `clockify_stop_timer`

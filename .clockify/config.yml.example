@@ -4,16 +4,52 @@
 version: 1
 project:
   name_from: repo
-rounding:
-  enabled: true
-  increment_minutes: 15
-  mode: nearest
-description:
-  template: "{issue_number} - {issue_title}"
-mapping:
-  project: repo_name
-  task_from: github_label
-automation:
+
+timer:
+  include_seconds: false
+  description:
+    from: prompt
+    template: "{issue_number} - {issue_title}"
+  task:
+    from: prompt
+    if_missing: prompt
+  rounding:
+    enabled: true
+    increment_minutes: 15
+    mode: nearest
+    start_mode: nearest
+    stop_mode: nearest
+    minimum_minutes: 15
+  overlap:
+    on_conflict: prompt
+
+manual:
+  description:
+    from: prompt
+    template: "{issue_number} - {issue_title}"
+  task:
+    from: prompt
+    if_missing: prompt
+  overlap:
+    on_conflict: prompt
+
+automated:
+  include_seconds: false
+  description:
+    from: template
+    template: "{issue_number} - {issue_title}"
+  task:
+    from: github_label
+    if_missing: create
+  rounding:
+    enabled: true
+    increment_minutes: 15
+    mode: nearest
+    start_mode: nearest
+    stop_mode: nearest
+    minimum_minutes: 15
+  overlap:
+    on_conflict: prompt
   triggers:
     - event: issue_start
       action: start_timer
