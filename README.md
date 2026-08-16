@@ -84,13 +84,17 @@ Credentials detail and non-Cursor hosts: [docs/setup.md](docs/setup.md). Full do
 
 ### Skills
 
-| Skill | Purpose |
-|-------|---------|
-| [`clockify-coding-time`](skills/clockify-coding-time/SKILL.md) | Daily start/stop/summary; honors `.clockify/config.yml` |
-| [`clockify-init`](skills/clockify-init/SKILL.md) | Repo contract: config + ignore + project + label→task sync |
-| [`clockify-automate`](skills/clockify-automate/SKILL.md) | Mode on: Cursor rules/hooks from `automated.triggers` |
-| [`clockify-unautomate`](skills/clockify-unautomate/SKILL.md) | Mode off: remove rule/hooks; keep `.clockify/` |
-| [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Full local teardown (keep plugin unless asked) |
+| Group | Skill | Purpose |
+|-------|-------|---------|
+| Repo | [`clockify-init`](skills/clockify-init/SKILL.md) | Config + ignore + project + label→task sync |
+| Repo | [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Full local teardown (keep plugin unless asked) |
+| Mode | [`clockify-automate`](skills/clockify-automate/SKILL.md) | Agent mode on: Cursor rules/hooks from `automated.triggers` |
+| Mode | [`clockify-unautomate`](skills/clockify-unautomate/SKILL.md) | Agent mode off: remove rule/hooks; keep `.clockify/` |
+| Timer | [`clockify-start-timer`](skills/clockify-start-timer/SKILL.md) | Start a running timer (`entry_method: timer`) |
+| Timer | [`clockify-stop-timer`](skills/clockify-stop-timer/SKILL.md) | Stop the running timer |
+| Timer | [`clockify-status`](skills/clockify-status/SKILL.md) | Read-only running timer (or none) |
+| Time | [`clockify-enter-time`](skills/clockify-enter-time/SKILL.md) | Completed range, no rounding (`entry_method: manual`) |
+| Review | [`clockify-summarize`](skills/clockify-summarize/SKILL.md) | Today / range totals |
 
 <br>
 
