@@ -158,7 +158,7 @@ server.registerTool(
         config: loaded.config,
         hint: loaded.found
           ? undefined
-          : "No .clockify/config.yml found. Add one via clockify-project-init, or set CLOCKIFY_CONFIG_ROOT / CLOCKIFY_CONFIG_PATH.",
+          : "No .clockify/config.yml found. Add one via clockify-init, or set CLOCKIFY_CONFIG_ROOT / CLOCKIFY_CONFIG_PATH.",
       });
     } catch (error) {
       return errorResult(error);

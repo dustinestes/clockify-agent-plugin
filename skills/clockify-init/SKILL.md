@@ -1,20 +1,24 @@
 ---
-name: clockify-project-init
+name: clockify-init
 description: >-
-  Bootstrap Clockify standards for a git repo: write .clockify/config.yml,
-  default-ignore personal time-tracking files, ensure a Clockify project named
-  like the repo, and sync GitHub labels to Clockify tasks. Use when setting up
-  time tracking for a new or existing project (manual workflow). Safe to re-run:
-  does not overwrite existing config unless the user asks.
+  Bootstrap Clockify for a git repo: write .clockify/config.yml, default-ignore
+  personal time-tracking files, ensure a Clockify project named like the repo,
+  and sync GitHub labels to Clockify tasks when task.from is github_label. Use
+  when setting up time tracking (timer or enter-time). Safe to re-run: does not
+  overwrite existing config unless the user asks. Does not enable agent
+  automation — that is clockify-automate.
+disable-model-invocation: true
 ---
 
-# Clockify project init
+# Clockify init
 
-Set up taxonomy and formatting so coding-time tools share one contract. Config is **personal by default** (gitignored) so product repos stay clean.
+Set up the repo contract so timer and enter-time tools share one yaml. Config is **personal by default** (gitignored) so product repos stay clean.
+
+Optional next mode: [`clockify-automate`](../clockify-automate/SKILL.md) wires Cursor rules/hooks. Do not write those here.
 
 ## Idempotency
 
-Re-runs are expected (e.g. from `clockify-project-init-automated`). Treat existing setup as authoritative:
+Re-runs are expected (including from `clockify-automate`). Treat existing setup as authoritative:
 
 1. Confirm MCP auth: `clockify_get_user` (fix if missing API key).
 2. Detect repo name (git root / folder name). Prefer `CLOCKIFY_CONFIG_ROOT` = workspace folder.
@@ -47,7 +51,7 @@ Re-runs are expected (e.g. from `clockify-project-init-automated`). Treat existi
 12. Sync GitHub labels → Clockify tasks (when any method has `task.from: github_label`):
     - `gh label list --json name` (or GitHub API)
     - For each label: `clockify_ensure_task` with `project_id` + label `name`
-13. Summarize: whether this was first-time vs already present, config path, **ignored by default**, how to opt in (delete the managed gitignore stanza and commit on purpose), project id, tasks created vs existing.
+13. Summarize: whether this was first-time vs already present, config path, **ignored by default**, how to opt in (delete the managed gitignore stanza and commit on purpose), project id, tasks created vs existing. Mention `clockify-automate` if they want agent-mediated start/stop.
 
 ## Do not
 
@@ -55,7 +59,7 @@ Re-runs are expected (e.g. from `clockify-project-init-automated`). Treat existi
 - Invent Clockify ids
 - Force-add `.clockify/` to git
 - Overwrite an existing `.clockify/config.yml` without an explicit user request
-- Enable automated Cursor rules here - that is `clockify-project-init-automated`
+- Enable automated Cursor rules here — that is `clockify-automate`
 
 ## Default yaml (unless user overrides)
 

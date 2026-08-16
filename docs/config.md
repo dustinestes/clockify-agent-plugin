@@ -29,7 +29,7 @@ Clockify files are **local/personal by default**. Init gitignores `.clockify/` s
 ```bash
 mkdir -p .clockify
 cp path/to/clockify-mcp-server/.clockify/config.yml.example .clockify/config.yml
-# or run the clockify-project-init skill (preferred: also writes ignore defaults)
+# or run the clockify-init skill (preferred: also writes ignore defaults)
 ```
 
 Point the MCP server at the repo when Cursor's cwd is wrong:
@@ -53,7 +53,7 @@ Or set `CLOCKIFY_CONFIG_PATH` to the full path of the config file.
 - **Default:** do not commit `.clockify/`. Init writes a directory self-ignore and a managed stanza in the repo `.gitignore`.
 - **Team opt-in:** delete the managed ignore block and commit `.clockify/` on purpose if the team wants shared standards. Still never commit API keys.
 - **Cursor glue:** `.cursor/rules/clockify-time.mdc` is also listed in the managed stanza when automated init is used. Other `.cursor/` files stay team-owned; do not ignore all of `.cursor/`.
-- **Cleanup:** run the `clockify-uninit` skill to remove config + Cursor glue surgically.
+- **Cleanup:** run `clockify-unautomate` to drop Cursor glue and keep config, or `clockify-uninit` for full local teardown.
 - A global `core.excludesfile` can ignore Clockify files in every repo; it is an extra option, not a substitute for init’s repo-local default.
 
 <br>
