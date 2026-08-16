@@ -8,7 +8,7 @@ const automationEventSchema = z.enum([
   "issue_finish",
   "issue_switch",
   "pr_ship",
-  "pr_merged",
+  "pr_closed",
 ]);
 
 const automationActionSchema = z.enum([
@@ -17,17 +17,19 @@ const automationActionSchema = z.enum([
   "stop_then_start",
 ]);
 
+const positiveInt = z.coerce.number().int().positive();
+
 export const roundingModeSchema = z.enum(["nearest", "up", "down"]);
 export type RoundingMode = z.infer<typeof roundingModeSchema>;
 
 const roundingSchema = z
   .object({
     enabled: z.boolean().default(false),
-    increment_minutes: z.number().int().positive().default(15),
+    increment_minutes: positiveInt.default(15),
     mode: roundingModeSchema.default("nearest"),
     start_mode: roundingModeSchema.optional(),
     stop_mode: roundingModeSchema.optional(),
-    minimum_minutes: z.number().int().positive().optional(),
+    minimum_minutes: positiveInt.optional(),
   })
   .default({});
 
@@ -62,7 +64,7 @@ const overlapSchema = z
 const inactivitySchema = z
   .object({
     enabled: z.boolean().default(false),
-    stop_after_minutes: z.number().int().positive().default(45),
+    stop_after_minutes: positiveInt.default(45),
   })
   .default({});
 
@@ -210,9 +212,38 @@ export function loadClockifyConfig(
   };
 }
 
+export function formatClockifyConfigError(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => {
+      const path = issue.path.length > 0 ? issue.path.join(".") : "(root)";
+      if (issue.code === z.ZodIssueCode.invalid_enum_value) {
+        const expected = `Invalid enum value. Expected ${issue.options.join(" | ")}`;
+        if (issue.received === "pr_merged") {
+          return `${path}: ${expected}. pr_merged is not supported: GitHub merge is an unwatched action.`;
+        }
+        return `${path}: ${expected}`;
+      }
+      return `${path}: ${issue.message}`;
+    })
+    .join("\n");
+}
+
+export function parseClockifyConfig(
+  raw: unknown,
+  source = "config",
+): ClockifyConfig {
+  const result = clockifyConfigSchema.safeParse(raw ?? {});
+  if (!result.success) {
+    throw new Error(
+      `Invalid Clockify config (${source}):\n${formatClockifyConfigError(result.error)}`,
+    );
+  }
+  return result.data;
+}
+
 function parseConfigFile(path: string): ClockifyConfig {
   const raw = parseYaml(readFileSync(path, "utf8"));
-  return clockifyConfigSchema.parse(raw ?? {});
+  return parseClockifyConfig(raw, path);
 }
 
 export function resolveProjectName(
