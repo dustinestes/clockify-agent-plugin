@@ -125,7 +125,7 @@ A repo `.env` is not loaded automatically by the server. Without `envFile` or `e
 
 ```bash
 mkdir -p ~/.claude/skills
-cp -R skills/clockify-coding-time ~/.claude/skills/
+cp -R skills/clockify-* ~/.claude/skills/
 ```
 
 ### Generic stdio host
