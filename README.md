@@ -76,7 +76,7 @@ Credentials detail and non-Cursor hosts: [docs/setup.md](docs/setup.md). Full do
 | `clockify_list_tasks` | List tasks on a project |
 | `clockify_ensure_task` | Find or create task (e.g. GitHub label) |
 | `clockify_get_running_timer` | Current running timer (+ inactivity hint) |
-| `clockify_start_timer` | Start a timer (supports description template fields) |
+| `clockify_start_timer` | Start a timer (optional start time; description template fields) |
 | `clockify_stop_timer` | Stop the running timer (optional rounding) |
 | `clockify_create_time_entry` | Create a completed entry (explicit start/end; no rounding) |
 | `clockify_list_time_entries` | List entries in a window |

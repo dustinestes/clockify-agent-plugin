@@ -36,7 +36,7 @@ Use the Clockify MCP tools to connect coding effort with time tracking.
 
 ### Stop (issue_finish / pr_ship / explicit stop)
 
-1. `clockify_stop_timer` (`timer.rounding` applied from yaml when enabled).
+1. `clockify_stop_timer` (`timer.rounding` on end when enabled). If the tool reports `overlap: true`, ask before retrying with `confirm_overlap: true`.
 2. Confirm description, project, duration, and any `rounding` metadata from the response.
 
 ### Summarize
@@ -45,7 +45,7 @@ Use the Clockify MCP tools to connect coding effort with time tracking.
 
 ### Backfill
 
-- `clockify_create_time_entry` with ISO start/end; `manual.description` applies; do not round.
+- `clockify_create_time_entry` with ISO start/end; `manual.description` applies; do not round. Honor overlap (`confirm_overlap` if `on_conflict` is prompt).
 
 ## Mapping guidance
 

@@ -106,11 +106,18 @@ With `issue_number: 1` and `issue_title: Wire Clockify MCP` that becomes `#1 - W
 
 ### Rounding
 
-`start_mode` / `stop_mode` fall back to `mode`. If both ends round to the same increment, end is bumped by `increment_minutes`. When `minimum_minutes` is set, duration is at least that long after rounding.
+`start_mode` / `stop_mode` fall back to `mode`. Start rounding applies when a timer is created (`include_seconds` floors to the UTC minute first). Stop rounding changes **end** only and does not re-round the stored start. If the rounded duration is zero, end is bumped by `increment_minutes`. When `minimum_minutes` is set, duration is at least that long after rounding.
 
-### Overlap and missing tasks
+Sequential switch: after a completed entry, the next timer start gap-fits to that entry’s end so independently rounded starts do not overlap it.
 
-`overlap.on_conflict` and `task.if_missing` are stored here for skills and a follow-up MCP pass. Stop rounding already uses `timer.rounding`. Create-entry does not round.
+### Overlap
+
+After rounding/gap-fit (or the explicit range on create-entry), tools list nearby completed entries. Abutting times are allowed. If another entry covers the same clock time:
+
+- `prompt` — do not write; the tool returns the colliding entries. Retry with `confirm_overlap: true` to stack anyway (parallel work streams).
+- `override` — write anyway.
+
+Timers still cannot stack: Clockify allows one running timer. Overlap checks apply to completed intervals and to a new start that falls inside a completed entry.
 
 ### AI contract
 
@@ -131,9 +138,9 @@ Phase 1 is best-effort on agent/session boundaries (`clockify_get_running_timer`
 ## Tools that honor config
 
 - `clockify_get_config` - effective yaml
-- `clockify_start_timer` - `timer.description`
-- `clockify_stop_timer` - `timer.rounding`
-- `clockify_create_time_entry` - `manual.description` (no rounding)
+- `clockify_start_timer` - optional `start`, `entry_method`, `timer`/`automated` include_seconds + start rounding + gap-fit + overlap
+- `clockify_stop_timer` - `entry_method` end rounding, include_seconds, overlap
+- `clockify_create_time_entry` - `manual`/`automated` description + overlap (no rounding)
 - `clockify_get_running_timer` - `automated.inactivity`
 - `clockify_ensure_project` / `clockify_ensure_task` - taxonomy bootstrap
 

@@ -10,11 +10,19 @@ import { parse as parseYaml } from "yaml";
 import {
   applyDescriptionTemplate,
   applyRoundingToInterval,
+  applyStopRounding,
   clockifyConfigSchema,
+  completedOverlaps,
   defaultConfig,
   findProjectRoot,
+  floorToMinute,
+  gapFitStart,
+  intervalsOverlap,
   isTimerPastInactivity,
+  latestCompletedEnd,
   loadClockifyConfig,
+  overlapShouldProceed,
+  prepareStartInstant,
   projectRootFromConfigPath,
   resolveConfigPathInRoot,
   resolveEntryDescription,
@@ -213,5 +221,98 @@ const examplePath = join(
   "config.yml.example",
 );
 clockifyConfigSchema.parse(parseYaml(readFileSync(examplePath, "utf8")));
+
+assert.equal(
+  floorToMinute("2026-08-15T21:07:32.500Z"),
+  "2026-08-15T21:07:00.000Z",
+);
+
+assert.equal(
+  intervalsOverlap(
+    "2026-08-09T13:00:00.000Z",
+    "2026-08-09T13:15:00.000Z",
+    "2026-08-09T13:15:00.000Z",
+    "2026-08-09T13:30:00.000Z",
+  ),
+  false,
+);
+assert.equal(
+  intervalsOverlap(
+    "2026-08-09T13:00:00.000Z",
+    "2026-08-09T13:20:00.000Z",
+    "2026-08-09T13:15:00.000Z",
+    "2026-08-09T13:30:00.000Z",
+  ),
+  true,
+);
+
+const previous = [
+  {
+    id: "a",
+    timeInterval: {
+      start: "2026-08-09T13:00:00.000Z",
+      end: "2026-08-09T13:15:00.000Z",
+    },
+  },
+  {
+    id: "b",
+    timeInterval: {
+      start: "2026-08-09T12:00:00.000Z",
+      end: "2026-08-09T12:45:00.000Z",
+    },
+  },
+];
+assert.equal(latestCompletedEnd(previous), "2026-08-09T13:15:00.000Z");
+assert.deepEqual(
+  gapFitStart("2026-08-09T13:07:00.000Z", latestCompletedEnd(previous)),
+  { start: "2026-08-09T13:15:00.000Z", fitted: true },
+);
+assert.equal(
+  completedOverlaps(
+    "2026-08-09T13:15:00.000Z",
+    "2026-08-09T13:30:00.000Z",
+    previous,
+  ).length,
+  0,
+);
+assert.equal(
+  completedOverlaps(
+    "2026-08-09T13:10:00.000Z",
+    "2026-08-09T13:20:00.000Z",
+    previous,
+  ).length,
+  1,
+);
+assert.equal(
+  completedOverlaps(
+    "2026-08-09T13:00:00.000Z",
+    "2026-08-09T13:15:00.000Z",
+    previous,
+    "a",
+  ).length,
+  0,
+);
+
+assert.equal(overlapShouldProceed("prompt", 1, false), false);
+assert.equal(overlapShouldProceed("prompt", 1, true), true);
+assert.equal(overlapShouldProceed("override", 2, false), true);
+assert.equal(overlapShouldProceed("prompt", 0, false), true);
+
+const prepared = prepareStartInstant(
+  "2026-08-09T13:07:32.000Z",
+  false,
+  cfg.timer.rounding,
+);
+assert.equal(prepared.secondsFloored, true);
+assert.equal(prepared.roundingApplied, true);
+assert.equal(prepared.start, "2026-08-09T13:00:00.000Z");
+
+const stopped = applyStopRounding(
+  "2026-08-09T13:00:00.000Z",
+  "2026-08-09T13:17:48.000Z",
+  cfg.timer.rounding,
+);
+assert.equal(stopped.applied, true);
+assert.equal(stopped.end, "2026-08-09T13:15:00.000Z");
 
 console.log("OK: config unit checks");
