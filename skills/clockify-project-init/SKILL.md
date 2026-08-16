@@ -44,7 +44,7 @@ Re-runs are expected (e.g. from `clockify-project-init-automated`). Treat existi
 9. If `.clockify/` is **already tracked** in git, warn and ask before `git rm --cached`; never force-add `.clockify/` to the index.
 10. `clockify_get_config` - confirm `found: true`, path under `.clockify/config.yml`, and expected `projectName`.
 11. `clockify_ensure_project` - create/find project matching the repo name.
-12. Sync GitHub labels → Clockify tasks (when `mapping.task_from: github_label`):
+12. Sync GitHub labels → Clockify tasks (when any method has `task.from: github_label`):
     - `gh label list --json name` (or GitHub API)
     - For each label: `clockify_ensure_task` with `project_id` + label `name`
 13. Summarize: whether this was first-time vs already present, config path, **ignored by default**, how to opt in (delete the managed gitignore stanza and commit on purpose), project id, tasks created vs existing.
@@ -59,8 +59,4 @@ Re-runs are expected (e.g. from `clockify-project-init-automated`). Treat existi
 
 ## Default yaml (unless user overrides)
 
-- Project from repo name
-- Description `{issue_number} - {issue_title}` (renders `#N - title`; do not write `#{issue_number}`)
-- Rounding nearest 15 minutes
-- Triggers: issue_start → start; issue_finish / pr_ship → stop; issue_switch → stop_then_start
-- Inactivity stop after 45 minutes (skill/hook enforced)
+Copy the plugin `.clockify/config.yml.example`. That file has `timer` / `manual` / `automated` blocks: project from repo name, prompt vs template descriptions, nearest-15 rounding on timer and automated, overlap `prompt`, automated triggers (issue_start → start; issue_finish / pr_ship → stop; issue_switch → stop_then_start), inactivity 45 minutes.

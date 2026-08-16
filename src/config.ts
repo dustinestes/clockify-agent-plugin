@@ -17,6 +17,55 @@ const automationActionSchema = z.enum([
   "stop_then_start",
 ]);
 
+export const roundingModeSchema = z.enum(["nearest", "up", "down"]);
+export type RoundingMode = z.infer<typeof roundingModeSchema>;
+
+const roundingSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    increment_minutes: z.number().int().positive().default(15),
+    mode: roundingModeSchema.default("nearest"),
+    start_mode: roundingModeSchema.optional(),
+    stop_mode: roundingModeSchema.optional(),
+    minimum_minutes: z.number().int().positive().optional(),
+  })
+  .default({});
+
+const descriptionSchema = (fromDefault: "prompt" | "template") =>
+  z
+    .object({
+      from: z.enum(["prompt", "template"]).default(fromDefault),
+      template: z.string().default("{issue_number} - {issue_title}"),
+    })
+    .default({});
+
+const interactiveTaskSchema = z
+  .object({
+    from: z.enum(["prompt", "github_label", "none"]).default("prompt"),
+    if_missing: z.enum(["prompt", "create", "none"]).default("prompt"),
+  })
+  .default({});
+
+const automatedTaskSchema = z
+  .object({
+    from: z.enum(["github_label", "none"]).default("github_label"),
+    if_missing: z.enum(["create", "none"]).default("create"),
+  })
+  .default({});
+
+const overlapSchema = z
+  .object({
+    on_conflict: z.enum(["prompt", "override"]).default("prompt"),
+  })
+  .default({});
+
+const inactivitySchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    stop_after_minutes: z.number().int().positive().default(45),
+  })
+  .default({});
+
 export const clockifyConfigSchema = z.object({
   version: z.literal(1).default(1),
   project: z
@@ -25,28 +74,29 @@ export const clockifyConfigSchema = z.object({
       name: z.string().optional(),
     })
     .default({}),
-  rounding: z
+  timer: z
     .object({
-      enabled: z.boolean().default(false),
-      increment_minutes: z.number().int().positive().default(15),
-      mode: z.enum(["nearest", "up", "down"]).default("nearest"),
+      include_seconds: z.boolean().default(false),
+      description: descriptionSchema("prompt"),
+      task: interactiveTaskSchema,
+      rounding: roundingSchema,
+      overlap: overlapSchema,
     })
     .default({}),
-  description: z
+  manual: z
     .object({
-      template: z.string().default("{issue_number} - {issue_title}"),
+      description: descriptionSchema("prompt"),
+      task: interactiveTaskSchema,
+      overlap: overlapSchema,
     })
     .default({}),
-  mapping: z
+  automated: z
     .object({
-      project: z.enum(["repo_name", "fixed"]).default("repo_name"),
-      task_from: z
-        .enum(["github_label", "github_issue", "none"])
-        .default("github_label"),
-    })
-    .default({}),
-  automation: z
-    .object({
+      include_seconds: z.boolean().default(false),
+      description: descriptionSchema("template"),
+      task: automatedTaskSchema,
+      rounding: roundingSchema,
+      overlap: overlapSchema,
       triggers: z
         .array(
           z.object({
@@ -55,17 +105,15 @@ export const clockifyConfigSchema = z.object({
           }),
         )
         .default([]),
-      inactivity: z
-        .object({
-          enabled: z.boolean().default(false),
-          stop_after_minutes: z.number().int().positive().default(45),
-        })
-        .default({}),
+      inactivity: inactivitySchema,
     })
     .default({}),
 });
 
 export type ClockifyConfig = z.infer<typeof clockifyConfigSchema>;
+export type RoundingConfig = ClockifyConfig["timer"]["rounding"];
+export type InactivityConfig = ClockifyConfig["automated"]["inactivity"];
+export type DescriptionConfig = ClockifyConfig["timer"]["description"];
 
 export type LoadedConfig = {
   found: boolean;
@@ -171,7 +219,7 @@ export function resolveProjectName(
   config: ClockifyConfig,
   root: string | null,
 ): string | null {
-  if (config.project.name_from === "fixed" || config.mapping.project === "fixed") {
+  if (config.project.name_from === "fixed") {
     return config.project.name?.trim() || null;
   }
   if (config.project.name?.trim()) {
@@ -207,7 +255,25 @@ export function applyDescriptionTemplate(
     .trim();
 }
 
-export type RoundingMode = "nearest" | "up" | "down";
+export function resolveEntryDescription(
+  description: DescriptionConfig,
+  input: {
+    description?: string;
+    issue_number?: string | number;
+    issue_title?: string;
+    github_label?: string;
+    repo?: string;
+  },
+): string | undefined {
+  if (input.description?.trim()) return input.description.trim();
+  if (description.from === "prompt") return undefined;
+  const hasFields =
+    input.issue_number !== undefined ||
+    Boolean(input.issue_title?.trim()) ||
+    Boolean(input.github_label?.trim());
+  if (!hasFields) return undefined;
+  return applyDescriptionTemplate(description.template, input);
+}
 
 export function roundDate(
   date: Date,
@@ -230,7 +296,7 @@ export function roundDate(
 export function applyRoundingToInterval(
   startIso: string,
   endIso: string,
-  rounding: ClockifyConfig["rounding"],
+  rounding: RoundingConfig,
 ): {
   start: string;
   end: string;
@@ -242,20 +308,25 @@ export function applyRoundingToInterval(
     return { start: startIso, end: endIso, raw, applied: false };
   }
 
+  const startMode = rounding.start_mode ?? rounding.mode;
+  const stopMode = rounding.stop_mode ?? rounding.mode;
+
   let start = roundDate(
     new Date(startIso),
     rounding.increment_minutes,
-    rounding.mode,
+    startMode,
   );
-  let end = roundDate(
-    new Date(endIso),
-    rounding.increment_minutes,
-    rounding.mode,
-  );
+  let end = roundDate(new Date(endIso), rounding.increment_minutes, stopMode);
 
-  const minMs = rounding.increment_minutes * 60 * 1000;
-  if (end.getTime() <= start.getTime()) {
-    end = new Date(start.getTime() + minMs);
+  const durationMs = end.getTime() - start.getTime();
+  const floorMinutes =
+    rounding.minimum_minutes ??
+    (durationMs <= 0 ? rounding.increment_minutes : undefined);
+  if (
+    floorMinutes !== undefined &&
+    durationMs < floorMinutes * 60 * 1000
+  ) {
+    end = new Date(start.getTime() + floorMinutes * 60 * 1000);
   }
 
   return {
@@ -268,7 +339,7 @@ export function applyRoundingToInterval(
 
 export function isTimerPastInactivity(
   startedAtIso: string,
-  inactivity: ClockifyConfig["automation"]["inactivity"],
+  inactivity: InactivityConfig,
   now = new Date(),
 ): boolean {
   if (!inactivity.enabled) return false;

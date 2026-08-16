@@ -20,9 +20,9 @@ Use the Clockify MCP tools to connect coding effort with time tracking.
 
 ## Config-aware behavior
 
-1. Call `clockify_get_config`. If `found`, honor templates, rounding, triggers, and inactivity.
+1. Call `clockify_get_config`. If `found`, honor per-method description, rounding, triggers, and inactivity.
 2. Never invent project/task ids - list or `ensure_*` first.
-3. Prefer structured fields on start/create: `issue_number`, `issue_title`, `github_label` so the description template applies when `description` is omitted. Default template is `{issue_number} - {issue_title}` → `#N - title`. Do not put a literal `#` before `{issue_number}`.
+3. When `description.from` is `template`, pass `issue_number` / `issue_title` / `github_label` so the template applies when `description` is omitted. Default template is `{issue_number} - {issue_title}` → `#N - title`. Do not put a literal `#` before `{issue_number}`. When `from` is `prompt`, ask for or use a caller-supplied description.
 
 ## Workflow
 
@@ -31,12 +31,12 @@ Use the Clockify MCP tools to connect coding effort with time tracking.
 1. `clockify_get_running_timer`. If running and `inactivity.pastThreshold`, stop it (or ask) per config.
 2. If another issue’s timer is running and the user is switching, stop first (`issue_switch` → stop_then_start).
 3. Resolve project: user name, config repo name, or `clockify_list_projects` / `clockify_ensure_project`.
-4. Resolve task when `mapping.task_from` is `github_label`: `clockify_ensure_task` with the label name.
+4. Resolve task from the method’s `task.from`. When `github_label`, `clockify_ensure_task` if `if_missing` is `create`; prompt or skip per `if_missing`.
 5. `clockify_start_timer` with `project_id`, optional `task_id`, and `issue_number` / `issue_title`.
 
 ### Stop (issue_finish / pr_ship / explicit stop)
 
-1. `clockify_stop_timer` (rounding applied from yaml when enabled).
+1. `clockify_stop_timer` (`timer.rounding` applied from yaml when enabled).
 2. Confirm description, project, duration, and any `rounding` metadata from the response.
 
 ### Summarize
@@ -45,14 +45,14 @@ Use the Clockify MCP tools to connect coding effort with time tracking.
 
 ### Backfill
 
-- `clockify_create_time_entry` with ISO start/end; template fields and rounding apply like start/stop.
+- `clockify_create_time_entry` with ISO start/end; `manual.description` applies; do not round.
 
 ## Mapping guidance
 
 | Coding signal | Clockify field |
 |---------------|----------------|
 | Git repo name | Project (often via `.clockify/config.yml`) |
-| GitHub label | Task when `task_from: github_label` |
+| GitHub label | Task when `task.from: github_label` |
 | Issue number + title | Description via template |
 
 ## Examples

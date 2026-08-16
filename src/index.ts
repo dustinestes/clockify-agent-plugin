@@ -11,10 +11,10 @@ import {
   startOfLocalDayIso,
 } from "./clockify-client.js";
 import {
-  applyDescriptionTemplate,
   applyRoundingToInterval,
   isTimerPastInactivity,
   loadClockifyConfig,
+  resolveEntryDescription,
   resolveProjectName,
 } from "./config.js";
 
@@ -59,24 +59,19 @@ function errorResult(error: unknown) {
   };
 }
 
-function resolveDescription(input: {
-  description?: string;
-  issue_number?: string | number;
-  issue_title?: string;
-  github_label?: string;
-}): string | undefined {
-  if (input.description?.trim()) return input.description.trim();
+function resolveDescription(
+  method: "timer" | "manual" | "automated",
+  input: {
+    description?: string;
+    issue_number?: string | number;
+    issue_title?: string;
+    github_label?: string;
+  },
+): string | undefined {
   const loaded = loadClockifyConfig();
-  const hasFields =
-    input.issue_number !== undefined ||
-    Boolean(input.issue_title?.trim()) ||
-    Boolean(input.github_label?.trim());
-  if (!hasFields) return undefined;
   const repo = resolveProjectName(loaded.config, loaded.root) ?? undefined;
-  return applyDescriptionTemplate(loaded.config.description.template, {
-    issue_number: input.issue_number,
-    issue_title: input.issue_title,
-    github_label: input.github_label,
+  return resolveEntryDescription(loaded.config[method].description, {
+    ...input,
     repo,
   });
 }
@@ -91,7 +86,7 @@ server.registerTool(
   {
     title: "Get project Clockify config",
     description:
-      "Returns the effective .clockify/config.yml standards (templates, rounding, automation triggers, inactivity). Set CLOCKIFY_CONFIG_ROOT to the repo root if needed.",
+      "Returns the effective .clockify/config.yml standards (per-method description, task, rounding, overlap, automation). Set CLOCKIFY_CONFIG_ROOT to the repo root if needed.",
     inputSchema: {},
   },
   async () => {
@@ -281,16 +276,16 @@ server.registerTool(
       const running = await client().getRunningTimer(workspace_id);
       if (!running) return textResult({ running: false });
       const loaded = loadClockifyConfig();
+      const inactivity = loaded.config.automated.inactivity;
       const pastInactivity = isTimerPastInactivity(
         running.timeInterval.start,
-        loaded.config.automation.inactivity,
+        inactivity,
       );
       return textResult({
         ...running,
         inactivity: {
-          enabled: loaded.config.automation.inactivity.enabled,
-          stop_after_minutes:
-            loaded.config.automation.inactivity.stop_after_minutes,
+          enabled: inactivity.enabled,
+          stop_after_minutes: inactivity.stop_after_minutes,
           pastThreshold: pastInactivity,
           recommendation: pastInactivity
             ? "Timer exceeded inactivity threshold - stop it (or ask the user) per .clockify/config.yml."
@@ -308,7 +303,7 @@ server.registerTool(
   {
     title: "Start timer",
     description:
-      "Starts a new running timer. Prefer stopping any existing timer first unless the user wants overlapping entries. Pass issue_number/issue_title to apply .clockify/config.yml description.template when description is omitted.",
+      "Starts a new running timer. Prefer stopping any existing timer first unless the user wants overlapping entries. When timer.description.from is template, pass issue_number/issue_title so the template applies when description is omitted.",
     inputSchema: {
       workspace_id: z.string().optional().describe("Workspace ID override."),
       description: z
@@ -345,7 +340,7 @@ server.registerTool(
     billable,
   }) => {
     try {
-      const resolvedDescription = resolveDescription({
+      const resolvedDescription = resolveDescription("timer", {
         description,
         issue_number,
         issue_title,
@@ -372,7 +367,7 @@ server.registerTool(
   {
     title: "Stop timer",
     description:
-      "Stops the currently running timer. Applies .clockify/config.yml rounding to the end time when enabled.",
+      "Stops the currently running timer. Applies timer.rounding from .clockify/config.yml when enabled.",
     inputSchema: {
       workspace_id: z.string().optional().describe("Workspace ID override."),
       apply_rounding: z
@@ -394,8 +389,8 @@ server.registerTool(
       }
 
       const loaded = loadClockifyConfig();
-      const shouldRound =
-        apply_rounding ?? loaded.config.rounding.enabled;
+      const rounding = loaded.config.timer.rounding;
+      const shouldRound = apply_rounding ?? rounding.enabled;
       const rawEnd = new Date().toISOString();
       let endIso = rawEnd;
       let roundingMeta: unknown = { applied: false };
@@ -405,15 +400,16 @@ server.registerTool(
           running.timeInterval.start,
           rawEnd,
           {
-            ...loaded.config.rounding,
+            ...rounding,
             enabled: true,
           },
         );
         endIso = rounded.end;
         roundingMeta = {
           applied: true,
-          mode: loaded.config.rounding.mode,
-          increment_minutes: loaded.config.rounding.increment_minutes,
+          mode: rounding.stop_mode ?? rounding.mode,
+          increment_minutes: rounding.increment_minutes,
+          minimum_minutes: rounding.minimum_minutes,
           raw: rounded.raw,
           rounded: { start: rounded.start, end: rounded.end },
         };
@@ -432,7 +428,7 @@ server.registerTool(
   {
     title: "Create time entry",
     description:
-      "Creates a completed time entry with explicit start and end (ISO-8601). Applies .clockify/config.yml rounding when enabled. Supports description template fields.",
+      "Creates a completed time entry with explicit start and end (ISO-8601). Does not round (Manual times are explicit). When manual.description.from is template, pass issue fields so the template applies when description is omitted.",
     inputSchema: {
       start: z.string().describe("Start time in ISO-8601 / yyyy-MM-ddThh:mm:ssZ."),
       end: z.string().describe("End time in ISO-8601 / yyyy-MM-ddThh:mm:ssZ."),
@@ -445,10 +441,6 @@ server.registerTool(
       task_id: z.string().optional().describe("Clockify task ID."),
       tag_ids: z.array(z.string()).optional().describe("Tag IDs to attach."),
       billable: z.boolean().optional().describe("Mark entry billable."),
-      apply_rounding: z
-        .boolean()
-        .optional()
-        .describe("Override config rounding (default: use .clockify/config.yml)."),
     },
   },
   async ({
@@ -463,32 +455,9 @@ server.registerTool(
     task_id,
     tag_ids,
     billable,
-    apply_rounding,
   }) => {
     try {
-      const loaded = loadClockifyConfig();
-      const shouldRound = apply_rounding ?? loaded.config.rounding.enabled;
-      let startIso = start;
-      let endIso = end;
-      let roundingMeta: unknown = { applied: false };
-
-      if (shouldRound) {
-        const rounded = applyRoundingToInterval(start, end, {
-          ...loaded.config.rounding,
-          enabled: true,
-        });
-        startIso = rounded.start;
-        endIso = rounded.end;
-        roundingMeta = {
-          applied: true,
-          mode: loaded.config.rounding.mode,
-          increment_minutes: loaded.config.rounding.increment_minutes,
-          raw: rounded.raw,
-          rounded: { start: rounded.start, end: rounded.end },
-        };
-      }
-
-      const resolvedDescription = resolveDescription({
+      const resolvedDescription = resolveDescription("manual", {
         description,
         issue_number,
         issue_title,
@@ -496,8 +465,8 @@ server.registerTool(
       });
 
       const entry = await client().createTimeEntry({
-        start: startIso,
-        end: endIso,
+        start,
+        end,
         workspaceId: workspace_id,
         description: resolvedDescription,
         projectId: project_id,
@@ -505,7 +474,7 @@ server.registerTool(
         tagIds: tag_ids,
         billable,
       });
-      return textResult({ entry, rounding: roundingMeta });
+      return textResult({ entry });
     } catch (error) {
       return errorResult(error);
     }

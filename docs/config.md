@@ -3,7 +3,7 @@
 <h1>Config</h1>
 <br clear="both">
 
-Per-repo standards via `.clockify/config.yml`: taxonomy, description formatting, rounding, and AI automation triggers. API keys stay in MCP env / plugin variables - not in this file.
+Per-repo standards via `.clockify/config.yml`: project identity plus per-method description, task, rounding, overlap, and automation. API keys stay in MCP env / plugin variables - not in this file.
 
 Clockify files are **local/personal by default**. Init gitignores `.clockify/` so time-tracking habits do not land in product repos unless the team opts in.
 
@@ -77,33 +77,50 @@ Project root is the git/workspace root (parent of `.clockify/`), not the `.clock
 
 ## Schema
 
+Root keys: `version`, `project`, `timer`, `manual`, `automated`. Method blocks hold description, task, and overlap. Rounding and `include_seconds` apply to timer and automated only. Manual times are explicit.
+
 | Key | Purpose |
 |-----|---------|
 | `project.name_from` | `repo` (folder name) or `fixed` with `project.name` |
-| `rounding` | `enabled`, `increment_minutes`, `mode` (`nearest` \| `up` \| `down`) |
-| `description.template` | Default `{issue_number} - {issue_title}` (renders `#N - title`). Also `{github_label}`, `{repo}` |
-| `mapping.task_from` | `github_label` → Clockify tasks named like labels; `none` to skip |
-| `automation.triggers` | AI/hook contract: `issue_start`, `issue_finish`, `issue_switch`, `pr_ship`, `pr_merged` |
-| `automation.inactivity` | Stop guidance when a timer exceeds `stop_after_minutes` |
+| `*.description.from` | `prompt` (caller supplies the string) or `template` |
+| `*.description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
+| `*.task.from` | `prompt`, `github_label`, or `none`. Automated allows `github_label` or `none` only |
+| `*.task.if_missing` | When the Clockify task does not exist: `prompt`, `create` (`ensure_task`), or `none`. Automated: `create` or `none` |
+| `timer.rounding` / `automated.rounding` | `enabled`, `increment_minutes`, `mode` (`nearest` \| `up` \| `down`), optional `start_mode` / `stop_mode` / `minimum_minutes` |
+| `*.overlap.on_conflict` | `prompt` or `override` when a completed interval overlaps another entry |
+| `automated.triggers` | AI/hook contract: `issue_start`, `issue_finish`, `issue_switch`, `pr_ship`, `pr_merged` |
+| `automated.inactivity` | Stop guidance when a timer exceeds `stop_after_minutes` |
+
+See [`.clockify/config.yml.example`](../.clockify/config.yml.example) for a full file.
 
 ### Description placeholders
 
 ```yaml
-description:
-  template: "{issue_number} - {issue_title}"
+timer:
+  description:
+    from: template
+    template: "{issue_number} - {issue_title}"
 ```
 
-With `issue_number: 1` and `issue_title: Wire Clockify MCP` that becomes `#1 - Wire Clockify MCP`.
+With `issue_number: 1` and `issue_title: Wire Clockify MCP` that becomes `#1 - Wire Clockify MCP`. When `from: prompt`, an omitted description is left blank rather than filled from the template.
+
+### Rounding
+
+`start_mode` / `stop_mode` fall back to `mode`. If both ends round to the same increment, end is bumped by `increment_minutes`. When `minimum_minutes` is set, duration is at least that long after rounding.
+
+### Overlap and missing tasks
+
+`overlap.on_conflict` and `task.if_missing` are stored here for skills and a follow-up MCP pass. Stop rounding already uses `timer.rounding`. Create-entry does not round.
 
 ### AI contract
 
-Triggers run when an agent or Cursor hook is in the loop. Coding without AI means manual start/stop. That is expected.
+Triggers run when an agent or Cursor hook is in the loop. Coding without AI means start/stop timer or enter an explicit range. That is expected.
 
 `pr_merged` is for **phase 2** GitHub Actions (no local MCP). Phase 1 binds other events via skills/rules.
 
 ### Inactivity
 
-Phase 1 is best-effort on agent/session boundaries (`clockify_get_running_timer` returns `inactivity.pastThreshold`). No background daemon while Cursor is closed.
+Phase 1 is best-effort on agent/session boundaries (`clockify_get_running_timer` returns `inactivity.pastThreshold` from `automated.inactivity`). No background daemon while Cursor is closed.
 
 <br>
 
@@ -114,8 +131,10 @@ Phase 1 is best-effort on agent/session boundaries (`clockify_get_running_timer`
 ## Tools that honor config
 
 - `clockify_get_config` - effective yaml
-- `clockify_start_timer` / `clockify_create_time_entry` - description template fields
-- `clockify_stop_timer` / `clockify_create_time_entry` - rounding
+- `clockify_start_timer` - `timer.description`
+- `clockify_stop_timer` - `timer.rounding`
+- `clockify_create_time_entry` - `manual.description` (no rounding)
+- `clockify_get_running_timer` - `automated.inactivity`
 - `clockify_ensure_project` / `clockify_ensure_task` - taxonomy bootstrap
 
 <br>
