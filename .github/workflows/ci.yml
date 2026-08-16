@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Build, config tests, handshake
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Config tests
+        run: npm run test:config
+      - name: Handshake
+        run: npm run smoke:handshake

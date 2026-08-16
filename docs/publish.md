@@ -52,7 +52,9 @@ npm publish --access public
 
 Verify `npx -y @dustinestes/clockify-mcp-server` starts over stdio.
 
-Until a Release workflow exists ([#15](https://github.com/dustinestes/clockify-mcp-server/issues/15)), publish npm by hand. Do not publish on every push to `main`. PR checks are tracked in [#14](https://github.com/dustinestes/clockify-mcp-server/issues/14).
+Pull requests and pushes to `main` run `npm ci`, `npm run build`, `npm run test:config`, and `npm run smoke:handshake` with no Clockify credentials. Handshake only checks MCP `initialize` against `dist/`; it does not call the Clockify API. That workflow does not publish.
+
+Until a Release workflow exists ([#15](https://github.com/dustinestes/clockify-mcp-server/issues/15)), publish npm by hand. Do not publish on every push to `main`.
 
 <br>
 
