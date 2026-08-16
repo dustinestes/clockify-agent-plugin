@@ -347,3 +347,139 @@ export function isTimerPastInactivity(
   const limitMs = inactivity.stop_after_minutes * 60 * 1000;
   return now.getTime() - started >= limitMs;
 }
+
+export type EntryMethod = "timer" | "manual" | "automated";
+export type TimerEntryMethod = "timer" | "automated";
+
+export function floorToMinute(iso: string): string {
+  const d = new Date(iso);
+  d.setUTCSeconds(0, 0);
+  d.setUTCMilliseconds(0);
+  return d.toISOString();
+}
+
+/** Half-open [start, end). Abutting ends/starts do not overlap. */
+export function intervalsOverlap(
+  aStart: string,
+  aEnd: string,
+  bStart: string,
+  bEnd: string,
+): boolean {
+  return (
+    new Date(aStart).getTime() < new Date(bEnd).getTime() &&
+    new Date(bStart).getTime() < new Date(aEnd).getTime()
+  );
+}
+
+export type IntervalEntry = {
+  id?: string;
+  description?: string;
+  timeInterval: { start: string; end: string | null };
+};
+
+export function completedOverlaps(
+  start: string,
+  end: string,
+  entries: IntervalEntry[],
+  excludeId?: string,
+): IntervalEntry[] {
+  return entries.filter((entry) => {
+    if (excludeId && entry.id === excludeId) return false;
+    const otherEnd = entry.timeInterval.end;
+    if (!otherEnd) return false;
+    return intervalsOverlap(start, end, entry.timeInterval.start, otherEnd);
+  });
+}
+
+export function latestCompletedEnd(entries: IntervalEntry[]): string | null {
+  let latest: string | null = null;
+  let latestMs = Number.NEGATIVE_INFINITY;
+  for (const entry of entries) {
+    const end = entry.timeInterval.end;
+    if (!end) continue;
+    const ms = new Date(end).getTime();
+    if (ms > latestMs) {
+      latestMs = ms;
+      latest = end;
+    }
+  }
+  return latest;
+}
+
+export function gapFitStart(
+  proposedStart: string,
+  previousEnd: string | null,
+): { start: string; fitted: boolean } {
+  if (!previousEnd) return { start: proposedStart, fitted: false };
+  if (new Date(proposedStart).getTime() < new Date(previousEnd).getTime()) {
+    return { start: previousEnd, fitted: true };
+  }
+  return { start: proposedStart, fitted: false };
+}
+
+export function prepareStartInstant(
+  rawStart: string,
+  includeSeconds: boolean,
+  rounding: RoundingConfig,
+): {
+  start: string;
+  raw: string;
+  secondsFloored: boolean;
+  roundingApplied: boolean;
+} {
+  let start = rawStart;
+  const secondsFloored = !includeSeconds;
+  if (secondsFloored) {
+    start = floorToMinute(start);
+  }
+  let roundingApplied = false;
+  if (rounding.enabled) {
+    const startMode = rounding.start_mode ?? rounding.mode;
+    start = roundDate(
+      new Date(start),
+      rounding.increment_minutes,
+      startMode,
+    ).toISOString();
+    roundingApplied = true;
+  }
+  return { start, raw: rawStart, secondsFloored, roundingApplied };
+}
+
+/** Round stop end only; keep the stored start. */
+export function applyStopRounding(
+  storedStartIso: string,
+  rawEndIso: string,
+  rounding: RoundingConfig,
+): { end: string; rawEnd: string; applied: boolean } {
+  if (!rounding.enabled) {
+    return { end: rawEndIso, rawEnd: rawEndIso, applied: false };
+  }
+  const stopMode = rounding.stop_mode ?? rounding.mode;
+  let end = roundDate(
+    new Date(rawEndIso),
+    rounding.increment_minutes,
+    stopMode,
+  );
+  const startMs = new Date(storedStartIso).getTime();
+  const durationMs = end.getTime() - startMs;
+  const floorMinutes =
+    rounding.minimum_minutes ??
+    (durationMs <= 0 ? rounding.increment_minutes : undefined);
+  if (
+    floorMinutes !== undefined &&
+    durationMs < floorMinutes * 60 * 1000
+  ) {
+    end = new Date(startMs + floorMinutes * 60 * 1000);
+  }
+  return { end: end.toISOString(), rawEnd: rawEndIso, applied: true };
+}
+
+export function overlapShouldProceed(
+  onConflict: "prompt" | "override",
+  overlapCount: number,
+  confirmOverlap?: boolean,
+): boolean {
+  if (overlapCount === 0) return true;
+  if (onConflict === "override") return true;
+  return Boolean(confirmOverlap);
+}

@@ -187,6 +187,7 @@ export class ClockifyClient {
 
   async startTimer(input: {
     workspaceId?: string;
+    start?: string;
     description?: string;
     projectId?: string;
     taskId?: string;
@@ -197,7 +198,7 @@ export class ClockifyClient {
     const ws = await this.resolveWorkspaceId(input.workspaceId);
     await this.assertProjectInWorkspace(ws, input.projectId);
     const body: Record<string, unknown> = {
-      start: new Date().toISOString(),
+      start: input.start ?? new Date().toISOString(),
     };
     if (input.description !== undefined) body.description = input.description;
     if (input.projectId !== undefined) body.projectId = input.projectId;
