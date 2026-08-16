@@ -29,6 +29,7 @@ Unofficial [Model Context Protocol](https://modelcontextprotocol.io) server and 
 ```text
 clockify-mcp-server/
 ├── .cursor-plugin/plugin.json
+├── .mcp.json
 ├── assets/logo.svg
 ├── docs/
 ├── skills/
@@ -45,11 +46,11 @@ clockify-mcp-server/
 ## Getting started
 
 1. Create a Clockify API key (Preferences → Advanced → Manage API Keys). Optionally pin `CLOCKIFY_WORKSPACE_ID`.
-2. Install **clockify** from the [Cursor Marketplace](https://cursor.com/marketplace) (or Customize → Plugins).
-3. Set plugin variables when prompted; confirm **Customize → MCP** shows **Clockify** enabled.
+2. Install **Clockify** from [cursor.directory](https://cursor.directory) (Add to Cursor), or wire `npx -y @dustinestes/clockify-mcp-server` in MCP config.
+3. Set `CLOCKIFY_API_KEY` when prompted; confirm **Customize → MCP** shows **Clockify** enabled.
 
 ```bash
-# Local clone instead of Marketplace — see docs
+# Local clone instead of Directory / npx — see docs
 npm install && npm run build
 npm run dev:link
 ```
@@ -100,9 +101,10 @@ Credentials detail and non-Cursor hosts: [docs/setup.md](docs/setup.md). Full do
 
 | File | Role |
 |------|------|
-| `.cursor-plugin/plugin.json` | Cursor Plugin / Marketplace |
+| `.cursor-plugin/plugin.json` | Cursor Plugin manifest (local install + variables) |
 | `plugin.json` | [Agent Plugins](https://agent-plugins.org) portable manifest |
-| `mcp.json` | MCP server entry for plugins |
+| `.mcp.json` | [cursor.directory](https://cursor.directory) MCP discovery (npx, never mutated by `dev:link`) |
+| `mcp.json` | MCP server entry for the local Cursor plugin |
 | `skills/` | [Agent Skills](https://agentskills.io) |
 
 <br>

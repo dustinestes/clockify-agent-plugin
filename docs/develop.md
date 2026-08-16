@@ -3,7 +3,7 @@
 <h1>Develop</h1>
 <br clear="both">
 
-How to develop this MCP on a machine that may also act like a Marketplace subscriber. Explicit modes avoid false positives (green MCP that is really your checkout; skills missing because only MCP was wired).
+How to develop this MCP on a machine that may also act like a Directory / npx subscriber. Explicit modes avoid false positives (green MCP that is really your checkout; skills missing because only MCP was wired).
 
 <br>
 
@@ -26,7 +26,7 @@ How to develop this MCP on a machine that may also act like a Marketplace subscr
 | Mode | Purpose | How |
 |------|---------|-----|
 | **Developer** | Iterate this repo (tools + plugin skills) | `npm run dev:link` |
-| **Consumer-like** | Behave like a Marketplace user on this machine | `npm run dev:unlink` |
+| **Consumer-like** | Behave like a Directory / npx user on this machine | `npm run dev:unlink` |
 
 ```bash
 npm run dev:status
@@ -44,8 +44,8 @@ After link or unlink: **reload Cursor**.
 
 `npm run dev:link`:
 
-1. Symlinks this repo to `~/.cursor/plugins/local/clockify-dev` (not `clockify`, so Marketplace id does not collide)
-2. Points repo `mcp.json` at local `node dist/index.js` for the local plugin
+1. Symlinks this repo to `~/.cursor/plugins/local/clockify-dev` (not `clockify`, so the published plugin id does not collide)
+2. Points repo `mcp.json` at local `node dist/index.js` for the local plugin (does not rewrite `.mcp.json`)
 3. Writes **project** `.cursor/mcp.json` with server id **`clockify-dev`**
 4. Removes local-dist Clockify entries from `~/.cursor/mcp.json`
 
@@ -54,7 +54,7 @@ npm run build
 # reload Cursor
 ```
 
-Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not Marketplace proof.
+Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not a consumer-install proof.
 
 <br>
 
@@ -71,7 +71,7 @@ Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` gree
 3. Clears this project's `.cursor/mcp.json`
 4. Strips local-dist Clockify servers from `~/.cursor/mcp.json`
 
-Reload, then install from Marketplace or configure npx as a subscriber would.
+Reload, then install from [cursor.directory](https://cursor.directory) or configure npx as a subscriber would.
 
 <br>
 
@@ -103,14 +103,14 @@ Project MCP often starts **disabled** until you enable it under Customize → MC
 ## Mental model
 
 ```text
-Marketplace subscriber     Developer on same machine
-─────────────────────      ─────────────────────────
-plugin id: clockify        plugin id: clockify-dev
-mcp: npx or Marketplace    mcp: dist/ via clockify-dev
-skills: from plugin        skills: from clockify-dev plugin
+Directory / npx subscriber     Developer on same machine
+─────────────────────────      ─────────────────────────
+plugin id: clockify            plugin id: clockify-dev
+mcp: npx (unpinned npm)        mcp: dist/ via clockify-dev
+skills: Directory Add snapshot skills: from clockify-dev plugin
 ```
 
-Do not keep a user-scoped MCP pointed at this checkout's `dist` while validating Marketplace install.
+Do not keep a user-scoped MCP pointed at this checkout's `dist` while validating a Directory or npx install. Do not commit a `dev:link`-shaped `mcp.json`.
 
 <br>
 
