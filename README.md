@@ -87,9 +87,10 @@ Credentials detail and non-Cursor hosts: [docs/setup.md](docs/setup.md). Full do
 | Skill | Purpose |
 |-------|---------|
 | [`clockify-coding-time`](skills/clockify-coding-time/SKILL.md) | Daily start/stop/summary; honors `.clockify/config.yml` |
-| [`clockify-project-init`](skills/clockify-project-init/SKILL.md) | Bootstrap config + ignore defaults + project + label→task sync |
-| [`clockify-project-init-automated`](skills/clockify-project-init-automated/SKILL.md) | Wire Cursor rules/hooks from yaml triggers |
-| [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Remove project Clockify artifacts (keep plugin unless asked) |
+| [`clockify-init`](skills/clockify-init/SKILL.md) | Repo contract: config + ignore + project + label→task sync |
+| [`clockify-automate`](skills/clockify-automate/SKILL.md) | Mode on: Cursor rules/hooks from `automated.triggers` |
+| [`clockify-unautomate`](skills/clockify-unautomate/SKILL.md) | Mode off: remove rule/hooks; keep `.clockify/` |
+| [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Full local teardown (keep plugin unless asked) |
 
 <br>
 

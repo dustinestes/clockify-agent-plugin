@@ -260,8 +260,9 @@ function sandbox() {
 
   const skills = [
     "clockify-coding-time",
-    "clockify-project-init",
-    "clockify-project-init-automated",
+    "clockify-init",
+    "clockify-automate",
+    "clockify-unautomate",
     "clockify-uninit",
   ];
   for (const name of skills) {
@@ -310,7 +311,7 @@ Project MCP servers often appear in **Customize → MCP** as **disabled** until 
 3. Toggle it **enabled** (green)
 4. If it stays red, open **Output → MCP Logs**
 
-Then try a tool (e.g. ask for today's Clockify summary) or \`/clockify-coding-time\`.
+Then try a tool (e.g. ask for today's Clockify summary) or \`/clockify-init\`.
 `,
   );
 
