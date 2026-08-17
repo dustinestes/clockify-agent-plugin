@@ -38,7 +38,11 @@ Credentials, allowlists, and non-Cursor hosts: [docs/getting-started.md](docs/ge
 
 <br>
 
-## Tools
+## Plugin Contents
+
+You talk to the agent in plain language (or run a `/skill`). The agent calls **tools**; you do not. **Skills** are the recipes (slash command or a phrase). Setup skills (`init`, `automate`, …) are slash-only so they do not fire by accident.
+
+### Tools
 
 | Tool | Purpose |
 |------|---------|
@@ -59,17 +63,17 @@ Credentials, allowlists, and non-Cursor hosts: [docs/getting-started.md](docs/ge
 
 ### Skills
 
-| Group | Skill | Purpose |
-|-------|-------|---------|
-| Repo | [`clockify-init`](skills/clockify-init/SKILL.md) | Config + ignore + project + label→task sync |
-| Repo | [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Full local teardown (keep plugin unless asked) |
-| Mode | [`clockify-automate`](skills/clockify-automate/SKILL.md) | Agent mode on: Cursor rules/hooks from `automated.triggers` |
-| Mode | [`clockify-unautomate`](skills/clockify-unautomate/SKILL.md) | Agent mode off: remove rule/hooks; keep `.clockify/` |
-| Timer | [`clockify-start-timer`](skills/clockify-start-timer/SKILL.md) | Start a running timer (`entry_method: timer`) |
-| Timer | [`clockify-stop-timer`](skills/clockify-stop-timer/SKILL.md) | Stop the running timer |
-| Timer | [`clockify-status`](skills/clockify-status/SKILL.md) | Read-only running timer (or none) |
-| Time | [`clockify-enter-time`](skills/clockify-enter-time/SKILL.md) | Completed range, no rounding (`entry_method: manual`) |
-| Review | [`clockify-summarize`](skills/clockify-summarize/SKILL.md) | Today / range totals |
+| Group | Skill | Purpose | Example |
+|-------|-------|---------|---------|
+| Repo | [`clockify-init`](skills/clockify-init/SKILL.md) | Config + ignore + project + label→task sync | `/clockify-init` |
+| Repo | [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Full local teardown (keep plugin unless asked) | `/clockify-uninit` |
+| Mode | [`clockify-automate`](skills/clockify-automate/SKILL.md) | Agent mode on: Cursor rules/hooks from `automated.triggers` | `/clockify-automate` |
+| Mode | [`clockify-unautomate`](skills/clockify-unautomate/SKILL.md) | Agent mode off: remove rule/hooks; keep `.clockify/` | `/clockify-unautomate` |
+| Timer | [`clockify-start-timer`](skills/clockify-start-timer/SKILL.md) | Start a running timer (`entry_method: timer`) | `/clockify-start-timer` or “start a timer on this issue” |
+| Timer | [`clockify-stop-timer`](skills/clockify-stop-timer/SKILL.md) | Stop the running timer | `/clockify-stop-timer` or “stop my Clockify timer” |
+| Timer | [`clockify-status`](skills/clockify-status/SKILL.md) | Read-only running timer (or none) | `/clockify-status` or “is a timer running?” |
+| Time | [`clockify-enter-time`](skills/clockify-enter-time/SKILL.md) | Completed range, no rounding (`entry_method: manual`) | `/clockify-enter-time` or “log 2–3pm on this issue” |
+| Review | [`clockify-summarize`](skills/clockify-summarize/SKILL.md) | Today / range totals | `/clockify-summarize` or “how much time today?” |
 
 <br>
 
