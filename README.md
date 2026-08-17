@@ -1,7 +1,8 @@
 <br><br>
 
 <p align="center">
-  <img src="assets/lockup.svg" alt="Clockify MCP Server" height="64">
+  <img src="assets/lockup-light.svg#gh-light-mode-only" alt="Clockify Agent Plugin" height="64">
+  <img src="assets/lockup-dark.svg#gh-dark-mode-only" alt="Clockify Agent Plugin" height="64">
 </p>
 
 <br>
@@ -115,7 +116,7 @@ Local clone of this repo (maintainers): [docs/develop.md](docs/develop.md).
 
 <br>
 
-<strong>Clockify MCP Server</strong>
+<strong>Clockify Agent Plugin</strong>
 <div align="right">
 
 [MIT License](LICENSE)
