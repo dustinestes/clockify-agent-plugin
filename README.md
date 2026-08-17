@@ -1,8 +1,22 @@
 <br><br>
 
-<p align="center">
-  <img src="assets/logo.svg" alt="Clockify MCP (unofficial)" width="128">
-</p>
+<div align="center">
+
+<table>
+<tr>
+<td>
+<img src="assets/logo.svg" alt="Clockify MCP (unofficial)" width="64" height="64">
+</td>
+<td align="left" valign="middle">
+
+<strong>Clockify MCP Server</strong><br>
+Unofficial Cursor plugin — MCP tools and skills to track coding time in Clockify
+
+</td>
+</tr>
+</table>
+
+</div>
 
 <br>
 
@@ -16,7 +30,7 @@
 
 ---
 
-Unofficial [Model Context Protocol](https://modelcontextprotocol.io) server and Agent Skills for [Clockify](https://clockify.me) - start/stop timers, map coding work to projects, and summarize sessions in Cursor and other MCP hosts.
+Unofficial Cursor plugin for [Clockify](https://clockify.me): [MCP](https://modelcontextprotocol.io) tools plus Agent Skills — start/stop timers, enter time, and summarize sessions in Cursor and other MCP hosts.
 
 **Not affiliated with, endorsed by, or sponsored by Clockify or Cake.com.** Third-party connector only.
 
@@ -45,18 +59,14 @@ clockify-mcp-server/
 
 ## Getting started
 
-1. Create a Clockify API key (Preferences → Advanced → Manage API Keys). Optionally pin `CLOCKIFY_WORKSPACE_ID`.
+1. Create a Clockify API key (Preferences → Advanced → Manage API Keys).
 2. Install **Clockify** from [cursor.directory](https://cursor.directory) (Add to Cursor), or wire `npx -y @dustinestes/clockify-mcp-server` in MCP config.
 3. Set `CLOCKIFY_API_KEY` when prompted; confirm **Customize → MCP** shows **Clockify** enabled.
 4. Optional: [pre-allow Clockify MCP tools](docs/setup.md#pre-enable-clockify-tools) so agents do not stall on an Allow / Always allow prompt mid-run.
 
-```bash
-# Local clone instead of Directory / npx — see docs
-npm install && npm run build
-npm run dev:link
-```
+Credentials, allowlists, and non-Cursor hosts: [docs/setup.md](docs/setup.md). Full doc index: [docs/README.md](docs/README.md).
 
-Credentials detail and non-Cursor hosts: [docs/setup.md](docs/setup.md). Full doc index: [docs/README.md](docs/README.md).
+Local clone of this repo (maintainers): [docs/develop.md](docs/develop.md).
 
 <br>
 
