@@ -25,25 +25,6 @@ Unofficial Cursor plugin for [Clockify](https://clockify.me): [MCP](https://mode
 
 <br>
 
-## Layout
-
-```text
-clockify-mcp-server/
-├── .cursor-plugin/plugin.json
-├── .mcp.json
-├── assets/logo.svg
-├── docs/
-├── skills/
-├── src/
-├── mcp.json
-├── package.json
-└── README.md
-```
-
----
-
-<br>
-
 ## Getting started
 
 1. Create a Clockify API key (Preferences → Advanced → Manage API Keys).
@@ -51,11 +32,7 @@ clockify-mcp-server/
 3. Set `CLOCKIFY_API_KEY` when prompted; confirm **Customize → MCP** shows **Clockify** enabled.
 4. Optional: [pre-allow Clockify MCP tools](docs/getting-started.md#pre-enable-clockify-tools) so agents do not stall on an Allow / Always allow prompt mid-run.
 
-Credentials, allowlists, and non-Cursor hosts: [docs/getting-started.md](docs/getting-started.md). Full doc index: [docs/README.md](docs/README.md).
-
-Local clone of this repo (maintainers): [docs/develop.md](docs/develop.md).
-
-<br>
+Credentials, allowlists, and non-Cursor hosts: [docs/getting-started.md](docs/getting-started.md).
 
 ---
 
@@ -100,15 +77,9 @@ Local clone of this repo (maintainers): [docs/develop.md](docs/develop.md).
 
 <br>
 
-## Packaging
+## Developing
 
-| File | Role |
-|------|------|
-| `.cursor-plugin/plugin.json` | Cursor Plugin manifest (local install + variables) |
-| `plugin.json` | [Agent Plugins](https://agent-plugins.org) portable manifest |
-| `.mcp.json` | [cursor.directory](https://cursor.directory) MCP discovery (npx, never mutated by `dev:link`) |
-| `mcp.json` | MCP server entry for the local Cursor plugin |
-| `skills/` | [Agent Skills](https://agentskills.io) |
+Working on this repo: [docs/develop.md](docs/develop.md). Shipping a release or Directory listing: [docs/publish.md](docs/publish.md). How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 <br>
 

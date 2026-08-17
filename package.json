@@ -23,6 +23,7 @@
     "mcp.dev.json",
     "mcp.publish.json",
     "README.md",
+    "CONTRIBUTING.md",
     "LICENSE"
   ],
   "scripts": {

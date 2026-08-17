@@ -10,12 +10,38 @@ How to develop this MCP on a machine that may also act like a Directory / npx su
 ## Contents
 
 - [Contents](#contents)
+- [Repo layout](#repo-layout)
 - [Modes](#modes)
 - [Developer mode](#developer-mode)
 - [Consumer-like mode](#consumer-like-mode)
 - [Sandbox](#sandbox)
 - [Mental model](#mental-model)
 - [See also](#see-also)
+
+---
+
+<br>
+
+## Repo layout
+
+Why the tree looks like this (Directory does **not** read this section; it only scans `.mcp.json` and `skills/*/SKILL.md`):
+
+```text
+clockify-mcp-server/
+├── .cursor-plugin/plugin.json   # local Cursor plugin + variables
+├── .mcp.json                    # Directory MCP discovery (npx; never rewritten by dev:link)
+├── assets/                      # logo + README lockups
+├── docs/
+├── skills/                      # Agent Skills (Directory snapshot)
+├── src/                         # MCP server
+├── mcp.json                     # local plugin MCP entry (dev:link may rewrite)
+├── package.json
+└── README.md
+```
+
+`mcp.publish.json` / `mcp.dev.json` are templates for unlink/link. Do not commit a `dev:link`-shaped `mcp.json`.
+
+<br>
 
 ---
 
@@ -122,6 +148,7 @@ Do not keep a user-scoped MCP pointed at this checkout's `dist` while validating
 
 - [getting-started.md](./getting-started.md)
 - [publish.md](./publish.md)
+- [Contributing](../CONTRIBUTING.md)
 - [Docs index](./README.md)
 
 <br>

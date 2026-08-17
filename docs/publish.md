@@ -12,6 +12,7 @@ Agent: [`.cursor/skills/publish-release`](../.cursor/skills/publish-release/SKIL
 ## Contents
 
 - [Contents](#contents)
+- [Discovery files](#discovery-files)
 - [npm](#npm)
 - [Release](#release)
 - [Trusted publishing](#trusted-publishing)
@@ -19,6 +20,26 @@ Agent: [`.cursor/skills/publish-release`](../.cursor/skills/publish-release/SKIL
 - [After the first listing](#after-the-first-listing)
 - [GitHub topics](#github-topics)
 - [See also](#see-also)
+
+---
+
+<br>
+
+## Discovery files
+
+cursor.directory and other galleries scan **paths**, not the README. Keep these in publish shape on `main`:
+
+| File | Role |
+|------|------|
+| `.mcp.json` | Directory MCP discovery (unpinned `npx`; never mutated by `dev:link`) |
+| `skills/*/SKILL.md` | Directory skill snapshot |
+| `.cursor-plugin/plugin.json` | Cursor plugin manifest (local install + variables) |
+| `plugin.json` | [Agent Plugins](https://agent-plugins.org) portable manifest |
+| `mcp.json` | MCP entry for the local Cursor plugin (`mcp.publish.json` after `dev:unlink`) |
+
+There is no plugin-root `rules/*.mdc`, so Directory will not show a Rules Add button. Init may write a rule into the *consumer* repo.
+
+<br>
 
 ---
 
@@ -147,6 +168,7 @@ This repo ships skills + MCP. Init writes a rule into the *consumer* repo; there
 ## See also
 
 - [develop.md](./develop.md)
+- [Contributing](../CONTRIBUTING.md)
 - [Docs index](./README.md)
 
 <br>

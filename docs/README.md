@@ -24,6 +24,7 @@ Index for the unofficial Clockify Agent Plugin (MCP tools and skills).
 | [Config](./config.md) | `.clockify/config.yml` schema and git hygiene | Anyone |
 | [Develop](./develop.md) | `dev:link` / `dev:unlink` / sandbox | Maintainers |
 | [Publish](./publish.md) | GitHub Release → npm, cursor.directory | Maintainers |
+| [Contributing](../CONTRIBUTING.md) | PRs and where the other maintainer docs live | Maintainers |
 
 <br>
 
