@@ -1,0 +1,38 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: npm publish
+    if: github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Config tests
+        run: npm run test:config
+      - name: Handshake
+        run: npm run smoke:handshake
+      - name: Check versions
+        run: npm run check:versions
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+      - name: Publish
+        run: npm publish --access public

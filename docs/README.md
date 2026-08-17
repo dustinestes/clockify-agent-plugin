@@ -23,7 +23,7 @@ Index of documentation for the unofficial Clockify MCP server and Cursor plugin.
 | [setup.md](./setup.md) | Credentials, Cursor MCP allowlist, Directory / npx vs clone, PATH, other MCP hosts |
 | [develop.md](./develop.md) | Local development: `dev:link` / `dev:unlink` / sandbox |
 | [config.md](./config.md) | `.clockify/config.yml` per-method schema |
-| [publish.md](./publish.md) | npm publish and cursor.directory submission |
+| [publish.md](./publish.md) | GitHub Release → npm, and cursor.directory submission |
 
 Root product overview and install happy path: [README](../README.md).
 

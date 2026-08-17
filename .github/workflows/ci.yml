@@ -24,5 +24,7 @@ jobs:
         run: npm run build
       - name: Config tests
         run: npm run test:config
+      - name: Versions
+        run: npm run check:versions
       - name: Handshake
         run: npm run smoke:handshake

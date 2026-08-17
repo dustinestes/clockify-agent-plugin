@@ -3,7 +3,9 @@ dist/
 .env
 .env.*
 !.env.example
-.cursor/
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
 .clockify/*
 !.clockify/config.yml.example
 *.log
