@@ -3,9 +3,7 @@
 <h1>Config</h1>
 <br clear="both">
 
-Per-repo standards via `.clockify/config.yml`: project identity plus per-method description, task, rounding, overlap, and automation. API keys stay in MCP env / plugin variables - not in this file.
-
-Clockify files are **local/personal by default**. Init gitignores `.clockify/` so time-tracking habits do not land in product repos unless the team opts in.
+Implement per-repo standards via `.clockify/config.yml`: project identity plus per-method description, task, rounding, overlap, and automation.
 
 <br>
 
@@ -16,8 +14,12 @@ Clockify files are **local/personal by default**. Init gitignores `.clockify/` s
 - [Git hygiene](#git-hygiene)
 - [Discovery](#discovery)
 - [Schema](#schema)
+  - [Description placeholders](#description-placeholders)
+  - [Rounding](#rounding)
+  - [Overlap](#overlap)
+  - [AI contract](#ai-contract)
+  - [Inactivity](#inactivity)
 - [Tools that honor config](#tools-that-honor-config)
-- [See also](#see-also)
 
 ---
 
@@ -41,8 +43,6 @@ Point the MCP server at the repo when Cursor's cwd is wrong:
 
 Or set `CLOCKIFY_CONFIG_PATH` to the full path of the config file.
 
-<br>
-
 ---
 
 <br>
@@ -55,8 +55,6 @@ Or set `CLOCKIFY_CONFIG_PATH` to the full path of the config file.
 - **Cleanup:** run `clockify-unautomate` to drop Cursor glue and keep config, or `clockify-uninit` for full local teardown.
 - A global `core.excludesfile` can ignore Clockify files in every repo; it is an extra option, not a substitute for init’s repo-local default.
 
-<br>
-
 ---
 
 <br>
@@ -67,8 +65,6 @@ Or set `CLOCKIFY_CONFIG_PATH` to the full path of the config file.
 2. `.clockify/config.yml` under the project root
 
 Project root is the git/workspace root (parent of `.clockify/`), not the `.clockify` directory itself.
-
-<br>
 
 ---
 
@@ -152,8 +148,6 @@ automated:
     stop_after_minutes: 15
 ```
 
-<br>
-
 ---
 
 <br>
@@ -166,19 +160,6 @@ automated:
 - `clockify_create_time_entry` - `manual`/`automated` description + overlap (no rounding)
 - `clockify_get_running_timer` - `automated.inactivity`
 - `clockify_ensure_project` / `clockify_ensure_task` - taxonomy bootstrap
-
-<br>
-
----
-
-<br>
-
-## See also
-
-- [develop.md](./develop.md)
-- [Docs index](./README.md)
-
-<br>
 
 ---
 
