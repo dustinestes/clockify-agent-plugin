@@ -3,7 +3,7 @@
  * Toggle this machine between plugin developer and Directory/npx-style consumer.
  *
  *   node scripts/dev-mode.mjs status
- *   node scripts/dev-mode.mjs link      # enable local plugin + project MCP (clockify-dev)
+ *   node scripts/dev-mode.mjs link      # enable local plugin + project MCP (clockify-agent-plugin-dev)
  *   node scripts/dev-mode.mjs unlink    # remove local plugin link + strip local-dist MCP globals
  *   node scripts/dev-mode.mjs sandbox   # create disposable repo for skill/MCP smoke tests
  *   node scripts/dev-mode.mjs sandbox-teardown  # remove that sandbox directory
@@ -25,10 +25,12 @@ import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const pluginId = "clockify-dev";
+const pluginId = "clockify-agent-plugin-dev";
 const localPlugins = join(homedir(), ".cursor", "plugins", "local");
 const pluginLink = join(localPlugins, pluginId);
-const legacyPluginLink = join(localPlugins, "clockify");
+const legacyPluginIds = ["clockify", "clockify-dev"];
+const legacyPluginLinks = legacyPluginIds.map((id) => join(localPlugins, id));
+const localServerIds = new Set([pluginId, "clockify-dev"]);
 const userMcpPath = join(homedir(), ".cursor", "mcp.json");
 const projectMcpPath = join(root, ".cursor", "mcp.json");
 const mcpDevTemplate = join(root, "mcp.dev.json");
@@ -84,7 +86,7 @@ function stripLocalDistServers(mcp) {
   const removed = [];
   const next = { ...mcp, mcpServers: { ...mcp.mcpServers } };
   for (const [name, entry] of Object.entries(next.mcpServers)) {
-    if (name === "clockify-dev" || isLocalDistEntry(entry)) {
+    if (localServerIds.has(name) || isLocalDistEntry(entry)) {
       removed.push(name);
       delete next.mcpServers[name];
     }
@@ -96,7 +98,7 @@ function buildProjectDevMcp() {
   const node = whichNode();
   return {
     mcpServers: {
-      "clockify-dev": {
+      [pluginId]: {
         type: "stdio",
         command: node,
         args: ["${workspaceFolder}/dist/index.js"],
@@ -135,9 +137,11 @@ function status() {
   console.log("Clockify Agent Plugin — machine mode\n");
   console.log(`repo: ${root}`);
   console.log(`plugin link (${pluginId}): ${linkTarget(pluginLink) ?? "(none)"}`);
-  console.log(
-    `legacy link (clockify): ${linkTarget(legacyPluginLink) ?? "(none)"}`,
-  );
+  for (const path of legacyPluginLinks) {
+    console.log(
+      `legacy link (${basename(path)}): ${linkTarget(path) ?? "(none)"}`,
+    );
+  }
 
   const userMcp = readJson(userMcpPath, { mcpServers: {} });
   const names = Object.keys(userMcp.mcpServers ?? {});
@@ -154,11 +158,14 @@ function status() {
     `project .cursor/mcp.json: ${Object.keys(projectMcp.mcpServers ?? {}).join(", ") || "(none)"}`,
   );
 
-  const linked =
-    linkTarget(pluginLink) === root || linkTarget(legacyPluginLink) === root;
-  const hasDevProject = Boolean(projectMcp.mcpServers?.["clockify-dev"]);
+  const linked = [pluginLink, ...legacyPluginLinks].some(
+    (path) => linkTarget(path) === root,
+  );
+  const hasDevProject = Object.keys(projectMcp.mcpServers ?? {}).some((name) =>
+    localServerIds.has(name),
+  );
   const hasGlobalLocal = Object.entries(userMcp.mcpServers ?? {}).some(
-    ([name, entry]) => name === "clockify-dev" || isLocalDistEntry(entry),
+    ([name, entry]) => localServerIds.has(name) || isLocalDistEntry(entry),
   );
 
   console.log("");
@@ -175,9 +182,11 @@ function status() {
 function link() {
   mkdirSync(localPlugins, { recursive: true });
 
-  if (existsSync(legacyPluginLink)) {
-    console.log(`Removing legacy link ${legacyPluginLink}`);
-    rmSync(legacyPluginLink, { force: true });
+  for (const path of legacyPluginLinks) {
+    if (existsSync(path)) {
+      console.log(`Removing legacy link ${path}`);
+      rmSync(path, { force: true });
+    }
   }
 
   if (existsSync(pluginLink)) {
@@ -190,7 +199,9 @@ function link() {
   console.log("Wrote repo mcp.json for local plugin (node dist/index.js)");
 
   writeJson(projectMcpPath, buildProjectDevMcp());
-  console.log("Wrote project .cursor/mcp.json as clockify-dev (this workspace only)");
+  console.log(
+    `Wrote project .cursor/mcp.json as ${pluginId} (this workspace only)`,
+  );
 
   // Keep user MCP free of local-dist so other workspaces don't silently use the checkout
   const userMcp = readJson(userMcpPath, { mcpServers: {} });
@@ -209,14 +220,14 @@ Next:
   1. npm run build
   2. Reload Cursor
   3. Customize → Plugins: enable "${pluginId}" (skills via /)
-  4. Customize → MCP: "${pluginId}" / project "clockify-dev" (tools from this checkout)
+  4. Customize → MCP: "${pluginId}" / project "${pluginId}" (tools from this checkout)
 
 Do not treat this as a consumer install. Use npm run dev:unlink, then Directory or npx.
 `);
 }
 
 function unlinkMode() {
-  for (const path of [pluginLink, legacyPluginLink]) {
+  for (const path of [pluginLink, ...legacyPluginLinks]) {
     if (existsSync(path)) {
       rmSync(path, { force: true });
       console.log(`Removed ${path}`);
@@ -285,7 +296,7 @@ function sandbox() {
   const node = whichNode();
   writeJson(join(sandboxRoot, ".cursor", "mcp.json"), {
     mcpServers: {
-      "clockify-dev": {
+      [pluginId]: {
         type: "stdio",
         command: node,
         args: [join(root, "dist", "index.js")],
@@ -304,7 +315,7 @@ function sandbox() {
 Disposable workspace for testing Clockify Agent Plugin skills/tools without mutating the main repo.
 
 - Skills: symlinked from \`${root}/skills\` (should appear under \`/\` immediately)
-- MCP: \`clockify-dev\` → that checkout's \`dist/index.js\` + its \`.env\`
+- MCP: \`${pluginId}\` → that checkout's \`dist/index.js\` + its \`.env\`
 - Config root: this sandbox (safe to write \`.clockify/config.yml\` / rules here)
 
 ## Enable MCP (required once)
@@ -312,7 +323,7 @@ Disposable workspace for testing Clockify Agent Plugin skills/tools without muta
 Project MCP servers often appear in **Customize → MCP** as **disabled** until you turn them on (Cursor treats project-level MCP as opt-in).
 
 1. Open **Customize → MCP**
-2. Find **clockify-dev** (may be grouped under this project / sandbox name)
+2. Find **${pluginId}** (may be grouped under this project / sandbox name)
 3. Toggle it **enabled** (green)
 4. If it stays red, open **Output → MCP Logs**
 
@@ -323,7 +334,7 @@ Then try a tool (e.g. ask for today's Clockify summary) or \`/clockify-start-tim
   console.log(`Sandbox ready: ${sandboxRoot}`);
   console.log("Open that folder in Cursor (separate window).");
   console.log(
-    "Skills should work via /. Project MCP often starts DISABLED — enable clockify-dev under Customize → MCP.",
+    `Skills should work via /. Project MCP often starts DISABLED — enable ${pluginId} under Customize → MCP.`,
   );
 }
 
