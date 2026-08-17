@@ -1,9 +1,9 @@
 <br><br>
-<img align="right" src="../assets/logo.svg" height="40" alt="Clockify MCP (unofficial)">
+<img align="right" src="../assets/logo.svg" height="40" alt="Clockify Agent Plugin">
 <h1>Develop</h1>
 <br clear="both">
 
-How to develop this MCP on a machine that may also act like a Directory / npx subscriber. Explicit modes avoid false positives (green MCP that is really your checkout; skills missing because only MCP was wired).
+How to develop this plugin on a machine that may also act like a Directory / npx subscriber. Explicit modes avoid false positives (green MCP that is really your checkout; skills missing because only MCP was wired).
 
 <br>
 
@@ -27,7 +27,7 @@ How to develop this MCP on a machine that may also act like a Directory / npx su
 Why the tree looks like this (Directory does **not** read this section; it only scans `.mcp.json` and `skills/*/SKILL.md`):
 
 ```text
-clockify-mcp-server/
+clockify-agent-plugin/
 ├── .cursor-plugin/plugin.json   # local Cursor plugin + variables
 ├── .mcp.json                    # Directory MCP discovery (npx; never rewritten by dev:link)
 ├── assets/                      # logo + README lockups
@@ -104,7 +104,7 @@ Reload, then install from [cursor.directory](https://cursor.directory) or config
 Test skills/init without mutating this repo:
 
 ```bash
-npm run sandbox           # ~/workspaces/clockify-mcp-sandbox
+npm run sandbox           # ~/workspaces/clockify-agent-plugin-sandbox
 npm run sandbox:teardown
 ```
 

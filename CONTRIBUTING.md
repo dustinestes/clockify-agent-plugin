@@ -15,4 +15,4 @@ Thanks for wanting to work on the unofficial **Clockify Agent Plugin**.
 3. Do not commit `.env`, API keys, or a `dev:link`-shaped `mcp.json`.
 4. PR CI runs build, config tests, version check, and MCP handshake (no Clockify credentials).
 
-Issues: [github.com/dustinestes/clockify-mcp-server/issues](https://github.com/dustinestes/clockify-mcp-server/issues).
+Issues: [github.com/dustinestes/clockify-agent-plugin/issues](https://github.com/dustinestes/clockify-agent-plugin/issues).

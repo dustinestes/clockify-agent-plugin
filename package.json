@@ -1,10 +1,10 @@
 {
-  "name": "@dustinestes/clockify-mcp-server",
+  "name": "@dustinestes/clockify-agent-plugin",
   "version": "0.1.0",
   "description": "Unofficial Clockify time tracking for coding sessions - MCP tools plus workflow skills. Not affiliated with Clockify/Cake.com.",
   "type": "module",
   "bin": {
-    "clockify-mcp-server": "dist/index.js"
+    "clockify-agent-plugin": "dist/index.js"
   },
   "main": "./dist/index.js",
   "publishConfig": {
@@ -58,11 +58,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dustinestes/clockify-mcp-server.git"
+    "url": "git+https://github.com/dustinestes/clockify-agent-plugin.git"
   },
-  "homepage": "https://github.com/dustinestes/clockify-mcp-server",
+  "homepage": "https://github.com/dustinestes/clockify-agent-plugin",
   "bugs": {
-    "url": "https://github.com/dustinestes/clockify-mcp-server/issues"
+    "url": "https://github.com/dustinestes/clockify-agent-plugin/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",

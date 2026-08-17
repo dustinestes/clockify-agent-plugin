@@ -18,7 +18,7 @@ To remove config as well, use [`clockify-uninit`](../clockify-uninit/SKILL.md).
 
 1. Summarize what will be removed (rule + Clockify-owned hooks only).
 2. Do **not** delete `.clockify/` or the managed `.clockify/` gitignore line.
-3. Do **not** uninstall the MCP server / plugin unless the user explicitly asks.
+3. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
 
 ## Removals
 
@@ -27,7 +27,7 @@ To remove config as well, use [`clockify-uninit`](../clockify-uninit/SKILL.md).
 3. If the managed gitignore stanza includes `.cursor/rules/clockify-time.mdc`, remove that one line (the rule file is gone). Keep:
 
    ```gitignore
-   # Clockify MCP — personal time-tracking (delete this block to share with the team)
+   # Clockify Agent Plugin — personal time-tracking (delete this block to share with the team)
    .clockify/
    ```
 

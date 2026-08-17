@@ -3,7 +3,7 @@
 <h1>Publish</h1>
 <br clear="both">
 
-Information related to publishing the mcp server (npm) and plugin (agent platform)
+Information related to publishing the MCP server (npm) and the Clockify Agent Plugin (agent platforms).
 
 Maintainer skill: [`.cursor/skills/publish-release`](../.cursor/skills/publish-release/SKILL.md) (not a Directory skill).
 
@@ -62,7 +62,7 @@ People who already clicked Add still have the old skill snapshot until they Add 
 
 ## GitHub
 
-Public repo: [dustinestes/clockify-mcp-server](https://github.com/dustinestes/clockify-mcp-server). Do not rename it on this pass. Tags are `v` plus the shared version (`v0.2.0`).
+Public repo: [dustinestes/clockify-agent-plugin](https://github.com/dustinestes/clockify-agent-plugin). Tags are `v` plus the shared version (`v0.1.0`). GitHub redirects the old `clockify-mcp-server` URL.
 
 `npm run dev:unlink` before you commit or cut a release so `mcp.json` stays npx-shaped. Do not commit a `dev:link` checkout.
 
@@ -78,13 +78,13 @@ Pull requests and pushes to `main` run `npm ci`, `npm run build`, `npm run test:
 
 One shared version: `package.json`, `plugin.json`, and `.cursor-plugin/plugin.json` (and the lockfile). `npm run check:versions` fails closed if they drift; on the publish job it also requires the GitHub Release tag to match.
 
-`0.1.0` is already on npm from a manual publish. Do **not** create GitHub Release `v0.1.0`. First CI publish must be a **new** version (recommend **0.2.0**).
+`@dustinestes/clockify-mcp-server@0.1.0` is leftover on npm under the old name. Do **not** npx that. First CI publish of **`@dustinestes/clockify-agent-plugin`** can be `0.1.0` (this tree) via GitHub Release `v0.1.0`.
 
 1. `npm run dev:unlink`.
 2. Bump the three manifests (and lockfile) together. Merge to `main`.
 3. `gh release create vX.Y.Z --generate-notes` (not a draft, not a prerelease).
 4. [`.github/workflows/publish.yml`](../.github/workflows/publish.yml) runs on `release: published` and publishes npm (next section).
-5. Confirm `npx -y @dustinestes/clockify-mcp-server` starts over stdio.
+5. Confirm `npx -y @dustinestes/clockify-agent-plugin` starts over stdio.
 
 Do not auto-bump on merge. Do not publish from tag-push alone (a tag without a published Release does nothing).
 
@@ -94,16 +94,16 @@ Do not auto-bump on merge. Do not publish from tag-push alone (a tag without a p
 
 ## npm
 
-Package: [`@dustinestes/clockify-mcp-server`](https://www.npmjs.com/package/@dustinestes/clockify-mcp-server). This is what Directory users actually run.
+Package: [`@dustinestes/clockify-agent-plugin`](https://www.npmjs.com/package/@dustinestes/clockify-agent-plugin). This is what Directory users actually run.
 
-Keep `.mcp.json` and `mcp.publish.json` **unpinned** (`npx -y @dustinestes/clockify-mcp-server`, no `@1.2.3`) so each Cursor start resolves latest npm. `dev:link` rewrites repo `mcp.json` for local plugin testing. It must not touch `.mcp.json`.
+Keep `.mcp.json` and `mcp.publish.json` **unpinned** (`npx -y @dustinestes/clockify-agent-plugin`, no `@1.2.3`) so each Cursor start resolves latest npm. `dev:link` rewrites repo `mcp.json` for local plugin testing. It must not touch `.mcp.json`.
 
 ```json
 {
   "mcpServers": {
     "clockify": {
       "command": "npx",
-      "args": ["-y", "@dustinestes/clockify-mcp-server"],
+      "args": ["-y", "@dustinestes/clockify-agent-plugin"],
       "env": {
         "CLOCKIFY_API_KEY": "${CLOCKIFY_API_KEY}",
         "CLOCKIFY_WORKSPACE_ID": "${CLOCKIFY_WORKSPACE_ID}"
@@ -113,25 +113,25 @@ Keep `.mcp.json` and `mcp.publish.json` **unpinned** (`npx -y @dustinestes/clock
 }
 ```
 
-On `release: published`, `publish.yml` runs build, config tests, handshake, version check, then `npm publish --access public` via OIDC. Verify `npm view @dustinestes/clockify-mcp-server version`. Do not publish on every push to `main`.
+On `release: published`, `publish.yml` runs build, config tests, handshake, version check, then `npm publish --access public` via OIDC. Verify `npm view @dustinestes/clockify-agent-plugin version`. Do not publish on every push to `main`.
 
 <br>
 
 
 ### Trusted publishing
 
-npm authenticates with GitHub Actions OIDC (no `NPM_TOKEN` secret). One-time on [npmjs.com](https://www.npmjs.com/package/@dustinestes/clockify-mcp-server) → package **Settings** → **Trusted Publisher**:
+npm authenticates with GitHub Actions OIDC (no `NPM_TOKEN` secret). One-time on [npmjs.com](https://www.npmjs.com/package/@dustinestes/clockify-agent-plugin) → package **Settings** → **Trusted Publisher**:
 
 | Field | Value |
 |-------|--------|
 | Provider | GitHub Actions |
 | Organization or user | `dustinestes` |
-| Repository | `clockify-mcp-server` |
+| Repository | `clockify-agent-plugin` |
 | Workflow filename | `publish.yml` (filename only) |
 | Environment | leave empty |
 | Allowed actions | `npm publish` |
 
-Configure this **before** the first GitHub Release. Provenance is generated automatically for public packages from this workflow.
+Configure this **before** the first GitHub Release, on the **new** package name (not the leftover `@dustinestes/clockify-mcp-server`). Provenance is generated automatically for public packages from this workflow.
 
 After the first CI publish succeeds, optionally restrict token publishing on the package (**Require two-factor authentication and disallow tokens**). Manual `npm publish` from a laptop then stops working; that is intended.
 
@@ -164,7 +164,7 @@ One-time submit after the repo is public and npm `latest` matches `main` (skills
 1. `npm run dev:unlink`. Confirm `.mcp.json` is still the publish/npx shape (never a local `dist/` path).
 2. Development plugin id is `clockify-dev` (`npm run dev:link`). For a clean subscriber check use `npm run dev:unlink`, reload, then install from Directory or wire npx.
 3. Listing copy must state this is an **unofficial** third-party connector (not affiliated with Clockify/Cake.com). Public title **Clockify**; plugin id `clockify`. On the submit form, override auto-fill `clockify` if the name field is lowercase.
-4. Submit at [cursor.directory/plugins/new](https://cursor.directory/plugins/new): sign in, paste `https://github.com/dustinestes/clockify-mcp-server`. Directory auto-detects `.mcp.json` and `skills/*/SKILL.md`. It does **not** pick up `.cursor/skills/` (maintainer skills).
+4. Submit at [cursor.directory/plugins/new](https://cursor.directory/plugins/new): sign in, paste `https://github.com/dustinestes/clockify-agent-plugin`. Directory auto-detects `.mcp.json` and `skills/*/SKILL.md`. It does **not** pick up `.cursor/skills/` (maintainer skills).
 5. Wait for the automated safety scan (`safe`). The listing appears when it passes.
 
 Do **not** submit a second listing for the same repo (duplicate name/repo is rejected). Later catalog changes: owner **Edit**, not CI.

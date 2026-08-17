@@ -30,7 +30,7 @@ Unofficial agent plugin for [Clockify](https://clockify.me): [MCP](https://model
 ### Install the plugin (once per machine)
 
 1. Create a Clockify API key (Preferences → Advanced → Manage API Keys).
-2. Install **Clockify** from [cursor.directory](https://cursor.directory) (Add to Cursor), or wire `npx -y @dustinestes/clockify-mcp-server` in MCP config.
+2. Install **Clockify** from [cursor.directory](https://cursor.directory) (Add to Cursor), or wire `npx -y @dustinestes/clockify-agent-plugin` in MCP config.
 3. Set `CLOCKIFY_API_KEY` when prompted; confirm **Customize → MCP** shows **Clockify** enabled.
 4. Optional: [pre-allow Clockify MCP tools](docs/use.md#pre-enable-clockify-tools) so agents do not stall on an Allow / Always allow prompt mid-run.
 
