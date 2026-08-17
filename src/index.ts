@@ -30,7 +30,7 @@ function requireApiKey(): string {
   const key = process.env.CLOCKIFY_API_KEY?.trim();
   if (!key) {
     throw new Error(
-      "CLOCKIFY_API_KEY is required. See docs/getting-started.md → Credentials, then set it in your MCP / plugin env.",
+      "CLOCKIFY_API_KEY is required. See docs/use.md → Credentials, then set it in your MCP / plugin env.",
     );
   }
   return key;
