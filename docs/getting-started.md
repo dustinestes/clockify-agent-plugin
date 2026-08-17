@@ -1,9 +1,11 @@
 <br><br>
-<img align="right" src="../assets/logo.svg" height="40" alt="Clockify MCP (unofficial)">
-<h1>Setup</h1>
+<img align="right" src="../assets/logo.svg" height="40" alt="Clockify Agent Plugin">
+<h1>Getting started</h1>
 <br clear="both">
 
-Install and configure the unofficial Clockify MCP for Cursor and other hosts. Directory / npx happy path lives in the [root README](../README.md); this page covers credentials, Cursor MCP allowlists, clones, PATH issues, and alternatives.
+Install and use the unofficial Clockify Agent Plugin. The short happy path is in the [root README](../README.md). This page is credentials, the Cursor MCP allowlist, PATH, and other hosts.
+
+Maintainers cloning *this* repo: [develop.md](./develop.md).
 
 <br>
 
@@ -12,9 +14,7 @@ Install and configure the unofficial Clockify MCP for Cursor and other hosts. Di
 - [Contents](#contents)
 - [Credentials](#credentials)
 - [Pre-enable Clockify tools](#pre-enable-clockify-tools)
-- [Develop this repo](#develop-this-repo)
 - [Node not found](#node-not-found)
-- [envFile vs env](#envfile-vs-env)
 - [Other MCP hosts](#other-mcp-hosts)
 - [Troubleshooting](#troubleshooting)
 - [See also](#see-also)
@@ -25,18 +25,9 @@ Install and configure the unofficial Clockify MCP for Cursor and other hosts. Di
 
 ## Credentials
 
-Same values for every host. Details also summarized in the root README.
+**`CLOCKIFY_API_KEY` (required)** — Clockify → Preferences → Advanced → Manage API Keys. Set it as a Cursor plugin / MCP env variable when you install. Do not put it in `.clockify/config.yml`. Do not add a Clockify `.env` to the repo you are tracking time in.
 
-**`CLOCKIFY_API_KEY` (required)** — Clockify → Preferences → Advanced → Manage API Keys.
-
-**`CLOCKIFY_WORKSPACE_ID` (optional)** — pin a workspace via `/workspaces/{id}/` in the URL, or `clockify_list_workspaces`.
-
-```bash
-cp .env.example .env
-# edit .env
-```
-
-Per-repo standards (`.clockify/config.yml`): [config.md](./config.md).
+**Workspace (optional)** — pin a workspace via `/workspaces/{id}/` in the Clockify URL, or `clockify_list_workspaces`. Until config.yml grows a pin field, you can pass `CLOCKIFY_WORKSPACE_ID` in MCP env. Per-repo standards: [config.md](./config.md).
 
 <br>
 
@@ -48,7 +39,7 @@ Per-repo standards (`.clockify/config.yml`): [config.md](./config.md).
 
 Cursor asks before running **MCP tools** (Allow once / Always allow). That is not a skill prompt. Agents can look busy, then sit idle waiting on a Clockify approval the user never saw—especially mid-session timer or init flows.
 
-You can approve tools as they appear, or pre-allow them during setup so unattended runs do not stall.
+You can approve tools as they appear, or pre-allow them so unattended runs do not stall.
 
 **Prerequisite — Run Mode.** Allowlists apply only when Run Mode is **Auto-review**, **Allowlist**, or **Run Everything** (**Settings → Agents → Approvals & Execution**). MCP tools are not sandboxed like shell; under Auto-review, a non-allowlisted Clockify call may still go to the classifier or an approval prompt. Do not switch to **Run Everything** just for Clockify.
 
@@ -63,7 +54,7 @@ You can approve tools as they appear, or pre-allow them during setup so unattend
 
 User-wide if you use Clockify from many repos on this machine. Per-repo if teammates should inherit the same allowlist, or you only want it in one workspace.
 
-The server name must match the `mcp.json` key: **`clockify`** for Marketplace / published / npx installs; **`clockify-dev`** when using local `dev:link` ([develop.md](./develop.md)).
+The server name must match the MCP config key: **`clockify`** for Directory / npx installs; **`clockify-dev`** when using local `dev:link` ([develop.md](./develop.md)).
 
 **Sample — allow all Clockify MCP tools** (normal installs):
 
@@ -77,7 +68,7 @@ The server name must match the `mcp.json` key: **`clockify`** for Marketplace / 
 }
 ```
 
-For local plugin / `dev:link` installs that register as `clockify-dev`:
+For local `dev:link` installs that register as `clockify-dev`:
 
 ```jsonc
 {
@@ -101,65 +92,15 @@ Cursor references: [permissions.json](https://cursor.com/docs/reference/permissi
 
 <br>
 
-## Develop this repo
-
-Use explicit developer vs consumer-like modes so local paths do not fake a Directory / npx install — see [develop.md](./develop.md).
-
-```bash
-cp .env.example .env
-npm install
-npm run build
-npm run dev:link
-# reload Cursor — enable plugin clockify-dev; use MCP clockify-dev
-npm run smoke:handshake
-npm run smoke:live     # optional
-```
-
-```bash
-npm run sandbox           # ~/workspaces/clockify-mcp-sandbox
-npm run sandbox:teardown
-```
-
-`dev:link` writes project `.cursor/mcp.json` as **`clockify-dev`** (this workspace only). Do not put local `dist/index.js` in `~/.cursor/mcp.json` while validating consumer installs. Allowlist that server as `clockify-dev:*` — [Pre-enable Clockify tools](#pre-enable-clockify-tools).
-
-<br>
-
----
-
-<br>
-
 ## Node not found
 
-Cursor launched from a desktop entry often has a minimal PATH, so `"command": "node"` or `"npx"` can fail.
+Cursor launched from a desktop entry often has a minimal PATH, so `"command": "npx"` can fail.
 
 ```bash
-command -v node   # use the absolute path in mcp.json if needed
+command -v node   # use the absolute path in MCP config if needed
 ```
 
 After changing config, reload Cursor. If MCP is red, open **Output → MCP Logs**.
-
-Quick stdio check:
-
-```bash
-set -a && source .env && set +a
-node dist/index.js
-# idle on stdio; Ctrl+C to stop
-```
-
-<br>
-
----
-
-<br>
-
-## envFile vs env
-
-| Approach | When to use |
-|----------|-------------|
-| `envFile` → `.env` | Local clone; keeps secrets out of json |
-| `env` block in `mcp.json` | Published/`npx` install; hosts without `envFile` |
-
-A repo `.env` is not loaded automatically by the server. Without `envFile` or `env`, tools fail with “CLOCKIFY_API_KEY is required”.
 
 <br>
 
@@ -190,7 +131,7 @@ cp -R skills/clockify-* ~/.claude/skills/
 
 ### Generic stdio host
 
-Same as Claude once published, or absolute `node` + `dist/index.js` while developing.
+Same `npx` command and `CLOCKIFY_API_KEY` env, or absolute `node` + `dist/index.js` while developing this repo ([develop.md](./develop.md)).
 
 <br>
 
@@ -203,9 +144,9 @@ Same as Claude once published, or absolute `node` + `dist/index.js` while develo
 | Symptom | Likely cause |
 |---------|----------------|
 | Server not listed under Customize → MCP | Unloaded path; invalid json; Node not on PATH |
-| `CLOCKIFY_API_KEY is required` | Missing `env` / `envFile` |
+| `CLOCKIFY_API_KEY is required` | Missing plugin / MCP `env` |
 | Workspace ID not found | Typo in `CLOCKIFY_WORKSPACE_ID` |
-| `npx -y @dustinestes/clockify-mcp-server` fails | Not published yet, or PATH issue |
+| `npx -y @dustinestes/clockify-mcp-server` fails | Node/npx not on PATH, or registry/network |
 | Agent sits idle after the first Clockify tool call | Waiting on MCP tool approval; [pre-enable tools](#pre-enable-clockify-tools) |
 
 <br>
@@ -216,8 +157,8 @@ Same as Claude once published, or absolute `node` + `dist/index.js` while develo
 
 ## See also
 
-- [develop.md](./develop.md) - local plugin modes
-- [publish.md](./publish.md) - npm and cursor.directory
+- [develop.md](./develop.md) — local plugin modes
+- [publish.md](./publish.md) — npm and cursor.directory
 - [Docs index](./README.md)
 - [Cursor permissions.json](https://cursor.com/docs/reference/permissions)
 - [Clockify API](https://docs.clockify.me)
@@ -228,7 +169,7 @@ Same as Claude once published, or absolute `node` + `dist/index.js` while develo
 
 <br>
 
-<strong>Clockify MCP Server</strong>
+<strong>Clockify Agent Plugin</strong>
 <div align="right">
 
 [MIT License](../LICENSE)

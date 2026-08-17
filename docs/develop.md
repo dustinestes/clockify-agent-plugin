@@ -54,7 +54,7 @@ npm run build
 # reload Cursor
 ```
 
-Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not a consumer-install proof. Pre-allow tools as `clockify-dev:*` (not `clockify:*`) — [setup.md](./setup.md#pre-enable-clockify-tools).
+Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not a consumer-install proof. Pre-allow tools as `clockify-dev:*` (not `clockify:*`) — [getting-started.md](./getting-started.md#pre-enable-clockify-tools).
 
 <br>
 
@@ -120,7 +120,7 @@ Do not keep a user-scoped MCP pointed at this checkout's `dist` while validating
 
 ## See also
 
-- [setup.md](./setup.md)
+- [getting-started.md](./getting-started.md)
 - [publish.md](./publish.md)
 - [Docs index](./README.md)
 

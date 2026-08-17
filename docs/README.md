@@ -3,7 +3,7 @@
 <h1>Docs</h1>
 <br clear="both">
 
-Index for the unofficial Clockify Agent Plugin (MCP tools and skills). Install happy path: [root README](../README.md).
+Index for the unofficial Clockify Agent Plugin (MCP tools and skills).
 
 <br>
 
@@ -18,12 +18,12 @@ Index for the unofficial Clockify Agent Plugin (MCP tools and skills). Install h
 
 ## Guides
 
-| Who | Doc | Purpose |
-|-----|-----|---------|
-| Anyone | [Getting started](./setup.md) | API key, Cursor allowlist, PATH, other hosts |
-| Anyone | [Config](./config.md) | `.clockify/config.yml` schema and git hygiene |
-| Maintainers | [Develop](./develop.md) | `dev:link` / `dev:unlink` / sandbox |
-| Maintainers | [Publish](./publish.md) | GitHub Release → npm, cursor.directory |
+| Doc | Purpose | Audience |
+|-----|---------|-----|
+| [Getting started](./getting-started.md) | API key, Cursor allowlist, PATH, other hosts | Anyone |
+| [Config](./config.md) | `.clockify/config.yml` schema and git hygiene | Anyone |
+| [Develop](./develop.md) | `dev:link` / `dev:unlink` / sandbox | Maintainers |
+| [Publish](./publish.md) | GitHub Release → npm, cursor.directory | Maintainers |
 
 <br>
 

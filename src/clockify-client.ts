@@ -66,7 +66,7 @@ function formatApiError(status: number, body: string): string {
   switch (status) {
     case 401:
     case 403:
-      return `Clockify authentication failed (${status}). Check CLOCKIFY_API_KEY - see README Setup → Clockify credentials.${detail ? ` Details: ${detail}` : ""}`;
+      return `Clockify authentication failed (${status}). Check CLOCKIFY_API_KEY - see docs/getting-started.md → Credentials.${detail ? ` Details: ${detail}` : ""}`;
     case 429:
       return `Clockify rate limit exceeded (429). Wait a moment and retry.${detail ? ` Details: ${detail}` : ""}`;
     default:
