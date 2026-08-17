@@ -48,6 +48,7 @@ clockify-mcp-server/
 1. Create a Clockify API key (Preferences → Advanced → Manage API Keys). Optionally pin `CLOCKIFY_WORKSPACE_ID`.
 2. Install **Clockify** from [cursor.directory](https://cursor.directory) (Add to Cursor), or wire `npx -y @dustinestes/clockify-mcp-server` in MCP config.
 3. Set `CLOCKIFY_API_KEY` when prompted; confirm **Customize → MCP** shows **Clockify** enabled.
+4. Optional: [pre-allow Clockify MCP tools](docs/setup.md#pre-enable-clockify-tools) so agents do not stall on an Allow / Always allow prompt mid-run.
 
 ```bash
 # Local clone instead of Directory / npx — see docs
