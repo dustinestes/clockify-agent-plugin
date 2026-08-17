@@ -54,7 +54,7 @@ npm run build
 # reload Cursor
 ```
 
-Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not a consumer-install proof.
+Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not a consumer-install proof. Pre-allow tools as `clockify-dev:*` (not `clockify:*`) — [setup.md](./setup.md#pre-enable-clockify-tools).
 
 <br>
 
