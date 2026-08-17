@@ -66,7 +66,7 @@ function formatApiError(status: number, body: string): string {
   switch (status) {
     case 401:
     case 403:
-      return `Clockify authentication failed (${status}). Check CLOCKIFY_API_KEY - see README Setup → Clockify credentials.${detail ? ` Details: ${detail}` : ""}`;
+      return `Clockify authentication failed (${status}). Check CLOCKIFY_API_KEY - see docs/use.md → Credentials.${detail ? ` Details: ${detail}` : ""}`;
     case 429:
       return `Clockify rate limit exceeded (429). Wait a moment and retry.${detail ? ` Details: ${detail}` : ""}`;
     default:
@@ -127,14 +127,14 @@ export class ClockifyClient {
 
     if (!candidate) {
       throw new ClockifyError(
-        "No Clockify workspace available. Set CLOCKIFY_WORKSPACE_ID or create a workspace.",
+        "No Clockify workspace available. Set workspace_id in .clockify/config.yml, CLOCKIFY_WORKSPACE_ID, or create a workspace.",
         400,
         "",
       );
     }
 
-    // Validate configured IDs early — a typo in CLOCKIFY_WORKSPACE_ID is easy
-    // when copying from the browser URL and produces opaque 404s later.
+    // Validate configured IDs early — a typo in workspace_id / CLOCKIFY_WORKSPACE_ID
+    // is easy when copying from the browser URL and produces opaque 404s later.
     if (explicit || this.defaultWorkspaceId) {
       const workspaces = await this.listWorkspaces();
       if (!workspaces.some((w) => w.id === candidate)) {

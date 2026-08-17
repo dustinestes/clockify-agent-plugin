@@ -20,10 +20,6 @@
       "CLOCKIFY_API_KEY": {
         "type": "string",
         "description": "Clockify API key from Profile Settings"
-      },
-      "CLOCKIFY_WORKSPACE_ID": {
-        "type": "string",
-        "description": "Optional default workspace ID"
       }
     },
     "required": ["CLOCKIFY_API_KEY"]

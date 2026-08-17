@@ -1,7 +1,8 @@
 <br><br>
 
 <p align="center">
-  <img src="assets/logo.svg" alt="Clockify MCP (unofficial)" width="128">
+  <img src="assets/lockup-light.svg#gh-light-mode-only" alt="Clockify Agent Plugin" height="64">
+  <img src="assets/lockup-dark.svg#gh-dark-mode-only" alt="Clockify Agent Plugin" height="64">
 </p>
 
 <br>
@@ -16,7 +17,7 @@
 
 ---
 
-Unofficial [Model Context Protocol](https://modelcontextprotocol.io) server and Agent Skills for [Clockify](https://clockify.me) - start/stop timers, map coding work to projects, and summarize sessions in Cursor and other MCP hosts.
+Unofficial agent plugin for [Clockify](https://clockify.me): [MCP](https://modelcontextprotocol.io) tools plus Agent Skills — start/stop timers, enter time, and summarize sessions in Cursor and other MCP hosts.
 
 **Not affiliated with, endorsed by, or sponsored by Clockify or Cake.com.** Third-party connector only.
 
@@ -24,102 +25,72 @@ Unofficial [Model Context Protocol](https://modelcontextprotocol.io) server and 
 
 <br>
 
-## Layout
-
-```text
-clockify-mcp-server/
-├── .cursor-plugin/plugin.json
-├── .mcp.json
-├── assets/logo.svg
-├── docs/
-├── skills/
-├── src/
-├── mcp.json
-├── package.json
-└── README.md
-```
-
----
-
-<br>
-
 ## Getting started
 
-1. Create a Clockify API key (Preferences → Advanced → Manage API Keys). Optionally pin `CLOCKIFY_WORKSPACE_ID`.
+### Install the plugin (once per machine)
+
+1. Create a Clockify API key (Preferences → Advanced → Manage API Keys).
 2. Install **Clockify** from [cursor.directory](https://cursor.directory) (Add to Cursor), or wire `npx -y @dustinestes/clockify-mcp-server` in MCP config.
 3. Set `CLOCKIFY_API_KEY` when prompted; confirm **Customize → MCP** shows **Clockify** enabled.
-4. Optional: [pre-allow Clockify MCP tools](docs/setup.md#pre-enable-clockify-tools) so agents do not stall on an Allow / Always allow prompt mid-run.
+4. Optional: [pre-allow Clockify MCP tools](docs/use.md#pre-enable-clockify-tools) so agents do not stall on an Allow / Always allow prompt mid-run.
 
-```bash
-# Local clone instead of Directory / npx — see docs
-npm install && npm run build
-npm run dev:link
-```
+Credentials, allowlists, and non-Cursor hosts: [docs/use.md](docs/use.md).
 
-Credentials detail and non-Cursor hosts: [docs/setup.md](docs/setup.md). Full doc index: [docs/README.md](docs/README.md).
+### Add Clockify to a repo (each repo)
 
-<br>
+1. In that repo, run `/clockify-init` — config, ignore, Clockify project, optional GitHub label→task sync. After this you can enter time with skills (start/stop timer, enter-time, summarize).
+2. Optional: run `/clockify-automate` so the agent starts/stops timers from `automated.triggers` (issues/PRs).
 
----
-
-<br>
-
-## Tools
-
-| Tool | Purpose |
-|------|---------|
-| `clockify_get_config` | Effective `.clockify/config.yml` standards |
-| `clockify_get_user` | Authenticated user + workspace IDs |
-| `clockify_list_workspaces` | List workspaces |
-| `clockify_list_projects` | List / filter projects |
-| `clockify_ensure_project` | Find or create project by name |
-| `clockify_list_tags` | List tags |
-| `clockify_list_tasks` | List tasks on a project |
-| `clockify_ensure_task` | Find or create task (e.g. GitHub label) |
-| `clockify_get_running_timer` | Current running timer (+ inactivity hint) |
-| `clockify_start_timer` | Start a timer (optional start time; description template fields) |
-| `clockify_stop_timer` | Stop the running timer (optional rounding) |
-| `clockify_create_time_entry` | Create a completed entry (explicit start/end; no rounding) |
-| `clockify_list_time_entries` | List entries in a window |
-| `clockify_today_summary` | Today's totals by project |
-
-### Skills
-
-| Group | Skill | Purpose |
-|-------|-------|---------|
-| Repo | [`clockify-init`](skills/clockify-init/SKILL.md) | Config + ignore + project + label→task sync |
-| Repo | [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Full local teardown (keep plugin unless asked) |
-| Mode | [`clockify-automate`](skills/clockify-automate/SKILL.md) | Agent mode on: Cursor rules/hooks from `automated.triggers` |
-| Mode | [`clockify-unautomate`](skills/clockify-unautomate/SKILL.md) | Agent mode off: remove rule/hooks; keep `.clockify/` |
-| Timer | [`clockify-start-timer`](skills/clockify-start-timer/SKILL.md) | Start a running timer (`entry_method: timer`) |
-| Timer | [`clockify-stop-timer`](skills/clockify-stop-timer/SKILL.md) | Stop the running timer |
-| Timer | [`clockify-status`](skills/clockify-status/SKILL.md) | Read-only running timer (or none) |
-| Time | [`clockify-enter-time`](skills/clockify-enter-time/SKILL.md) | Completed range, no rounding (`entry_method: manual`) |
-| Review | [`clockify-summarize`](skills/clockify-summarize/SKILL.md) | Today / range totals |
-
-<br>
+To undo a repo without uninstalling the plugin: [docs/use.md](docs/use.md#remove-clockify-from-a-repo).
 
 ---
 
 <br>
 
-## Packaging
+## How it works
 
-| File | Role |
-|------|------|
-| `.cursor-plugin/plugin.json` | Cursor Plugin manifest (local install + variables) |
-| `plugin.json` | [Agent Plugins](https://agent-plugins.org) portable manifest |
-| `.mcp.json` | [cursor.directory](https://cursor.directory) MCP discovery (npx, never mutated by `dev:link`) |
-| `mcp.json` | MCP server entry for the local Cursor plugin |
-| `skills/` | [Agent Skills](https://agentskills.io) |
+Two modes. Both use the same Clockify project. Clockify still allows only **one running timer**.
 
-<br>
+| Mode | How time gets in | Skills |
+|------|------------------|--------|
+| **Manual** | You (or the agent, when you ask) start/stop a timer or log a completed range | After `/clockify-init`: start-timer, stop-timer, enter-time, status, summarize |
+| **Automated** | Agent follows Cursor rules/hooks from `automated.triggers` (issue/PR events in session) | `/clockify-automate` on; `/clockify-unautomate` back to manual |
 
 ---
 
 <br>
 
-<strong>Clockify MCP Server</strong>
+## Skills
+
+You talk to the agent in plain language (or run a `/skill`). The agent calls MCP tools; you do not.
+
+> Setup skills (`init`, `uninit`, `automate`, `unautomate`) are slash-only so they do not fire by accident.
+
+| Group | Skill | Purpose | Example |
+|-------|-------|---------|---------|
+| Repo | [`clockify-init`](skills/clockify-init/SKILL.md) | Setup the current working directory (config + ignore + project + GitHub label→task sync) | `/clockify-init` |
+| Repo | [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Full local teardown (keep plugin unless asked) | `/clockify-uninit` |
+| Mode | [`clockify-automate`](skills/clockify-automate/SKILL.md) | Agent mode on: Cursor rules/hooks from `automated.triggers` | `/clockify-automate` |
+| Mode | [`clockify-unautomate`](skills/clockify-unautomate/SKILL.md) | Agent mode off: remove rule/hooks; keep `.clockify/` | `/clockify-unautomate` |
+| Timer | [`clockify-start-timer`](skills/clockify-start-timer/SKILL.md) | Start a running timer (`entry_method: timer`) | `/clockify-start-timer` or “start a timer on this issue” |
+| Timer | [`clockify-stop-timer`](skills/clockify-stop-timer/SKILL.md) | Stop the running timer | `/clockify-stop-timer` or “stop my Clockify timer” |
+| Timer | [`clockify-status`](skills/clockify-status/SKILL.md) | Read-only running timer (or none) | `/clockify-status` or “is a timer running?” |
+| Time | [`clockify-enter-time`](skills/clockify-enter-time/SKILL.md) | Completed range, no rounding (`entry_method: manual`) | `/clockify-enter-time` or “log 2–3pm on this issue” |
+| Review | [`clockify-summarize`](skills/clockify-summarize/SKILL.md) | Today / range totals | `/clockify-summarize` or “how much time today?” |
+
+---
+
+<br>
+
+## Developing
+
+Working on this repo: [docs/develop.md](docs/develop.md). Shipping a release or Directory listing: [docs/publish.md](docs/publish.md). How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+<br>
+
+<strong>Clockify Agent Plugin</strong>
 <div align="right">
 
 [MIT License](LICENSE)

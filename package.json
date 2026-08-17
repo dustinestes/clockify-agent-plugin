@@ -1,7 +1,7 @@
 {
   "name": "@dustinestes/clockify-mcp-server",
   "version": "0.1.0",
-  "description": "MCP server for Clockify time tracking - start/stop timers, list projects, and summarize coding sessions",
+  "description": "Unofficial Clockify time tracking for coding sessions - MCP tools plus workflow skills. Not affiliated with Clockify/Cake.com.",
   "type": "module",
   "bin": {
     "clockify-mcp-server": "dist/index.js"
@@ -23,6 +23,7 @@
     "mcp.dev.json",
     "mcp.publish.json",
     "README.md",
+    "CONTRIBUTING.md",
     "LICENSE"
   ],
   "scripts": {

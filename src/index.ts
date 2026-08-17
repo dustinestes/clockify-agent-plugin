@@ -21,6 +21,7 @@ import {
   loadClockifyConfig,
   overlapShouldProceed,
   prepareStartInstant,
+  resolveConfiguredWorkspaceId,
   resolveEntryDescription,
   resolveProjectName,
   type TimerEntryMethod,
@@ -30,16 +31,17 @@ function requireApiKey(): string {
   const key = process.env.CLOCKIFY_API_KEY?.trim();
   if (!key) {
     throw new Error(
-      "CLOCKIFY_API_KEY is required. See README Setup → Clockify credentials, then set it in your MCP config (or .env via envFile).",
+      "CLOCKIFY_API_KEY is required. See docs/use.md → Credentials, then set it in your MCP / plugin env.",
     );
   }
   return key;
 }
 
 function client(): ClockifyClient {
+  const loaded = loadClockifyConfig();
   return new ClockifyClient(
     requireApiKey(),
-    process.env.CLOCKIFY_WORKSPACE_ID?.trim() || undefined,
+    resolveConfiguredWorkspaceId(loaded.config),
   );
 }
 
@@ -155,6 +157,7 @@ server.registerTool(
         path: loaded.path,
         root: loaded.root,
         projectName: resolveProjectName(loaded.config, loaded.root),
+        workspaceId: resolveConfiguredWorkspaceId(loaded.config) ?? null,
         config: loaded.config,
         hint: loaded.found
           ? undefined
@@ -209,7 +212,9 @@ server.registerTool(
       workspace_id: z
         .string()
         .optional()
-        .describe("Workspace ID. Defaults to CLOCKIFY_WORKSPACE_ID or active workspace."),
+        .describe(
+          "Workspace ID. Defaults to CLOCKIFY_WORKSPACE_ID, else config.yml workspace_id, else the active workspace.",
+        ),
       name: z.string().optional().describe("Optional project name filter."),
       archived: z
         .boolean()

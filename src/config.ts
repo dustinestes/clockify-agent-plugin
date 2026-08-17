@@ -70,9 +70,16 @@ const inactivitySchema = z
 
 export const clockifyConfigSchema = z.object({
   version: z.literal(1).default(1),
+  workspace_id: z
+    .string()
+    .optional()
+    .transform((value) => {
+      const trimmed = value?.trim();
+      return trimmed ? trimmed : undefined;
+    }),
   project: z
     .object({
-      name_from: z.enum(["repo", "fixed"]).default("repo"),
+      from: z.enum(["repo", "fixed"]).default("repo"),
       name: z.string().optional(),
     })
     .default({}),
@@ -246,11 +253,20 @@ function parseConfigFile(path: string): ClockifyConfig {
   return parseClockifyConfig(raw, path);
 }
 
+/** Env `CLOCKIFY_WORKSPACE_ID` wins; else yaml `workspace_id`; else unset (Clockify default). */
+export function resolveConfiguredWorkspaceId(
+  config: ClockifyConfig,
+): string | undefined {
+  const fromEnv = process.env.CLOCKIFY_WORKSPACE_ID?.trim();
+  if (fromEnv) return fromEnv;
+  return config.workspace_id;
+}
+
 export function resolveProjectName(
   config: ClockifyConfig,
   root: string | null,
 ): string | null {
-  if (config.project.name_from === "fixed") {
+  if (config.project.from === "fixed") {
     return config.project.name?.trim() || null;
   }
   if (config.project.name?.trim()) {
