@@ -1,22 +1,8 @@
 <br><br>
 
-<div align="center">
-
-<table>
-<tr>
-<td>
-<img src="assets/logo.svg" alt="Clockify MCP (unofficial)" width="64" height="64">
-</td>
-<td align="left" valign="middle">
-
-<strong>Clockify MCP Server</strong><br>
-Unofficial Cursor plugin — MCP tools and skills to track coding time in Clockify
-
-</td>
-</tr>
-</table>
-
-</div>
+<p align="center">
+  <img src="assets/lockup.svg" alt="Clockify MCP Server" height="64">
+</p>
 
 <br>
 

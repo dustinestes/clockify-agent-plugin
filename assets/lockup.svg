@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 128" role="img" aria-label="Clockify MCP Server">
+  <rect width="128" height="128" rx="24" fill="#0F172A"/>
+  <circle cx="64" cy="64" r="40" fill="none" stroke="#38BDF8" stroke-width="8"/>
+  <path d="M64 36v32l22 12" fill="none" stroke="#F8FAFC" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text
+    x="152"
+    y="64"
+    dominant-baseline="middle"
+    font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+    font-size="40"
+    font-weight="600"
+    fill="#0F172A"
+  >Clockify MCP Server</text>
+</svg>
