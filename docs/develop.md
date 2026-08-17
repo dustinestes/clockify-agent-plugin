@@ -16,7 +16,7 @@ How to develop this MCP on a machine that may also act like a Directory / npx su
 - [Consumer-like mode](#consumer-like-mode)
 - [Sandbox](#sandbox)
 - [Mental model](#mental-model)
-- [See also](#see-also)
+- [MCP tools](#mcp-tools)
 
 ---
 
@@ -41,8 +41,6 @@ clockify-mcp-server/
 
 `mcp.publish.json` / `mcp.dev.json` are templates for unlink/link. Do not commit a `dev:link`-shaped `mcp.json`.
 
-<br>
-
 ---
 
 <br>
@@ -59,8 +57,6 @@ npm run dev:status
 ```
 
 After link or unlink: **reload Cursor**.
-
-<br>
 
 ---
 
@@ -80,9 +76,7 @@ npm run build
 # reload Cursor
 ```
 
-Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not a consumer-install proof. Pre-allow tools as `clockify-dev:*` (not `clockify:*`) — [getting-started.md](./getting-started.md#pre-enable-clockify-tools).
-
-<br>
+Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not a consumer-install proof. Pre-allow tools as `clockify-dev:*` (not `clockify:*`) — [use.md](./use.md#pre-enable-clockify-tools).
 
 ---
 
@@ -98,8 +92,6 @@ Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` gree
 4. Strips local-dist Clockify servers from `~/.cursor/mcp.json`
 
 Reload, then install from [cursor.directory](https://cursor.directory) or configure npx as a subscriber would.
-
-<br>
 
 ---
 
@@ -120,8 +112,6 @@ npm run sandbox:teardown
 
 Project MCP often starts **disabled** until you enable it under Customize → MCP.
 
-<br>
-
 ---
 
 <br>
@@ -138,20 +128,30 @@ skills: Directory Add snapshot skills: from clockify-dev plugin
 
 Do not keep a user-scoped MCP pointed at this checkout's `dist` while validating a Directory or npx install. Do not commit a `dev:link`-shaped `mcp.json`.
 
-<br>
-
 ---
 
 <br>
 
-## See also
+## MCP tools
 
-- [getting-started.md](./getting-started.md)
-- [publish.md](./publish.md)
-- [Contributing](../CONTRIBUTING.md)
-- [Docs index](./README.md)
+The agent calls these; people use skills. Listed here for handshake tests and allowlists (`clockify:*`).
 
-<br>
+| Tool | Purpose |
+|------|---------|
+| `clockify_get_config` | Effective `.clockify/config.yml` standards |
+| `clockify_get_user` | Authenticated user + workspace IDs |
+| `clockify_list_workspaces` | List workspaces |
+| `clockify_list_projects` | List / filter projects |
+| `clockify_ensure_project` | Find or create project by name |
+| `clockify_list_tags` | List tags |
+| `clockify_list_tasks` | List tasks on a project |
+| `clockify_ensure_task` | Find or create task (e.g. GitHub label) |
+| `clockify_get_running_timer` | Current running timer (+ inactivity hint) |
+| `clockify_start_timer` | Start a timer (optional start time; description template fields) |
+| `clockify_stop_timer` | Stop the running timer (optional rounding) |
+| `clockify_create_time_entry` | Create a completed entry (explicit start/end; no rounding) |
+| `clockify_list_time_entries` | List entries in a window |
+| `clockify_today_summary` | Today's totals by project |
 
 ---
 
