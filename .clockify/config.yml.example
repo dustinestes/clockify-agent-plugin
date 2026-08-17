@@ -1,4 +1,4 @@
-# Example project standards for Clockify MCP.
+# Example project standards for the Clockify Agent Plugin.
 # Init writes this as `.clockify/config.yml` in the consumer repo (or copy manually).
 # Personal by default — see docs/config.md (git hygiene). Fields: docs/schema/config.yml.md. Never put API keys here.
 version: 1

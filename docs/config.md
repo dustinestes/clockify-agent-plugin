@@ -24,7 +24,7 @@ Preferred: `/clockify-init` in the repo (writes config, ignore defaults, Clockif
 
 ```bash
 mkdir -p .clockify
-cp path/to/clockify-mcp-server/.clockify/config.yml.example .clockify/config.yml
+cp path/to/clockify-agent-plugin/.clockify/config.yml.example .clockify/config.yml
 ```
 
 Point the MCP server at the repo when Cursor's cwd is wrong:

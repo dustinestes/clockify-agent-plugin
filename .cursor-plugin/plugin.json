@@ -7,8 +7,8 @@
     "name": "Dustin Estes",
     "email": "clockify.mcpserver@dustinestes.com"
   },
-  "homepage": "https://github.com/dustinestes/clockify-mcp-server",
-  "repository": "https://github.com/dustinestes/clockify-mcp-server",
+  "homepage": "https://github.com/dustinestes/clockify-agent-plugin",
+  "repository": "https://github.com/dustinestes/clockify-agent-plugin",
   "license": "MIT",
   "keywords": ["clockify", "mcp", "time-tracking", "productivity"],
   "logo": "assets/logo.svg",

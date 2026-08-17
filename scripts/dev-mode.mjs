@@ -73,7 +73,8 @@ function isLocalDistEntry(entry) {
   const command = String(entry.command ?? "");
   const blob = `${command} ${args} ${JSON.stringify(entry.env ?? {})}`;
   return (
-    blob.includes("clockify-mcp-server") &&
+    (blob.includes("clockify-agent-plugin") ||
+      blob.includes("clockify-mcp-server")) &&
     (blob.includes("/dist/index.js") || blob.includes("dist/index.js"))
   );
 }
@@ -131,7 +132,7 @@ function ensureDevShapedRepoMcp() {
 }
 
 function status() {
-  console.log("Clockify MCP — machine mode\n");
+  console.log("Clockify Agent Plugin — machine mode\n");
   console.log(`repo: ${root}`);
   console.log(`plugin link (${pluginId}): ${linkTarget(pluginLink) ?? "(none)"}`);
   console.log(
@@ -250,7 +251,7 @@ Re-enter development: npm run dev:link
 }
 
 function sandbox() {
-  const sandboxRoot = join(homedir(), "workspaces", "clockify-mcp-sandbox");
+  const sandboxRoot = join(homedir(), "workspaces", "clockify-agent-plugin-sandbox");
   mkdirSync(sandboxRoot, { recursive: true });
   mkdirSync(join(sandboxRoot, ".cursor", "skills"), { recursive: true });
 
@@ -298,9 +299,9 @@ function sandbox() {
 
   writeFileSync(
     join(sandboxRoot, "README.md"),
-    `# clockify-mcp-sandbox
+    `# clockify-agent-plugin-sandbox
 
-Disposable workspace for testing Clockify MCP skills/tools without mutating the main repo.
+Disposable workspace for testing Clockify Agent Plugin skills/tools without mutating the main repo.
 
 - Skills: symlinked from \`${root}/skills\` (should appear under \`/\` immediately)
 - MCP: \`clockify-dev\` → that checkout's \`dist/index.js\` + its \`.env\`
@@ -327,7 +328,7 @@ Then try a tool (e.g. ask for today's Clockify summary) or \`/clockify-start-tim
 }
 
 function sandboxTeardown() {
-  const sandboxRoot = join(homedir(), "workspaces", "clockify-mcp-sandbox");
+  const sandboxRoot = join(homedir(), "workspaces", "clockify-agent-plugin-sandbox");
   if (!existsSync(sandboxRoot)) {
     console.log(`Nothing to remove: ${sandboxRoot}`);
     return;

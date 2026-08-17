@@ -40,7 +40,7 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 8. Ensure repo `.gitignore` has this managed block if missing (idempotent — skip when the comment or `.clockify/` entry already exists; do **not** rewrite the whole file):
 
    ```gitignore
-   # Clockify MCP — personal time-tracking (delete this block to share with the team)
+   # Clockify Agent Plugin — personal time-tracking (delete this block to share with the team)
    .clockify/
    .cursor/rules/clockify-time.mdc
    ```
