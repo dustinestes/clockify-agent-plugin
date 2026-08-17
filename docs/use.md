@@ -1,6 +1,6 @@
 <br><br>
 <img align="right" src="../assets/logo.svg" height="40" alt="Clockify Agent Plugin">
-<h1>Getting started</h1>
+<h1>Use</h1>
 <br clear="both">
 
 Install and use the unofficial Clockify Agent Plugin.
@@ -12,12 +12,10 @@ Install and use the unofficial Clockify Agent Plugin.
 - [Contents](#contents)
 - [Credentials](#credentials)
 - [Pre-enable Clockify tools](#pre-enable-clockify-tools)
-- [Node not found](#node-not-found)
 - [Other MCP hosts](#other-mcp-hosts)
   - [Claude Code / Desktop](#claude-code--desktop)
   - [Generic stdio host](#generic-stdio-host)
-- [Troubleshooting](#troubleshooting)
-- [See also](#see-also)
+- [Remove Clockify from a repo](#remove-clockify-from-a-repo)
 
 ---
 
@@ -25,11 +23,9 @@ Install and use the unofficial Clockify Agent Plugin.
 
 ## Credentials
 
-**`CLOCKIFY_API_KEY` (required)** — Clockify → Preferences → Advanced → Manage API Keys. Set it as a Cursor plugin / MCP env variable when you install. Do not put it in `.clockify/config.yml`. Do not add a Clockify `.env` to the repo you are tracking time in.
+**`CLOCKIFY_API_KEY` (required)** — Clockify → Preferences → Advanced → Manage API Keys ([Clockify API](https://docs.clockify.me)). Set it as a Cursor plugin / MCP env variable when you install. Do not put it in `.clockify/config.yml`. Do not add a Clockify `.env` to the repo you are tracking time in.
 
 **Workspace (optional)** — pin a workspace via `/workspaces/{id}/` in the Clockify URL, or `clockify_list_workspaces`. Until config.yml grows a pin field, you can pass `CLOCKIFY_WORKSPACE_ID` in MCP env. Per-repo standards: [config.md](./config.md).
-
-<br>
 
 ---
 
@@ -86,24 +82,6 @@ When `permissions.json` defines `mcpAllowlist`, that key **replaces** the in-app
 
 Cursor references: [permissions.json](https://cursor.com/docs/reference/permissions), [Run Modes](https://cursor.com/docs/agent/security/run-modes).
 
-<br>
-
----
-
-<br>
-
-## Node not found
-
-Cursor launched from a desktop entry often has a minimal PATH, so `"command": "npx"` can fail.
-
-```bash
-command -v node   # use the absolute path in MCP config if needed
-```
-
-After changing config, reload Cursor. If MCP is red, open **Output → MCP Logs**.
-
-<br>
-
 ---
 
 <br>
@@ -133,37 +111,20 @@ cp -R skills/clockify-* ~/.claude/skills/
 
 Same `npx` command and `CLOCKIFY_API_KEY` env, or absolute `node` + `dist/index.js` while developing this repo ([develop.md](./develop.md)).
 
-<br>
-
 ---
 
 <br>
 
-## Troubleshooting
+## Remove Clockify from a repo
 
-| Symptom | Likely cause |
-|---------|----------------|
-| Server not listed under Customize → MCP | Unloaded path; invalid json; Node not on PATH |
-| `CLOCKIFY_API_KEY is required` | Missing plugin / MCP `env` |
-| Workspace ID not found | Typo in `CLOCKIFY_WORKSPACE_ID` |
-| `npx -y @dustinestes/clockify-mcp-server` fails | Node/npx not on PATH, or registry/network |
-| Agent sits idle after the first Clockify tool call | Waiting on MCP tool approval; [pre-enable tools](#pre-enable-clockify-tools) |
+The Directory / npx **plugin stays installed**. These skills only change the current repo.
 
-<br>
+| Want | Skill | What it does |
+|------|-------|----------------|
+| Back to **manual** entry | `/clockify-unautomate` | Removes the Clockify Cursor rule and Clockify-owned hooks. Keeps `.clockify/` so start-timer, enter-time, and summarize still work. |
+| **All** Clockify files gone from this repo | `/clockify-uninit` | Unautomate, then deletes `.clockify/` and the managed gitignore stanza. Does not uninstall the plugin or clear `CLOCKIFY_API_KEY` unless you ask. |
 
----
-
-<br>
-
-## See also
-
-- [develop.md](./develop.md) — local plugin modes
-- [publish.md](./publish.md) — npm and cursor.directory
-- [Docs index](./README.md)
-- [Cursor permissions.json](https://cursor.com/docs/reference/permissions)
-- [Clockify API](https://docs.clockify.me)
-
-<br>
+Uninstalling the plugin itself is Cursor → remove Clockify (or drop the npx MCP server). That is separate from uninit.
 
 ---
 
