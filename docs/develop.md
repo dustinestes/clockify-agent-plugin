@@ -78,6 +78,8 @@ npm run build
 
 Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not a consumer-install proof. Pre-allow tools as `clockify-dev:*` (not `clockify:*`) — [use.md](./use.md#pre-enable-clockify-tools).
 
+This checkout may use a gitignored `.env` with **only** `CLOCKIFY_API_KEY` for `dev:link` (`envFile`) and `smoke:live`. Pin the workspace in config.yml; env `CLOCKIFY_WORKSPACE_ID` still overrides. The server does not auto-load `.env`.
+
 ---
 
 <br>

@@ -25,7 +25,7 @@ Install and use the unofficial Clockify Agent Plugin.
 
 **`CLOCKIFY_API_KEY` (required)** — Clockify → Preferences → Advanced → Manage API Keys ([Clockify API](https://docs.clockify.me)). Set it as a Cursor plugin / MCP env variable when you install. Do not put it in `.clockify/config.yml`. Do not add a Clockify `.env` to the repo you are tracking time in.
 
-**Workspace (optional)** — pin a workspace via `/workspaces/{id}/` in the Clockify URL, or `clockify_list_workspaces`. Until config.yml grows a pin field, you can pass `CLOCKIFY_WORKSPACE_ID` in MCP env. File on disk: [config.md](./config.md). Fields: [config.yml](./schema/config.yml.md).
+**Workspace (optional)** — pin `workspace_id` in `.clockify/config.yml` (Clockify URL `/workspaces/{id}/`, or `clockify_list_workspaces`). MCP env `CLOCKIFY_WORKSPACE_ID` overrides the yaml. File on disk: [config.md](./config.md). Fields: [config.yml](./schema/config.yml.md).
 
 ---
 

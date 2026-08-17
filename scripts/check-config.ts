@@ -25,6 +25,7 @@ import {
   parseClockifyConfig,
   prepareStartInstant,
   projectRootFromConfigPath,
+  resolveConfiguredWorkspaceId,
   resolveConfigPathInRoot,
   resolveEntryDescription,
   resolveProjectName,
@@ -51,10 +52,9 @@ assert.equal(cfg.automated.description.from, "template");
 assert.equal(cfg.timer.task.if_missing, "prompt");
 assert.equal(cfg.automated.task.if_missing, "create");
 assert.equal(cfg.timer.overlap.on_conflict, "prompt");
-assert.equal(
-  defaultConfig().timer.description.template,
-  "{issue_number} - {issue_title}",
-);
+assert.equal(cfg.project.from, "repo");
+assert.equal(defaultConfig().project.from, "repo");
+assert.equal(defaultConfig().workspace_id, undefined);
 
 assert.equal(
   applyDescriptionTemplate(cfg.timer.description.template, {
@@ -144,8 +144,9 @@ assert.equal(
 );
 
 const sampleYaml = `version: 1
+workspace_id: ws_from_yaml
 project:
-  name_from: fixed
+  from: fixed
   name: FixtureRepo
 timer:
   rounding:
@@ -158,8 +159,10 @@ function withFixture(run: (dir: string) => void): void {
   const dir = mkdtempSync(join(tmpdir(), "clockify-config-"));
   const prevPath = process.env.CLOCKIFY_CONFIG_PATH;
   const prevRoot = process.env.CLOCKIFY_CONFIG_ROOT;
+  const prevWorkspace = process.env.CLOCKIFY_WORKSPACE_ID;
   delete process.env.CLOCKIFY_CONFIG_PATH;
   delete process.env.CLOCKIFY_CONFIG_ROOT;
+  delete process.env.CLOCKIFY_WORKSPACE_ID;
   try {
     run(dir);
   } finally {
@@ -167,6 +170,8 @@ function withFixture(run: (dir: string) => void): void {
     else process.env.CLOCKIFY_CONFIG_PATH = prevPath;
     if (prevRoot === undefined) delete process.env.CLOCKIFY_CONFIG_ROOT;
     else process.env.CLOCKIFY_CONFIG_ROOT = prevRoot;
+    if (prevWorkspace === undefined) delete process.env.CLOCKIFY_WORKSPACE_ID;
+    else process.env.CLOCKIFY_WORKSPACE_ID = prevWorkspace;
     rmSync(dir, { recursive: true, force: true });
   }
 }
@@ -179,6 +184,11 @@ withFixture((dir) => {
   assert.equal(loaded.path, join(dir, ".clockify", "config.yml"));
   assert.equal(loaded.root, dir);
   assert.equal(resolveProjectName(loaded.config, loaded.root), "FixtureRepo");
+  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+  assert.equal(
+    resolveConfiguredWorkspaceId(loaded.config),
+    "ws_from_yaml",
+  );
   assert.equal(
     loaded.config.timer.description.template,
     "{issue_number} - {issue_title}",
@@ -186,6 +196,21 @@ withFixture((dir) => {
   assert.equal(loaded.config.timer.rounding.enabled, true);
   assert.equal(resolveConfigPathInRoot(dir), loaded.path);
 });
+
+withFixture((dir) => {
+  mkdirSync(join(dir, ".clockify"), { recursive: true });
+  writeFileSync(join(dir, ".clockify", "config.yml"), sampleYaml);
+  process.env.CLOCKIFY_WORKSPACE_ID = "ws_from_env";
+  const loaded = loadClockifyConfig(dir);
+  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+  assert.equal(resolveConfiguredWorkspaceId(loaded.config), "ws_from_env");
+});
+
+const leftoverNameFrom = parseClockifyConfig({
+  project: { name_from: "fixed", name: "IgnoredKey" },
+});
+assert.equal(leftoverNameFrom.project.from, "repo");
+assert.equal(parseClockifyConfig({ workspace_id: "  " }).workspace_id, undefined);
 
 withFixture((dir) => {
   mkdirSync(join(dir, ".clockify"), { recursive: true });

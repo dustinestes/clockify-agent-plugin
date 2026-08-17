@@ -24,11 +24,12 @@ Field contract for `.clockify/config.yml`: project identity plus per-method desc
 
 ## Schema
 
-Root keys: `version`, `project`, `timer`, `manual`, `automated`. Method blocks hold description, task, and overlap. Rounding and `include_seconds` apply to timer and automated only. Manual times are explicit.
+Root keys: `version`, `workspace_id`, `project`, `timer`, `manual`, `automated`. Method blocks hold description, task, and overlap. Rounding and `include_seconds` apply to timer and automated only. Manual times are explicit.
 
 | Key | Purpose |
 |-----|---------|
-| `project.name_from` | `repo` (folder name) or `fixed` with `project.name` |
+| `workspace_id` | Optional Clockify workspace pin. Env `CLOCKIFY_WORKSPACE_ID` overrides. Never put the API key here. |
+| `project.from` | `repo` (folder name) or `fixed` with `project.name` |
 | `*.description.from` | `prompt` (caller supplies the string) or `template` |
 | `*.description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
 | `*.task.from` | `prompt`, `github_label`, or `none`. Automated allows `github_label` or `none` only |
