@@ -159,7 +159,7 @@ The agent calls these; people use skills. Listed here for handshake tests and al
 
 <br>
 
-<strong>Clockify MCP Server</strong>
+<strong>Clockify Agent Plugin</strong>
 <div align="right">
 
 [MIT License](../LICENSE)
