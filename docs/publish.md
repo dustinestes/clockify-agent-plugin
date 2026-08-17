@@ -101,7 +101,7 @@ Keep `.mcp.json` and `mcp.publish.json` **unpinned** (`npx -y @dustinestes/clock
 ```json
 {
   "mcpServers": {
-    "clockify": {
+    "clockify-agent-plugin": {
       "command": "npx",
       "args": ["-y", "@dustinestes/clockify-agent-plugin"],
       "env": {
@@ -162,8 +162,8 @@ There is no plugin-root `rules/*.mdc`, so Directory will not show a Rules Add bu
 One-time submit after the repo is public and npm `latest` matches `main` (skills on GitHub `HEAD` would otherwise pair with stale MCP tools). Directory does not read git tags or semver.
 
 1. `npm run dev:unlink`. Confirm `.mcp.json` is still the publish/npx shape (never a local `dist/` path).
-2. Development plugin id is `clockify-dev` (`npm run dev:link`). For a clean subscriber check use `npm run dev:unlink`, reload, then install from Directory or wire npx.
-3. Listing copy must state this is an **unofficial** third-party connector (not affiliated with Clockify/Cake.com). Public title **Clockify**; plugin id `clockify`. On the submit form, override auto-fill `clockify` if the name field is lowercase.
+2. Development plugin id is `clockify-agent-plugin-dev` (`npm run dev:link`). For a clean subscriber check use `npm run dev:unlink`, reload, then install from Directory or wire npx.
+3. Listing copy must state this is an **unofficial** third-party connector (not affiliated with Clockify/Cake.com). Public title **Clockify Agent Plugin**; plugin id `clockify-agent-plugin`. If the form auto-fills `clockify`, override it.
 4. Submit at [cursor.directory/plugins/new](https://cursor.directory/plugins/new): sign in, paste `https://github.com/dustinestes/clockify-agent-plugin`. Directory auto-detects `.mcp.json` and `skills/*/SKILL.md`. It does **not** pick up `.cursor/skills/` (maintainer skills).
 5. Wait for the automated safety scan (`safe`). The listing appears when it passes.
 

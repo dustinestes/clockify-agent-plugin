@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "clockify": {
+    "clockify-agent-plugin": {
       "command": "npx",
       "args": ["-y", "@dustinestes/clockify-agent-plugin"],
       "env": {

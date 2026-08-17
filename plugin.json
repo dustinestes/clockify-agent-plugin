@@ -1,6 +1,6 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "clockify",
+  "name": "clockify-agent-plugin",
   "description": "Unofficial Clockify time tracking for coding sessions - MCP tools plus workflow skills. Not affiliated with Clockify/Cake.com.",
   "version": "0.1.0",
   "author": {
