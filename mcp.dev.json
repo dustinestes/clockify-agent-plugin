@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "clockify": {
+    "clockify-agent-plugin": {
       "command": "node",
       "args": ["dist/index.js"],
       "env": {

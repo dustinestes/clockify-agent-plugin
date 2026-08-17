@@ -118,7 +118,7 @@ function ensureDevShapedRepoMcp() {
   const node = whichNode();
   const dev = {
     mcpServers: {
-      clockify: {
+      "clockify-agent-plugin": {
         command: node,
         args: ["dist/index.js"],
         env: {
@@ -241,7 +241,7 @@ function unlinkMode() {
 
   console.log(`
 Consumer-like mode:
-  - No ${pluginId} / clockify local plugin symlink
+  - No ${pluginId} / clockify-agent-plugin local plugin symlink
   - No local-dist MCP in user or this project config
   - Reload Cursor
   - Install from cursor.directory (or add npx mcp.json) to test as a subscriber

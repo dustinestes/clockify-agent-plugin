@@ -50,16 +50,16 @@ You can approve tools as they appear, or pre-allow them so unattended runs do no
 
 User-wide if you use Clockify from many repos on this machine. Per-repo if teammates should inherit the same allowlist, or you only want it in one workspace.
 
-The server name must match the MCP config key: **`clockify`** for Directory / npx installs; **`clockify-dev`** when using local `dev:link` ([develop.md](./develop.md)).
+The server name must match the MCP config key: **`clockify-agent-plugin`** for Directory / npx installs; **`clockify-dev`** when using local `dev:link` ([develop.md](./develop.md)).
 
-**Sample — allow all Clockify MCP tools** (normal installs):
+**Sample — allow all Clockify Agent Plugin MCP tools** (normal installs):
 
 ```jsonc
 {
   // Overrides the in-app MCP allowlist when this key is present.
   // User + project files concatenate; see Cursor permissions docs.
   "mcpAllowlist": [
-    "clockify:*"
+    "clockify-agent-plugin:*"
   ]
 }
 ```
@@ -74,7 +74,7 @@ For local `dev:link` installs that register as `clockify-dev`:
 }
 ```
 
-Equivalent patterns if you prefer listing tools explicitly (same effect as `clockify:*` today):
+Equivalent patterns if you prefer listing tools explicitly (same effect as `clockify-agent-plugin:*` today):
 
 `clockify_get_config`, `clockify_get_user`, `clockify_list_workspaces`, `clockify_list_projects`, `clockify_ensure_project`, `clockify_list_tags`, `clockify_list_tasks`, `clockify_ensure_task`, `clockify_get_running_timer`, `clockify_start_timer`, `clockify_stop_timer`, `clockify_create_time_entry`, `clockify_list_time_entries`, `clockify_today_summary`.
 
@@ -124,7 +124,7 @@ The Directory / npx **plugin stays installed**. These skills only change the cur
 | Back to **manual** entry | `/clockify-unautomate` | Removes the Clockify Cursor rule and Clockify-owned hooks. Keeps `.clockify/` so start-timer, enter-time, and summarize still work. |
 | **All** Clockify files gone from this repo | `/clockify-uninit` | Unautomate, then deletes `.clockify/` and the managed gitignore stanza. Does not uninstall the plugin or clear `CLOCKIFY_API_KEY` unless you ask. |
 
-Uninstalling the plugin itself is Cursor → remove Clockify (or drop the npx MCP server). That is separate from uninit.
+Uninstalling the plugin itself is Cursor → remove Clockify Agent Plugin (or drop the npx MCP server). That is separate from uninit.
 
 ---
 

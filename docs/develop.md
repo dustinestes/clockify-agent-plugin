@@ -66,7 +66,7 @@ After link or unlink: **reload Cursor**.
 
 `npm run dev:link`:
 
-1. Symlinks this repo to `~/.cursor/plugins/local/clockify-dev` (not `clockify`, so the published plugin id does not collide)
+1. Symlinks this repo to `~/.cursor/plugins/local/clockify-dev` (not `clockify-agent-plugin`, so the published plugin id does not collide)
 2. Points repo `mcp.json` at local `node dist/index.js` for the local plugin (does not rewrite `.mcp.json`)
 3. Writes **project** `.cursor/mcp.json` with server id **`clockify-dev`**
 4. Removes local-dist Clockify entries from `~/.cursor/mcp.json`
@@ -76,7 +76,7 @@ npm run build
 # reload Cursor
 ```
 
-Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not a consumer-install proof. Pre-allow tools as `clockify-dev:*` (not `clockify:*`) — [use.md](./use.md#pre-enable-clockify-tools).
+Verify: Plugins → `clockify-dev` (skills via `/`); MCP → `clockify-dev` green. This is not a consumer-install proof. Pre-allow tools as `clockify-dev:*` (not `clockify-agent-plugin:*`) — [use.md](./use.md#pre-enable-clockify-tools).
 
 This checkout may use a gitignored `.env` with **only** `CLOCKIFY_API_KEY` for `dev:link` (`envFile`) and `smoke:live`. Pin the workspace in config.yml; env `CLOCKIFY_WORKSPACE_ID` still overrides. The server does not auto-load `.env`.
 
@@ -88,7 +88,7 @@ This checkout may use a gitignored `.env` with **only** `CLOCKIFY_API_KEY` for `
 
 `npm run dev:unlink`:
 
-1. Removes `clockify-dev` / legacy `clockify` local plugin symlinks
+1. Removes `clockify-dev` / legacy `clockify` local plugin symlinks (old published id)
 2. Restores repo `mcp.json` to publish/npx shape (`mcp.publish.json`)
 3. Clears this project's `.cursor/mcp.json`
 4. Strips local-dist Clockify servers from `~/.cursor/mcp.json`
@@ -123,9 +123,9 @@ Project MCP often starts **disabled** until you enable it under Customize → MC
 ```text
 Directory / npx subscriber     Developer on same machine
 ─────────────────────────      ─────────────────────────
-plugin id: clockify            plugin id: clockify-dev
-mcp: npx (unpinned npm)        mcp: dist/ via clockify-dev
-skills: Directory Add snapshot skills: from clockify-dev plugin
+plugin id: clockify-agent-plugin   plugin id: clockify-dev
+mcp: npx (unpinned npm)            mcp: dist/ via clockify-dev
+skills: Directory Add snapshot     skills: from clockify-dev plugin
 ```
 
 Do not keep a user-scoped MCP pointed at this checkout's `dist` while validating a Directory or npx install. Do not commit a `dev:link`-shaped `mcp.json`.
@@ -136,7 +136,7 @@ Do not keep a user-scoped MCP pointed at this checkout's `dist` while validating
 
 ## MCP tools
 
-The agent calls these; people use skills. Listed here for handshake tests and allowlists (`clockify:*`).
+The agent calls these; people use skills. Listed here for handshake tests and allowlists (`clockify-agent-plugin:*`).
 
 | Tool | Purpose |
 |------|---------|
