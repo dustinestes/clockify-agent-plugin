@@ -1,6 +1,6 @@
 # Example project standards for Clockify MCP.
 # Init writes this as `.clockify/config.yml` in the consumer repo (or copy manually).
-# Personal by default — see docs/config.md (git hygiene). Never put API keys here.
+# Personal by default — see docs/config.md (git hygiene). Fields: docs/schema/config.yml.md. Never put API keys here.
 version: 1
 project:
   name_from: repo
