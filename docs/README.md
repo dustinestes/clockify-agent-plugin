@@ -20,13 +20,12 @@ Index for the unofficial Clockify Agent Plugin (MCP tools and skills).
 
 | Doc | Purpose | Audience |
 |-----|---------|-----|
-| [Getting started](./getting-started.md) | API key, Cursor allowlist, PATH, other hosts | Anyone |
+| [Use](./use.md) | API key, allowlist, other hosts, remove from a repo | Anyone |
+| [Troubleshoot](./troubleshoot.md) | Node PATH, MCP not listed, idle agent | Anyone |
 | [Config](./config.md) | `.clockify/config.yml` schema and git hygiene | Anyone |
-| [Develop](./develop.md) | `dev:link` / `dev:unlink` / sandbox | Maintainers |
+| [Develop](./develop.md) | `dev:link` / sandbox; MCP tool names | Maintainers |
 | [Publish](./publish.md) | GitHub Release → npm, cursor.directory | Maintainers |
 | [Contributing](../CONTRIBUTING.md) | PRs and where the other maintainer docs live | Maintainers |
-
-<br>
 
 ---
 
