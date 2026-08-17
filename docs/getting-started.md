@@ -3,9 +3,7 @@
 <h1>Getting started</h1>
 <br clear="both">
 
-Install and use the unofficial Clockify Agent Plugin. The short happy path is in the [root README](../README.md). This page is credentials, the Cursor MCP allowlist, PATH, and other hosts.
-
-Maintainers cloning *this* repo: [develop.md](./develop.md).
+Install and use the unofficial Clockify Agent Plugin.
 
 <br>
 
@@ -16,6 +14,8 @@ Maintainers cloning *this* repo: [develop.md](./develop.md).
 - [Pre-enable Clockify tools](#pre-enable-clockify-tools)
 - [Node not found](#node-not-found)
 - [Other MCP hosts](#other-mcp-hosts)
+  - [Claude Code / Desktop](#claude-code--desktop)
+  - [Generic stdio host](#generic-stdio-host)
 - [Troubleshooting](#troubleshooting)
 - [See also](#see-also)
 
