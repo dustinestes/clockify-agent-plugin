@@ -50,9 +50,9 @@ You can approve tools as they appear, or pre-allow them so unattended runs do no
 
 User-wide if you use Clockify from many repos on this machine. Per-repo if teammates should inherit the same allowlist, or you only want it in one workspace.
 
-The server name must match the MCP config key: **`clockify-agent-plugin`** for Directory / npx installs; **`clockify-agent-plugin-dev`** when using local `dev:link` ([develop.md](./develop.md)).
+The server name must match the MCP config key: **`clockify-agent-plugin`** (install script, Directory / npx, and the maintainer sandbox).
 
-**Sample — allow all Clockify Agent Plugin MCP tools** (normal installs):
+**Sample — allow all Clockify Agent Plugin MCP tools:**
 
 ```jsonc
 {
@@ -60,16 +60,6 @@ The server name must match the MCP config key: **`clockify-agent-plugin`** for D
   // User + project files concatenate; see Cursor permissions docs.
   "mcpAllowlist": [
     "clockify-agent-plugin:*"
-  ]
-}
-```
-
-For local `dev:link` installs that register as `clockify-agent-plugin-dev`:
-
-```jsonc
-{
-  "mcpAllowlist": [
-    "clockify-agent-plugin-dev:*"
   ]
 }
 ```

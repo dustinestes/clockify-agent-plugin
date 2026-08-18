@@ -3,7 +3,7 @@
 <h1>Develop</h1>
 <br clear="both">
 
-How to develop this plugin on a machine that may also act like a Directory / npx subscriber. Explicit modes avoid false positives (green MCP that is really your checkout; skills missing because only MCP was wired).
+How to change this plugin. Edit and build in this checkout. Play against those changes in a disposable sandbox. Test a consumer install with the same script subscribers use.
 
 <br>
 
@@ -11,11 +11,9 @@ How to develop this plugin on a machine that may also act like a Directory / npx
 
 - [Contents](#contents)
 - [Repo layout](#repo-layout)
-- [Modes](#modes)
-- [Developer mode](#developer-mode)
-- [Consumer-like mode](#consumer-like-mode)
+- [Build](#build)
 - [Sandbox](#sandbox)
-- [Mental model](#mental-model)
+- [Consumer-like install](#consumer-like-install)
 - [MCP tools](#mcp-tools)
 
 ---
@@ -24,76 +22,37 @@ How to develop this plugin on a machine that may also act like a Directory / npx
 
 ## Repo layout
 
-Why the tree looks like this (Directory does **not** read this section; it only scans `.mcp.json` and `skills/*/SKILL.md`):
+Directory scans `.mcp.json` and `skills/*/SKILL.md` only. It does not read this section.
 
 ```text
 clockify-agent-plugin/
-├── .cursor-plugin/plugin.json   # local Cursor plugin + variables
-├── .mcp.json                    # Directory MCP discovery (npx; never rewritten by dev:link)
-├── assets/                      # logo + README lockups
+├── .cursor-plugin/plugin.json   # Cursor plugin + variables
+├── .mcp.json                    # Directory MCP discovery (npx)
+├── assets/
 ├── docs/
 ├── skills/                      # Agent Skills (Directory snapshot)
 ├── src/                         # MCP server
-├── mcp.json                     # local plugin MCP entry (dev:link may rewrite)
+├── mcp.json                     # plugin MCP entry (npx; same shape as .mcp.json)
 ├── package.json
 └── README.md
 ```
 
-`mcp.publish.json` / `mcp.dev.json` are templates for unlink/link. Do not commit a `dev:link`-shaped `mcp.json`.
+`mcp.json` stays the unpinned npx shape. Do not point it at `dist/`.
 
 ---
 
 <br>
 
-## Modes
-
-| Mode | Purpose | How |
-|------|---------|-----|
-| **Developer** | Iterate this repo (tools + plugin skills) | `npm run dev:link` |
-| **Consumer-like** | Behave like a Directory / npx user on this machine | `npm run dev:unlink` |
+## Build
 
 ```bash
-npm run dev:status
-```
-
-After link or unlink: **reload Cursor**.
-
----
-
-<br>
-
-## Developer mode
-
-`npm run dev:link`:
-
-1. Symlinks this repo to `~/.cursor/plugins/local/clockify-agent-plugin-dev` (not `clockify-agent-plugin`, so the published plugin id does not collide)
-2. Points repo `mcp.json` at local `node dist/index.js` for the local plugin (does not rewrite `.mcp.json`)
-3. Writes **project** `.cursor/mcp.json` with server id **`clockify-agent-plugin-dev`**
-4. Removes local-dist Clockify entries from `~/.cursor/mcp.json`
-
-```bash
+npm install
 npm run build
-# reload Cursor
 ```
 
-Verify: Plugins → `clockify-agent-plugin-dev` (skills via `/`); MCP → `clockify-agent-plugin-dev` green. This is not a consumer-install proof. Pre-allow tools as `clockify-agent-plugin-dev:*` (not `clockify-agent-plugin:*`) — [use.md](./use.md#pre-enable-clockify-tools).
+`dist/` and `node_modules/` are normal TypeScript / npm artifacts. They are gitignored. The sandbox does **not** get its own `dist/` — it runs this checkout’s build.
 
-This checkout may use a gitignored `.env` with **only** `CLOCKIFY_API_KEY` for `dev:link` (`envFile`) and `smoke:live`. Pin the workspace in each repo's `.clockify/config.yml` (via `/clockify-init`). The server does not auto-load `.env`.
-
----
-
-<br>
-
-## Consumer-like mode
-
-`npm run dev:unlink`:
-
-1. Removes `clockify-agent-plugin-dev` and legacy `clockify` / `clockify-dev` local plugin symlinks
-2. Restores repo `mcp.json` to publish/npx shape (`mcp.publish.json`)
-3. Clears this project's `.cursor/mcp.json`
-4. Strips local-dist Clockify servers from `~/.cursor/mcp.json`
-
-Reload, then install from [cursor.directory](https://cursor.directory) or configure npx as a subscriber would.
+A gitignored `.env` with **only** `CLOCKIFY_API_KEY` is enough for sandbox MCP (`envFile`) and `smoke:live`. Pin the workspace in each test repo’s `.clockify/config.yml` (via `/clockify-init`). The server does not auto-load `.env`.
 
 ---
 
@@ -101,34 +60,47 @@ Reload, then install from [cursor.directory](https://cursor.directory) or config
 
 ## Sandbox
 
-Test skills/init without mutating this repo:
+A disposable temp repo that points at this checkout’s `dist/`. It does **not** rewrite `~/.cursor/mcp.json` or this repo’s `mcp.json`.
 
 ```bash
-npm run sandbox           # ~/workspaces/clockify-agent-plugin-sandbox
-npm run sandbox:teardown
+npm run build
+npm run install:cursor -- --sandbox
 ```
 
-- Skills symlinked from this checkout
-- MCP `clockify-agent-plugin-dev` → this checkout's `dist` + `.env`
-- `CLOCKIFY_CONFIG_ROOT` = the sandbox
+Prints an absolute path under `$TMPDIR/clockify-agent-plugin-sandbox`. Open that folder in a **separate** Cursor window.
 
-Project MCP often starts **disabled** until you enable it under Customize → MCP.
+| What | Where |
+|------|--------|
+| Skills | sandbox `.cursor/skills/` → this checkout’s `skills/` |
+| MCP | sandbox `.cursor/mcp.json` → `dist/index.js` + checkout `.env` |
+| Config | `CLOCKIFY_CONFIG_ROOT` = the sandbox |
+
+Project MCP often starts **disabled**. Enable `clockify-agent-plugin` under Customize → MCP.
+
+After `src/` changes: `npm run build` in this checkout, then reload the sandbox window.
+
+```bash
+npm run install:cursor -- --sandbox --teardown
+```
+
+OS temp may also vanish on reboot. Re-run `--sandbox` if the folder is gone.
+
+This is not a consumer install. Do not treat a green sandbox MCP as proof that npx / Directory works.
 
 ---
 
 <br>
 
-## Mental model
+## Consumer-like install
 
-```text
-Directory / npx subscriber     Developer on same machine
-─────────────────────────      ─────────────────────────
-plugin id: clockify-agent-plugin   plugin id: clockify-agent-plugin-dev
-mcp: npx (unpinned npm)            mcp: dist/ via clockify-agent-plugin-dev
-skills: Directory Add snapshot     skills: from clockify-agent-plugin-dev plugin
+Behave like a subscriber on this machine:
+
+```bash
+npm run install:cursor -- --uninstall   # if you had a prior install
+npx -y -p @dustinestes/clockify-agent-plugin clockify-cursor-install
 ```
 
-Do not keep a user-scoped MCP pointed at this checkout's `dist` while validating a Directory or npx install. Do not commit a `dev:link`-shaped `mcp.json`.
+Or from this checkout: `npm run install:cursor`. Then open any empty repo (not this plugin checkout), reload Cursor, enable MCP, `/clockify-init`. Details: [install-cursor.md](./install-cursor.md).
 
 ---
 

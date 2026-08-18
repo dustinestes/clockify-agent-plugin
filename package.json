@@ -21,8 +21,6 @@
     "assets",
     "docs",
     ".clockify/config.yml.example",
-    "mcp.dev.json",
-    "mcp.publish.json",
     "scripts/install-cursor.mjs",
     "README.md",
     "CONTRIBUTING.md",
@@ -37,12 +35,7 @@
     "smoke:handshake": "tsx scripts/handshake.ts",
     "test:config": "tsx scripts/check-config.ts",
     "check:versions": "node scripts/check-versions.mjs",
-    "dev:status": "node scripts/dev-mode.mjs status",
-    "dev:link": "node scripts/dev-mode.mjs link",
-    "dev:unlink": "node scripts/dev-mode.mjs unlink",
     "install:cursor": "node scripts/install-cursor.mjs",
-    "sandbox": "node scripts/dev-mode.mjs sandbox",
-    "sandbox:teardown": "node scripts/dev-mode.mjs sandbox-teardown",
     "prepublishOnly": "npm run check:versions && npm run build"
   },
   "engines": {
