@@ -28,7 +28,7 @@ Root keys: `version`, `workspace_id`, `project`, `timer`, `manual`, `automated`.
 
 | Key | Purpose |
 |-----|---------|
-| `workspace_id` | Optional Clockify workspace pin. Env `CLOCKIFY_WORKSPACE_ID` overrides. Never put the API key here. |
+| `workspace_id` | Optional Clockify workspace pin (set during `/clockify-init`). Never put the API key here. |
 | `project.from` | `repo` (folder name) or `fixed` with `project.name` |
 | `*.description.from` | `prompt` (caller supplies the string) or `template` |
 | `*.description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |

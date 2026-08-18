@@ -159,10 +159,8 @@ function withFixture(run: (dir: string) => void): void {
   const dir = mkdtempSync(join(tmpdir(), "clockify-config-"));
   const prevPath = process.env.CLOCKIFY_CONFIG_PATH;
   const prevRoot = process.env.CLOCKIFY_CONFIG_ROOT;
-  const prevWorkspace = process.env.CLOCKIFY_WORKSPACE_ID;
   delete process.env.CLOCKIFY_CONFIG_PATH;
   delete process.env.CLOCKIFY_CONFIG_ROOT;
-  delete process.env.CLOCKIFY_WORKSPACE_ID;
   try {
     run(dir);
   } finally {
@@ -170,8 +168,6 @@ function withFixture(run: (dir: string) => void): void {
     else process.env.CLOCKIFY_CONFIG_PATH = prevPath;
     if (prevRoot === undefined) delete process.env.CLOCKIFY_CONFIG_ROOT;
     else process.env.CLOCKIFY_CONFIG_ROOT = prevRoot;
-    if (prevWorkspace === undefined) delete process.env.CLOCKIFY_WORKSPACE_ID;
-    else process.env.CLOCKIFY_WORKSPACE_ID = prevWorkspace;
     rmSync(dir, { recursive: true, force: true });
   }
 }
@@ -195,15 +191,6 @@ withFixture((dir) => {
   );
   assert.equal(loaded.config.timer.rounding.enabled, true);
   assert.equal(resolveConfigPathInRoot(dir), loaded.path);
-});
-
-withFixture((dir) => {
-  mkdirSync(join(dir, ".clockify"), { recursive: true });
-  writeFileSync(join(dir, ".clockify", "config.yml"), sampleYaml);
-  process.env.CLOCKIFY_WORKSPACE_ID = "ws_from_env";
-  const loaded = loadClockifyConfig(dir);
-  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
-  assert.equal(resolveConfiguredWorkspaceId(loaded.config), "ws_from_env");
 });
 
 const leftoverNameFrom = parseClockifyConfig({

@@ -125,7 +125,6 @@ function ensureDevShapedRepoMcp() {
         args: ["dist/index.js"],
         env: {
           CLOCKIFY_API_KEY: "${CLOCKIFY_API_KEY}",
-          CLOCKIFY_WORKSPACE_ID: "${CLOCKIFY_WORKSPACE_ID}",
         },
       },
     },

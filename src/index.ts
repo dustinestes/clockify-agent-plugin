@@ -213,7 +213,7 @@ server.registerTool(
         .string()
         .optional()
         .describe(
-          "Workspace ID. Defaults to CLOCKIFY_WORKSPACE_ID, else config.yml workspace_id, else the active workspace.",
+          "Workspace ID. Defaults to config.yml workspace_id, else the active workspace.",
         ),
       name: z.string().optional().describe("Optional project name filter."),
       archived: z

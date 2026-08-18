@@ -127,14 +127,13 @@ export class ClockifyClient {
 
     if (!candidate) {
       throw new ClockifyError(
-        "No Clockify workspace available. Set workspace_id in .clockify/config.yml, CLOCKIFY_WORKSPACE_ID, or create a workspace.",
+        "No Clockify workspace available. Set workspace_id in .clockify/config.yml (via /clockify-init) or create a workspace.",
         400,
         "",
       );
     }
 
-    // Validate configured IDs early — a typo in workspace_id / CLOCKIFY_WORKSPACE_ID
-    // is easy when copying from the browser URL and produces opaque 404s later.
+    // Validate configured IDs early — a typo in workspace_id is easy when copying
     if (explicit || this.defaultWorkspaceId) {
       const workspaces = await this.listWorkspaces();
       if (!workspaces.some((w) => w.id === candidate)) {
