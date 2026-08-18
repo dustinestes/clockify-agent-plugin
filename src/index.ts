@@ -18,12 +18,14 @@ import {
   gapFitStart,
   isTimerPastInactivity,
   latestCompletedEnd,
+  describeConfigDiscovery,
   loadClockifyConfig,
   overlapShouldProceed,
   prepareStartInstant,
   resolveConfiguredWorkspaceId,
   resolveEntryDescription,
   resolveProjectName,
+  type LoadedConfig,
   type TimerEntryMethod,
 } from "./config.js";
 
@@ -37,12 +39,48 @@ function requireApiKey(): string {
   return key;
 }
 
-function client(): ClockifyClient {
-  const loaded = loadClockifyConfig();
+const configRootField = z
+  .string()
+  .optional()
+  .describe(
+    "Absolute git toplevel of the repo that contains .clockify/config.yml. Resolve once per session with `git rev-parse --show-toplevel` from the working directory (open tabs are not required); reuse that string on later calls unless the repo or focused root changed. Do not pass a multi-root .code-workspace folder.",
+  );
+
+const CONFIG_ROOT_TOOL_HINT =
+  " Pass config_root as that repo's git toplevel when this MCP is user-scoped.";
+
+function loadConfig(configRoot?: string): LoadedConfig {
+  return loadClockifyConfig(process.cwd(), { configRoot });
+}
+
+function client(configRoot?: string): ClockifyClient {
+  const loaded = loadConfig(configRoot);
   return new ClockifyClient(
     requireApiKey(),
     resolveConfiguredWorkspaceId(loaded.config),
   );
+}
+
+function configMissPayload(loaded: LoadedConfig, configRoot?: string) {
+  return {
+    found: false as const,
+    path: loaded.path,
+    root: loaded.root,
+    tried: describeConfigDiscovery(configRoot),
+    hint: "No .clockify/config.yml found. Pass config_root as the git toplevel (git rev-parse --show-toplevel) of the repo that contains the file, or run /clockify-init.",
+  };
+}
+
+function configMissResult(loaded: LoadedConfig, configRoot?: string) {
+  return {
+    isError: true,
+    content: [
+      {
+        type: "text" as const,
+        text: JSON.stringify(configMissPayload(loaded, configRoot), null, 2),
+      },
+    ],
+  };
 }
 
 function textResult(data: unknown) {
@@ -77,8 +115,9 @@ function resolveDescription(
     issue_title?: string;
     github_label?: string;
   },
+  configRoot?: string,
 ): string | undefined {
-  const loaded = loadClockifyConfig();
+  const loaded = loadConfig(configRoot);
   const repo = resolveProjectName(loaded.config, loaded.root) ?? undefined;
   return resolveEntryDescription(loaded.config[method].description, {
     ...input,
@@ -146,12 +185,15 @@ server.registerTool(
   {
     title: "Get project Clockify config",
     description:
-      "Returns the effective .clockify/config.yml standards (per-method description, task, rounding, overlap, automation). Set CLOCKIFY_CONFIG_ROOT to the repo root if needed.",
-    inputSchema: {},
+      "Returns the effective .clockify/config.yml standards (per-method description, task, rounding, overlap, automation)." +
+      CONFIG_ROOT_TOOL_HINT,
+    inputSchema: {
+      config_root: configRootField,
+    },
   },
-  async () => {
+  async ({ config_root }) => {
     try {
-      const loaded = loadClockifyConfig();
+      const loaded = loadConfig(config_root);
       return textResult({
         found: loaded.found,
         path: loaded.path,
@@ -159,9 +201,10 @@ server.registerTool(
         projectName: resolveProjectName(loaded.config, loaded.root),
         workspaceId: resolveConfiguredWorkspaceId(loaded.config) ?? null,
         config: loaded.config,
+        tried: loaded.found ? undefined : describeConfigDiscovery(config_root),
         hint: loaded.found
           ? undefined
-          : "No .clockify/config.yml found. Add one via clockify-init, or set CLOCKIFY_CONFIG_ROOT / CLOCKIFY_CONFIG_PATH.",
+          : configMissPayload(loaded, config_root).hint,
       });
     } catch (error) {
       return errorResult(error);
@@ -174,12 +217,15 @@ server.registerTool(
   {
     title: "Get Clockify user",
     description:
-      "Returns the authenticated Clockify user, including active and default workspace IDs.",
-    inputSchema: {},
+      "Returns the authenticated Clockify user, including active and default workspace IDs." +
+      CONFIG_ROOT_TOOL_HINT,
+    inputSchema: {
+      config_root: configRootField,
+    },
   },
-  async () => {
+  async ({ config_root }) => {
     try {
-      return textResult(await client().getUser());
+      return textResult(await client(config_root).getUser());
     } catch (error) {
       return errorResult(error);
     }
@@ -190,12 +236,16 @@ server.registerTool(
   "clockify_list_workspaces",
   {
     title: "List Clockify workspaces",
-    description: "Lists workspaces available to the authenticated user.",
-    inputSchema: {},
+    description:
+      "Lists workspaces available to the authenticated user." +
+      CONFIG_ROOT_TOOL_HINT,
+    inputSchema: {
+      config_root: configRootField,
+    },
   },
-  async () => {
+  async ({ config_root }) => {
     try {
-      return textResult(await client().listWorkspaces());
+      return textResult(await client(config_root).listWorkspaces());
     } catch (error) {
       return errorResult(error);
     }
@@ -207,8 +257,10 @@ server.registerTool(
   {
     title: "List Clockify projects",
     description:
-      "Lists projects in a workspace. Use to map a git repo or task to a Clockify project.",
+      "Lists projects in a workspace. Use to map a git repo or task to a Clockify project." +
+      CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       workspace_id: z
         .string()
         .optional()
@@ -222,10 +274,10 @@ server.registerTool(
         .describe("Include archived projects when true."),
     },
   },
-  async ({ workspace_id, name, archived }) => {
+  async ({ config_root, workspace_id, name, archived }) => {
     try {
       return textResult(
-        await client().listProjects(workspace_id, { name, archived }),
+        await client(config_root).listProjects(workspace_id, { name, archived }),
       );
     } catch (error) {
       return errorResult(error);
@@ -238,8 +290,10 @@ server.registerTool(
   {
     title: "Ensure Clockify project",
     description:
-      "Finds a project by name or creates it. Defaults to the repo name from .clockify/config.yml / folder when name omitted.",
+      "Finds a project by name or creates it. Defaults to the repo name from .clockify/config.yml / folder when name omitted." +
+      CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       name: z
         .string()
         .optional()
@@ -247,17 +301,22 @@ server.registerTool(
       workspace_id: z.string().optional().describe("Workspace ID override."),
     },
   },
-  async ({ name, workspace_id }) => {
+  async ({ config_root, name, workspace_id }) => {
     try {
-      const loaded = loadClockifyConfig();
+      const loaded = loadConfig(config_root);
       const resolved =
         name?.trim() || resolveProjectName(loaded.config, loaded.root);
+      if (!name?.trim() && !loaded.found) {
+        return configMissResult(loaded, config_root);
+      }
       if (!resolved) {
         throw new Error(
-          "Project name required (pass name, or add .clockify/config.yml / set CLOCKIFY_CONFIG_ROOT).",
+          "Project name required (pass name, or add .clockify/config.yml / pass config_root).",
         );
       }
-      return textResult(await client().ensureProject(resolved, workspace_id));
+      return textResult(
+        await client(config_root).ensureProject(resolved, workspace_id),
+      );
     } catch (error) {
       return errorResult(error);
     }
@@ -268,14 +327,16 @@ server.registerTool(
   "clockify_list_tags",
   {
     title: "List Clockify tags",
-    description: "Lists tags available in a workspace.",
+    description:
+      "Lists tags available in a workspace." + CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       workspace_id: z.string().optional().describe("Workspace ID override."),
     },
   },
-  async ({ workspace_id }) => {
+  async ({ config_root, workspace_id }) => {
     try {
-      return textResult(await client().listTags(workspace_id));
+      return textResult(await client(config_root).listTags(workspace_id));
     } catch (error) {
       return errorResult(error);
     }
@@ -286,15 +347,20 @@ server.registerTool(
   "clockify_list_tasks",
   {
     title: "List Clockify tasks",
-    description: "Lists tasks for a project (often mapped 1:1 to GitHub labels).",
+    description:
+      "Lists tasks for a project (often mapped 1:1 to GitHub labels)." +
+      CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       project_id: z.string().describe("Clockify project ID."),
       workspace_id: z.string().optional().describe("Workspace ID override."),
     },
   },
-  async ({ project_id, workspace_id }) => {
+  async ({ config_root, project_id, workspace_id }) => {
     try {
-      return textResult(await client().listTasks(project_id, workspace_id));
+      return textResult(
+        await client(config_root).listTasks(project_id, workspace_id),
+      );
     } catch (error) {
       return errorResult(error);
     }
@@ -306,17 +372,19 @@ server.registerTool(
   {
     title: "Ensure Clockify task",
     description:
-      "Finds a task by name under a project or creates it (e.g. sync a GitHub label).",
+      "Finds a task by name under a project or creates it (e.g. sync a GitHub label)." +
+      CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       project_id: z.string().describe("Clockify project ID."),
       name: z.string().describe("Task name (e.g. GitHub label name)."),
       workspace_id: z.string().optional().describe("Workspace ID override."),
     },
   },
-  async ({ project_id, name, workspace_id }) => {
+  async ({ config_root, project_id, name, workspace_id }) => {
     try {
       return textResult(
-        await client().ensureTask(project_id, name, workspace_id),
+        await client(config_root).ensureTask(project_id, name, workspace_id),
       );
     } catch (error) {
       return errorResult(error);
@@ -329,16 +397,18 @@ server.registerTool(
   {
     title: "Get running timer",
     description:
-      "Returns the currently running timer for the user, if any. Includes inactivity hint from .clockify/config.yml when configured.",
+      "Returns the currently running timer for the user, if any. Includes inactivity hint from .clockify/config.yml when configured." +
+      CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       workspace_id: z.string().optional().describe("Workspace ID override."),
     },
   },
-  async ({ workspace_id }) => {
+  async ({ config_root, workspace_id }) => {
     try {
-      const running = await client().getRunningTimer(workspace_id);
+      const running = await client(config_root).getRunningTimer(workspace_id);
       if (!running) return textResult({ running: false });
-      const loaded = loadClockifyConfig();
+      const loaded = loadConfig(config_root);
       const inactivity = loaded.config.automated.inactivity;
       const pastInactivity = isTimerPastInactivity(
         running.timeInterval.start,
@@ -366,8 +436,10 @@ server.registerTool(
   {
     title: "Start timer",
     description:
-      "Starts a new running timer. Optional start (ISO-8601) backdates the timer; omit for now. entry_method selects timer vs automated config (include_seconds, start rounding, overlap). Prefer stopping any existing timer first. When description.from is template, pass issue_number/issue_title if description is omitted.",
+      "Starts a new running timer. Optional start (ISO-8601) backdates the timer; omit for now. entry_method selects timer vs automated config (include_seconds, start rounding, overlap). Prefer stopping any existing timer first. When description.from is template, pass issue_number/issue_title if description is omitted." +
+      CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       workspace_id: z.string().optional().describe("Workspace ID override."),
       start: z
         .string()
@@ -404,6 +476,7 @@ server.registerTool(
     },
   },
   async ({
+    config_root,
     workspace_id,
     start,
     entry_method,
@@ -418,21 +491,28 @@ server.registerTool(
     billable,
   }) => {
     try {
+      const loaded = loadConfig(config_root);
+      if (!loaded.found) {
+        return configMissResult(loaded, config_root);
+      }
       const method: TimerEntryMethod = entry_method ?? "timer";
-      const loaded = loadClockifyConfig();
       const block = loaded.config[method];
-      const resolvedDescription = resolveDescription(method, {
-        description,
-        issue_number,
-        issue_title,
-        github_label,
-      });
+      const resolvedDescription = resolveDescription(
+        method,
+        {
+          description,
+          issue_number,
+          issue_title,
+          github_label,
+        },
+        config_root,
+      );
       const prepared = prepareStartInstant(
         start ?? new Date().toISOString(),
         block.include_seconds,
         block.rounding,
       );
-      const api = client();
+      const api = client(config_root);
       const nearby = await loadEntriesAround(
         api,
         workspace_id,
@@ -485,8 +565,10 @@ server.registerTool(
   {
     title: "Stop timer",
     description:
-      "Stops the currently running timer. Honors entry_method rounding (end only), include_seconds, and overlap.on_conflict.",
+      "Stops the currently running timer. Honors entry_method rounding (end only), include_seconds, and overlap.on_conflict." +
+      CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       workspace_id: z.string().optional().describe("Workspace ID override."),
       entry_method: z
         .enum(["timer", "automated"])
@@ -503,13 +585,18 @@ server.registerTool(
     },
   },
   async ({
+    config_root,
     workspace_id,
     entry_method,
     confirm_overlap,
     apply_rounding,
   }) => {
     try {
-      const api = client();
+      const loaded = loadConfig(config_root);
+      if (!loaded.found) {
+        return configMissResult(loaded, config_root);
+      }
+      const api = client(config_root);
       const running = await api.getRunningTimer(workspace_id);
       if (!running) {
         throw new ClockifyError(
@@ -520,7 +607,6 @@ server.registerTool(
       }
 
       const method: TimerEntryMethod = entry_method ?? "timer";
-      const loaded = loadClockifyConfig();
       const block = loaded.config[method];
       const rounding = {
         ...block.rounding,
@@ -580,8 +666,10 @@ server.registerTool(
   {
     title: "Create time entry",
     description:
-      "Creates a completed time entry with explicit start and end (ISO-8601). Never rounds. entry_method selects manual vs automated description/overlap. When overlap.on_conflict is prompt, retry with confirm_overlap: true to stack intervals.",
+      "Creates a completed time entry with explicit start and end (ISO-8601). Never rounds. entry_method selects manual vs automated description/overlap. When overlap.on_conflict is prompt, retry with confirm_overlap: true to stack intervals." +
+      CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       start: z.string().describe("Start time in ISO-8601 / yyyy-MM-ddThh:mm:ssZ."),
       end: z.string().describe("End time in ISO-8601 / yyyy-MM-ddThh:mm:ssZ."),
       workspace_id: z.string().optional().describe("Workspace ID override."),
@@ -604,6 +692,7 @@ server.registerTool(
     },
   },
   async ({
+    config_root,
     start,
     end,
     workspace_id,
@@ -619,16 +708,23 @@ server.registerTool(
     billable,
   }) => {
     try {
+      const loaded = loadConfig(config_root);
+      if (!loaded.found) {
+        return configMissResult(loaded, config_root);
+      }
       const method = entry_method ?? "manual";
-      const loaded = loadClockifyConfig();
       const onConflict = loaded.config[method].overlap.on_conflict;
-      const resolvedDescription = resolveDescription(method, {
-        description,
-        issue_number,
-        issue_title,
-        github_label,
-      });
-      const api = client();
+      const resolvedDescription = resolveDescription(
+        method,
+        {
+          description,
+          issue_number,
+          issue_title,
+          github_label,
+        },
+        config_root,
+      );
+      const api = client(config_root);
       const nearby = await loadEntriesAround(api, workspace_id, start, end);
       const overlaps = completedOverlaps(
         start,
@@ -660,18 +756,21 @@ server.registerTool(
   "clockify_list_time_entries",
   {
     title: "List time entries",
-    description: "Lists recent time entries for the authenticated user.",
+    description:
+      "Lists recent time entries for the authenticated user." +
+      CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       workspace_id: z.string().optional().describe("Workspace ID override."),
       start: z.string().optional().describe("Filter start (ISO-8601)."),
       end: z.string().optional().describe("Filter end (ISO-8601)."),
       page_size: z.number().int().min(1).max(200).optional(),
     },
   },
-  async ({ workspace_id, start, end, page_size }) => {
+  async ({ config_root, workspace_id, start, end, page_size }) => {
     try {
       return textResult(
-        await client().listTimeEntries({
+        await client(config_root).listTimeEntries({
           workspaceId: workspace_id,
           start,
           end,
@@ -689,14 +788,16 @@ server.registerTool(
   {
     title: "Today summary",
     description:
-      "Summarizes today's tracked time: total duration, entry count, and per-project totals.",
+      "Summarizes today's tracked time: total duration, entry count, and per-project totals." +
+      CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
+      config_root: configRootField,
       workspace_id: z.string().optional().describe("Workspace ID override."),
     },
   },
-  async ({ workspace_id }) => {
+  async ({ config_root, workspace_id }) => {
     try {
-      const api = client();
+      const api = client(config_root);
       const entries = await api.listTimeEntries({
         workspaceId: workspace_id,
         start: startOfLocalDayIso(),

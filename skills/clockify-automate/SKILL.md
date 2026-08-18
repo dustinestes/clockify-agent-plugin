@@ -12,16 +12,21 @@ disable-model-invocation: true
 
 Mode on. This is not a second init. If config is already present, skip rewrite and only add Cursor glue.
 
+## Config root
+
+Pass `config_root` on Clockify MCP calls. If it is already known this session and still this repo, **reuse it** — do not run git before every tool. Otherwise resolve once with `git rev-parse --show-toplevel` from the working directory (open tabs are not required). In a multi-root workspace, git-toplevel the focused file/folder; if nothing is focused, ask or scan roots for `.clockify/config.yml`. Re-resolve when the focused root changes. Do not pass the `.code-workspace` parent.
+
 ## Init first (if needed)
 
-If `.clockify/config.yml` is missing (`clockify_get_config` `found: false`), **perform [`clockify-init`](../clockify-init/SKILL.md) in full**. It is idempotent. Then only the steps below. Do not restate or fork that skill’s config/ignore/project/task steps.
+If `.clockify/config.yml` is missing (`clockify_get_config` with `config_root` returns `found: false`), **perform [`clockify-init`](../clockify-init/SKILL.md) in full**. It is idempotent. Then only the steps below. Do not restate or fork that skill’s config/ignore/project/task steps.
 
 If config already exists, do not overwrite it. Continue with After init.
 
 ## After init
 
-1. `clockify_get_config` — read `automated.triggers`, `automated.inactivity`, `automated.task`, `automated.overlap`. If `automated.triggers` is empty, stop and point at `.clockify/config.yml.example`.
+1. `clockify_get_config` with `config_root` — read `automated.triggers`, `automated.inactivity`, `automated.task`, `automated.overlap`. If `automated.triggers` is empty, stop and point at `.clockify/config.yml.example`.
 2. Add or update `.cursor/rules/clockify-time.mdc` so the agent:
+   - Passes `config_root` on Clockify MCP calls: reuse the known git toplevel this session; re-resolve only if the folder or focused root changed (cwd first, not the open file)
    - Passes `entry_method: automated` on `clockify_start_timer` / `clockify_stop_timer`
    - On starting work / planning for an issue → start with issue fields; honor `task.from` / `task.if_missing` (create Clockify tasks from labels; if no label, no task)
    - On finishing issue work, shipping a PR, or closing/abandoning a PR in-session → stop
@@ -38,6 +43,13 @@ Safe to re-run: update the rule; do not duplicate hook entries.
 
 ```markdown
 # Clockify time (from .clockify/config.yml automated block)
+
+On Clockify MCP calls, pass config_root as the git toplevel. If already
+known this session and still this repo, reuse it; do not run git before
+every tool. Otherwise `git rev-parse --show-toplevel` from the working
+directory (open tabs are not required). In a multi-root workspace,
+git-toplevel the focused path; re-resolve when focus moves to another
+root. Do not pass the .code-workspace parent.
 
 When the user starts work or planning on a GitHub issue, start a Clockify timer
 with entry_method: automated (issue_number + issue_title; project/task from

@@ -73,7 +73,7 @@ Prints an absolute path under `$TMPDIR/clockify-agent-plugin-sandbox`. Open that
 |------|--------|
 | Skills | sandbox `.cursor/skills/` → this checkout’s `skills/` |
 | MCP | sandbox `.cursor/mcp.json` → `dist/index.js` + checkout `.env` |
-| Config | `CLOCKIFY_CONFIG_ROOT` = the sandbox |
+| Config | `CLOCKIFY_CONFIG_ROOT` = the sandbox (consumer path is tool arg `config_root`; see [config.md](./config.md)) |
 
 Project MCP often starts **disabled**. Enable `clockify-agent-plugin` under Customize → MCP.
 
@@ -108,11 +108,11 @@ Or from this checkout: `npm run install:cursor`. Then open any empty repo (not t
 
 ## MCP tools
 
-The agent calls these; people use skills. Listed here for handshake tests and allowlists (`clockify-agent-plugin:*`).
+The agent calls these; people use skills. Listed here for handshake tests and allowlists (`clockify-agent-plugin:*`). User-scoped MCP should pass `config_root` (git toplevel) on each call — [config.md](./config.md#which-repo-config_root).
 
 | Tool | Purpose |
 |------|---------|
-| `clockify_get_config` | Effective `.clockify/config.yml` standards |
+| `clockify_get_config` | Effective `.clockify/config.yml` standards (miss payload includes `tried` paths) |
 | `clockify_get_user` | Authenticated user + workspace IDs |
 | `clockify_list_workspaces` | List workspaces |
 | `clockify_list_projects` | List / filter projects |

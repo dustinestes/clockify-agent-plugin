@@ -25,6 +25,40 @@ Unofficial agent plugin for [Clockify](https://clockify.me): [MCP](https://model
 
 <br>
 
+## Features
+
+| Feature                                 | Description                                                                                   | Documentation                                                |
+|-----------------------------------------|-----------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| Easy Installation | Single user-scoped MCP server utilizing a single Clockify API key                           | [Config](docs/config.md)                                     |
+| Granular Repo Integration | Initialize and configure on a per-repo basis      | [Config](docs/config.md)                                     |
+| Easy Uninstallation  | Skills and scripts rollback changes with guards to prevent overreach or harm | [Use](docs/use.md) |
+| Good Hygiene                     | Plugin artifacts are gitignored by default                                                | [Config: git hygiene](docs/config.md#git-hygiene)            |
+| Three Time Entry Methods                | Running timer, explicit start/stop times, automated using workflow triggers               | [schema](docs/schema/config.yml.md)                          |
+| IDE Layouts                          | Supports: single-window, multi-window, multi-root code workspace | [Config: which repo](docs/config.md#which-repo-config_root)  |
+| Customize Time Entry                     | Configure nearest/up/down rounding, start/stop, increment, minimums, include seconds    | [schema: rounding](docs/schema/config.yml.md#rounding)       |
+| Overlap guards                          | Handle overlapping time entries based on config                                 | [schema: overlap](docs/schema/config.yml.md#overlap)         |
+| Git repo ↔ Clockify project             | Set project repo name as Clockify project; 1:1 match on both surfaces                          | [`/clockify-init`](skills/clockify-init/SKILL.md)            |
+| GitHub labels ↔ Clockify tasks          | Set github labels as Clockify tasks; 1:1 match on both surfaces                                                        | [schema](docs/schema/config.yml.md)                          |
+| Description templates                   | Use tokenized string with github properties or have the agent prompt you              | [schema](docs/schema/config.yml.md#description-placeholders) |
+| Timer Runaway Prevention  | Stop a timer after inactivity to prevent timer runaway                                  | [schema: inactivity](docs/schema/config.yml.md#inactivity)   |
+
+---
+
+<br>
+
+## How it works
+
+Two modes. Both use the same Clockify project. Clockify still allows only **one running timer**.
+
+| Mode | How time gets in | Skills |
+|------|------------------|--------|
+| **Manual** | You (or the agent, when you ask) start/stop a timer or log a completed range | After `/clockify-init`: start-timer, stop-timer, enter-time, status, summarize |
+| **Automated** | Agent follows Cursor rules/hooks from `automated.triggers` (issue/PR events in session) | `/clockify-automate` on; `/clockify-unautomate` back to manual |
+
+---
+
+<br>
+
 ## Getting started
 
 ### Install the plugin (once per machine)
@@ -42,19 +76,6 @@ Credentials, allowlists, and non-Cursor hosts: [docs/use.md](docs/use.md).
 2. Optional: run `/clockify-automate` so the agent starts/stops timers from `automated.triggers` (issues/PRs).
 
 To undo a repo without uninstalling the plugin: [docs/use.md](docs/use.md#remove-clockify-from-a-repo).
-
----
-
-<br>
-
-## How it works
-
-Two modes. Both use the same Clockify project. Clockify still allows only **one running timer**.
-
-| Mode | How time gets in | Skills |
-|------|------------------|--------|
-| **Manual** | You (or the agent, when you ask) start/stop a timer or log a completed range | After `/clockify-init`: start-timer, stop-timer, enter-time, status, summarize |
-| **Automated** | Agent follows Cursor rules/hooks from `automated.triggers` (issue/PR events in session) | `/clockify-automate` on; `/clockify-unautomate` back to manual |
 
 ---
 
