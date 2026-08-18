@@ -26,12 +26,26 @@ Workspace ID is **not** set at install time. Each repo chooses a Clockify worksp
 ### Options
 
 ```bash
-clockify-cursor-install --help       # usage
-clockify-cursor-install --dry-run    # show planned changes, write nothing
-clockify-cursor-install --uninstall   # remove symlinks + MCP entry
+clockify-cursor-install --help                 # usage
+clockify-cursor-install --dry-run              # show planned changes, write nothing
+clockify-cursor-install --uninstall            # remove symlinks + MCP entry
+clockify-cursor-install --sandbox              # maintainer: temp repo → checkout dist/
+clockify-cursor-install --sandbox --teardown   # remove that temp repo
 ```
 
 From a plugin checkout: `npm run install:cursor`
+
+### Maintainer sandbox
+
+Play against this checkout’s `dist/` in a disposable temp repo. Does **not** rewrite `~/.cursor/mcp.json`.
+
+```bash
+npm run build
+npm run install:cursor -- --sandbox
+npm run install:cursor -- --sandbox --teardown
+```
+
+Open the printed `$TMPDIR` path in a separate Cursor window. See [develop.md](./develop.md#sandbox).
 
 ### After install
 

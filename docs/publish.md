@@ -64,7 +64,7 @@ People who already clicked Add still have the old skill snapshot until they Add 
 
 Public repo: [dustinestes/clockify-agent-plugin](https://github.com/dustinestes/clockify-agent-plugin). Tags are `v` plus the shared version (`v0.1.0`). GitHub redirects the old `clockify-mcp-server` URL.
 
-`npm run dev:unlink` before you commit or cut a release so `mcp.json` stays npx-shaped. Do not commit a `dev:link` checkout.
+Leave `mcp.json` and `.mcp.json` as unpinned npx. Do not point them at `dist/`.
 
 ### Topics
 
@@ -80,7 +80,7 @@ One shared version: `package.json`, `plugin.json`, and `.cursor-plugin/plugin.js
 
 `@dustinestes/clockify-mcp-server@0.1.0` is leftover on npm under the old name. Do **not** npx that. First CI publish of **`@dustinestes/clockify-agent-plugin`** can be `0.1.0` (this tree) via GitHub Release `v0.1.0`.
 
-1. `npm run dev:unlink`.
+1. Confirm `mcp.json` and `.mcp.json` are still the unpinned npx shape.
 2. Bump the three manifests (and lockfile) together. Merge to `main`.
 3. `gh release create vX.Y.Z --generate-notes` (not a draft, not a prerelease).
 4. [`.github/workflows/publish.yml`](../.github/workflows/publish.yml) runs on `release: published` and publishes npm (next section).
@@ -96,7 +96,7 @@ Do not auto-bump on merge. Do not publish from tag-push alone (a tag without a p
 
 Package: [`@dustinestes/clockify-agent-plugin`](https://www.npmjs.com/package/@dustinestes/clockify-agent-plugin). This is what Directory users actually run.
 
-Keep `.mcp.json` and `mcp.publish.json` **unpinned** (`npx -y @dustinestes/clockify-agent-plugin`, no `@1.2.3`) so each Cursor start resolves latest npm. `dev:link` rewrites repo `mcp.json` for local plugin testing. It must not touch `.mcp.json`.
+Keep `.mcp.json` and `mcp.json` **unpinned** (`npx -y @dustinestes/clockify-agent-plugin`, no `@1.2.3`) so each Cursor start resolves latest npm. Do not rewrite them to a local `dist/` path. Play against a checkout build with `clockify-cursor-install --sandbox` ([develop.md](./develop.md#sandbox)).
 
 ```json
 {
@@ -148,11 +148,11 @@ Platforms scan **paths**, not the README.
 
 | File | Role |
 |------|------|
-| `.mcp.json` | Directory MCP discovery (unpinned `npx`; never mutated by `dev:link`) |
+| `.mcp.json` | Directory MCP discovery (unpinned `npx`) |
 | `skills/*/SKILL.md` | Directory skill snapshot |
 | `.cursor-plugin/plugin.json` | Cursor plugin manifest (local install + variables) |
 | `plugin.json` | [Agent Plugins](https://agent-plugins.org) portable manifest |
-| `mcp.json` | MCP entry for the local Cursor plugin (`mcp.publish.json` after `dev:unlink`) |
+| `mcp.json` | MCP entry for the Cursor plugin (same unpinned npx shape) |
 
 There is no plugin-root `rules/*.mdc`, so Directory will not show a Rules Add button. Init may write a rule into the *consumer* repo.
 
@@ -162,8 +162,8 @@ There is no plugin-root `rules/*.mdc`, so Directory will not show a Rules Add bu
 
 One-time submit after the repo is public and npm `latest` matches `main` (skills on GitHub `HEAD` would otherwise pair with stale MCP tools). Directory does not read git tags or semver.
 
-1. `npm run dev:unlink`. Confirm `.mcp.json` is still the publish/npx shape (never a local `dist/` path).
-2. Development plugin id is `clockify-agent-plugin-dev` (`npm run dev:link`). For a clean subscriber check use `npm run dev:unlink`, reload, then install from Directory or wire npx.
+1. Confirm `.mcp.json` is still the publish/npx shape (never a local `dist/` path).
+2. For a clean subscriber check, use `clockify-cursor-install` (or npx published), not `--sandbox`.
 3. Listing copy must state this is an **unofficial** third-party connector (not affiliated with Clockify/Cake.com). Public title **Clockify Agent Plugin**; plugin id `clockify-agent-plugin`. If the form auto-fills `clockify`, override it.
 4. Submit at [cursor.directory/plugins/new](https://cursor.directory/plugins/new): sign in, paste `https://github.com/dustinestes/clockify-agent-plugin`. Directory auto-detects `.mcp.json` and `skills/*/SKILL.md`. It does **not** pick up `.cursor/skills/` (maintainer skills).
 5. Wait for the automated safety scan (`safe`). The listing appears when it passes.
