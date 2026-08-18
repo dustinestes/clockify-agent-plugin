@@ -4,7 +4,8 @@
   "description": "Unofficial Clockify time tracking for coding sessions - MCP tools plus workflow skills. Not affiliated with Clockify/Cake.com.",
   "type": "module",
   "bin": {
-    "clockify-agent-plugin": "dist/index.js"
+    "clockify-agent-plugin": "dist/index.js",
+    "clockify-cursor-install": "scripts/install-cursor.mjs"
   },
   "main": "./dist/index.js",
   "publishConfig": {
@@ -22,6 +23,7 @@
     ".clockify/config.yml.example",
     "mcp.dev.json",
     "mcp.publish.json",
+    "scripts/install-cursor.mjs",
     "README.md",
     "CONTRIBUTING.md",
     "LICENSE"
@@ -38,6 +40,7 @@
     "dev:status": "node scripts/dev-mode.mjs status",
     "dev:link": "node scripts/dev-mode.mjs link",
     "dev:unlink": "node scripts/dev-mode.mjs unlink",
+    "install:cursor": "node scripts/install-cursor.mjs",
     "sandbox": "node scripts/dev-mode.mjs sandbox",
     "sandbox:teardown": "node scripts/dev-mode.mjs sandbox-teardown",
     "prepublishOnly": "npm run check:versions && npm run build"

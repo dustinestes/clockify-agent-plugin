@@ -41,6 +41,15 @@ function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
+function smokeWorkspaceId(): string | undefined {
+  for (const arg of process.argv.slice(2)) {
+    if (arg.startsWith("--workspace=")) {
+      return arg.slice("--workspace=".length).trim() || undefined;
+    }
+  }
+  return undefined;
+}
+
 async function main(): Promise<void> {
   loadDotEnv();
   const apiKey = process.env.CLOCKIFY_API_KEY?.trim();
@@ -49,7 +58,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const workspaceId = process.env.CLOCKIFY_WORKSPACE_ID?.trim();
+  const workspaceId = smokeWorkspaceId();
   const client = new ClockifyClient(apiKey, workspaceId);
   const log = (step: string, detail?: unknown) => {
     console.log(`✓ ${step}`);
@@ -83,7 +92,7 @@ async function main(): Promise<void> {
   if (workspaceId) {
     assert(
       workspaces.some((w) => w.id === workspaceId),
-      `CLOCKIFY_WORKSPACE_ID ${workspaceId} not in user's workspaces`,
+      `Workspace ${workspaceId} not in user's workspaces`,
     );
   }
 

@@ -105,8 +105,7 @@ Keep `.mcp.json` and `mcp.publish.json` **unpinned** (`npx -y @dustinestes/clock
       "command": "npx",
       "args": ["-y", "@dustinestes/clockify-agent-plugin"],
       "env": {
-        "CLOCKIFY_API_KEY": "${CLOCKIFY_API_KEY}",
-        "CLOCKIFY_WORKSPACE_ID": "${CLOCKIFY_WORKSPACE_ID}"
+        "CLOCKIFY_API_KEY": "${CLOCKIFY_API_KEY}"
       }
     }
   }
@@ -158,6 +157,8 @@ Platforms scan **paths**, not the README.
 There is no plugin-root `rules/*.mdc`, so Directory will not show a Rules Add button. Init may write a rule into the *consumer* repo.
 
 ### Cursor Directory
+
+**Primary consumer install:** [docs/install-cursor.md](../install-cursor.md) (`clockify-cursor-install` — skills + global MCP in one command). Directory is a secondary discovery path: its MCP button installs **MCP only** (no skills, no workspace picker). After merging MCP shape changes, owner **Edit** the listing so Directory re-parses GitHub `HEAD`.
 
 One-time submit after the repo is public and npm `latest` matches `main` (skills on GitHub `HEAD` would otherwise pair with stale MCP tools). Directory does not read git tags or semver.
 

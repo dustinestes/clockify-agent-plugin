@@ -20,6 +20,7 @@ Index for the unofficial Clockify Agent Plugin (MCP tools and skills).
 
 | Doc | Purpose | Audience |
 |-----|---------|-----|
+| [Install for Cursor](./install-cursor.md) | One-command setup (skills + MCP) | Anyone |
 | [Use](./use.md) | API key, allowlist, other hosts, remove from a repo | Anyone |
 | [Troubleshoot](./troubleshoot.md) | Node PATH, MCP not listed, idle agent | Anyone |
 | [Config](./config.md) | Init, gitignore, where the server looks | Anyone |

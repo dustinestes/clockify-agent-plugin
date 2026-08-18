@@ -2,7 +2,7 @@
 # Init writes this as `.clockify/config.yml` in the consumer repo (or copy manually).
 # Personal by default — see docs/config.md (git hygiene). Fields: docs/schema/config.yml.md. Never put API keys here.
 version: 1
-# Optional Clockify workspace pin (not the git project). Env CLOCKIFY_WORKSPACE_ID overrides.
+# Optional Clockify workspace pin (not the git project). Set during /clockify-init.
 # workspace_id: 64abc...
 project:
   from: repo

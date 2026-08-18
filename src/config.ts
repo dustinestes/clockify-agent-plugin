@@ -253,12 +253,10 @@ function parseConfigFile(path: string): ClockifyConfig {
   return parseClockifyConfig(raw, path);
 }
 
-/** Env `CLOCKIFY_WORKSPACE_ID` wins; else yaml `workspace_id`; else unset (Clockify default). */
+/** Repo yaml `workspace_id`, else unset (Clockify active/default workspace). */
 export function resolveConfiguredWorkspaceId(
   config: ClockifyConfig,
 ): string | undefined {
-  const fromEnv = process.env.CLOCKIFY_WORKSPACE_ID?.trim();
-  if (fromEnv) return fromEnv;
   return config.workspace_id;
 }
 

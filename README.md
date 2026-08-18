@@ -30,15 +30,15 @@ Unofficial agent plugin for [Clockify](https://clockify.me): [MCP](https://model
 ### Install the plugin (once per machine)
 
 1. Create a Clockify API key (Preferences → Advanced → Manage API Keys).
-2. Install **Clockify Agent Plugin** from [cursor.directory](https://cursor.directory) (Add to Cursor), or wire `npx -y @dustinestes/clockify-agent-plugin` in MCP config.
-3. Set `CLOCKIFY_API_KEY` when prompted; confirm **Customize → Plugins** shows **Clockify Agent Plugin** and **Customize → MCP** shows **clockify-agent-plugin** enabled.
+2. Run **`npx -y -p @dustinestes/clockify-agent-plugin clockify-cursor-install`** — installs skills + global MCP ([docs/install-cursor.md](docs/install-cursor.md)). Optional: Directory MCP button (MCP only; [caveats](docs/install-cursor.md#cursordirectory-optional)).
+3. Reload Cursor; confirm **Customize → MCP** shows **clockify-agent-plugin** enabled.
 4. Optional: [pre-allow Clockify MCP tools](docs/use.md#pre-enable-clockify-tools) so agents do not stall on an Allow / Always allow prompt mid-run.
 
 Credentials, allowlists, and non-Cursor hosts: [docs/use.md](docs/use.md).
 
 ### Add Clockify to a repo (each repo)
 
-1. In that repo, run `/clockify-init` — config, ignore, Clockify project, optional GitHub label→task sync. After this you can enter time with skills (start/stop timer, enter-time, summarize).
+1. In that repo, run `/clockify-init` — choose Clockify workspace, write config, ignore, Clockify project, optional GitHub label→task sync. After this you can enter time with skills (start/stop timer, enter-time, summarize).
 2. Optional: run `/clockify-automate` so the agent starts/stops timers from `automated.triggers` (issues/PRs).
 
 To undo a repo without uninstalling the plugin: [docs/use.md](docs/use.md#remove-clockify-from-a-repo).

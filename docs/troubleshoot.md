@@ -37,7 +37,7 @@ After changing config, reload Cursor. If MCP is red, open **Output → MCP Logs*
 |---------|----------------|
 | Server not listed under Customize → MCP | Unloaded path; invalid json; Node not on PATH |
 | `CLOCKIFY_API_KEY is required` | Missing plugin / MCP `env` |
-| Workspace ID not found | Typo in config.yml `workspace_id` or `CLOCKIFY_WORKSPACE_ID` |
+| Workspace ID not found | Typo in `.clockify/config.yml` `workspace_id`; re-run `/clockify-init` to pick a workspace |
 | `npx -y @dustinestes/clockify-agent-plugin` fails | Node/npx not on PATH, or registry/network |
 | Agent sits idle after the first Clockify tool call | Waiting on MCP tool approval; [pre-enable tools](./use.md#pre-enable-clockify-tools) |
 
