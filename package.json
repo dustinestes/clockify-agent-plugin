@@ -1,6 +1,6 @@
 {
   "name": "@dustinestes/clockify-agent-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Unofficial Clockify time tracking for coding sessions - MCP tools plus workflow skills. Not affiliated with Clockify/Cake.com.",
   "type": "module",
   "bin": {
