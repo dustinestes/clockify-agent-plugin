@@ -3,7 +3,7 @@
 <h1>config.yml</h1>
 <br clear="both">
 
-Field contract for `.clockify/config.yml`: project identity plus per-method description, task, rounding, overlap, and automation. How the file gets on disk: [config.md](../config.md). Copy-paste source: [`.clockify/config.yml.example`](../../.clockify/config.yml.example). Never put API keys here.
+Field contract for `.clockify/config.yml`: project identity plus per-method description, task, rounding, overlap, and automation. How the file gets on disk and how the server finds it (`config_root`, Cursor layouts): [config.md](../config.md). Copy-paste source: [`.clockify/config.yml.example`](../../.clockify/config.yml.example). Never put API keys here.
 
 <br>
 

@@ -21,7 +21,7 @@ This writes **user-global** Cursor config:
 | MCP server | `~/.cursor/mcp.json` → `clockify-agent-plugin` via npx |
 | API key | Prompted, or `--api-key` / `CLOCKIFY_API_KEY` env |
 
-Workspace ID is **not** set at install time. Each repo chooses a Clockify workspace during `/clockify-init` (stored in `.clockify/config.yml`).
+Workspace ID is **not** set at install time. Each repo chooses a Clockify workspace during `/clockify-init` (stored in `.clockify/config.yml`). User MCP does not pin `CLOCKIFY_CONFIG_ROOT`; skills pass `config_root` ([config.md](./config.md#which-repo-config_root)).
 
 ### Options
 

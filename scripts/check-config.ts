@@ -227,6 +227,91 @@ withFixture((dir) => {
   assert.equal(loaded.root, dir);
 });
 
+withFixture((dir) => {
+  mkdirSync(join(dir, ".clockify"), { recursive: true });
+  writeFileSync(join(dir, ".clockify", "config.yml"), sampleYaml);
+  const loaded = loadClockifyConfig("/tmp", { configRoot: dir });
+  assert.equal(loaded.found, true);
+  assert.equal(loaded.root, dir);
+  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+});
+
+withFixture((dir) => {
+  const cwdDir = join(dir, "cwd-repo");
+  const rootDir = join(dir, "arg-repo");
+  mkdirSync(join(cwdDir, ".clockify"), { recursive: true });
+  mkdirSync(join(rootDir, ".clockify"), { recursive: true });
+  writeFileSync(
+    join(cwdDir, ".clockify", "config.yml"),
+    `version: 1\nworkspace_id: ws_from_cwd\n`,
+  );
+  writeFileSync(join(rootDir, ".clockify", "config.yml"), sampleYaml);
+  const loaded = loadClockifyConfig(cwdDir, { configRoot: rootDir });
+  assert.equal(loaded.found, true);
+  assert.equal(loaded.root, rootDir);
+  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+});
+
+withFixture((dir) => {
+  const envDir = join(dir, "env-repo");
+  const argDir = join(dir, "arg-repo");
+  mkdirSync(join(envDir, ".clockify"), { recursive: true });
+  mkdirSync(join(argDir, ".clockify"), { recursive: true });
+  writeFileSync(
+    join(envDir, ".clockify", "config.yml"),
+    `version: 1\nworkspace_id: ws_from_env\n`,
+  );
+  writeFileSync(join(argDir, ".clockify", "config.yml"), sampleYaml);
+  process.env.CLOCKIFY_CONFIG_ROOT = envDir;
+  const loaded = loadClockifyConfig("/tmp", { configRoot: argDir });
+  assert.equal(loaded.found, true);
+  assert.equal(loaded.root, argDir);
+  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+  const fromEnv = loadClockifyConfig("/tmp");
+  assert.equal(fromEnv.found, true);
+  assert.equal(fromEnv.root, envDir);
+  assert.equal(fromEnv.config.workspace_id, "ws_from_env");
+});
+
+withFixture((dir) => {
+  const pathDir = join(dir, "path-repo");
+  const argDir = join(dir, "arg-repo");
+  mkdirSync(join(pathDir, ".clockify"), { recursive: true });
+  mkdirSync(join(argDir, ".clockify"), { recursive: true });
+  const configPath = join(pathDir, ".clockify", "config.yml");
+  writeFileSync(configPath, sampleYaml);
+  writeFileSync(
+    join(argDir, ".clockify", "config.yml"),
+    `version: 1\nworkspace_id: ws_ignored_arg\n`,
+  );
+  process.env.CLOCKIFY_CONFIG_PATH = configPath;
+  const loaded = loadClockifyConfig("/tmp", { configRoot: argDir });
+  assert.equal(loaded.found, true);
+  assert.equal(loaded.root, pathDir);
+  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+});
+
+withFixture((dir) => {
+  const repoA = join(dir, "repo-a");
+  const repoB = join(dir, "repo-b");
+  mkdirSync(join(repoA, ".clockify"), { recursive: true });
+  mkdirSync(join(repoB, ".clockify"), { recursive: true });
+  writeFileSync(
+    join(repoA, ".clockify", "config.yml"),
+    `version: 1\nworkspace_id: ws_repo_a\n`,
+  );
+  writeFileSync(
+    join(repoB, ".clockify", "config.yml"),
+    `version: 1\nworkspace_id: ws_repo_b\n`,
+  );
+  const loadedA = loadClockifyConfig("/tmp", { configRoot: repoA });
+  const loadedB = loadClockifyConfig("/tmp", { configRoot: repoB });
+  assert.equal(loadedA.found, true);
+  assert.equal(loadedB.found, true);
+  assert.equal(loadedA.config.workspace_id, "ws_repo_a");
+  assert.equal(loadedB.config.workspace_id, "ws_repo_b");
+});
+
 const examplePath = join(
   dirname(fileURLToPath(import.meta.url)),
   "..",

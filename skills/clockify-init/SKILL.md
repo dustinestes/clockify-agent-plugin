@@ -16,13 +16,24 @@ Set up the repo contract so timer and enter-time tools share one yaml. Config is
 
 Optional next mode: [`clockify-automate`](../clockify-automate/SKILL.md) wires Cursor rules/hooks. Do not write those here.
 
+## Config root
+
+Pass `config_root` (absolute git toplevel) on Clockify MCP calls. If it is already known this session and still this repo, **reuse it** — do not run git before every tool. Otherwise resolve once:
+
+1. `git rev-parse --show-toplevel` from the working directory (no path argument). Open editor tabs are not required.
+2. If that fails, the same command from the folder this Cursor window opened.
+3. Multi-root `.code-workspace` only: git-toplevel the focused file or explorer folder.
+4. Still ambiguous: ask which root, or look for `.clockify/config.yml` under each root. Do not guess the `.code-workspace` parent.
+
+Re-resolve when the user switches folders or the focused root changes.
+
 ## Idempotency
 
 Re-runs are expected (including from `clockify-automate`). Treat existing setup as authoritative:
 
-1. Confirm MCP auth: `clockify_get_user` (fix if missing API key).
-2. Detect repo name (git root / folder name). Prefer `CLOCKIFY_CONFIG_ROOT` = workspace folder.
-3. If `.clockify/config.yml` exists (or `clockify_get_config` returns `found: true` at that path):
+1. Confirm MCP auth: `clockify_get_user` with `config_root` (fix if missing API key).
+2. Detect repo name from that git toplevel (folder name). Do not use Cursor’s workspace folder when it is a multi-root `.code-workspace` parent.
+3. If `.clockify/config.yml` exists (or `clockify_get_config` with `config_root` returns `found: true` at that path):
    - **Do not** rewrite config, `.managed-by-init`, or `.clockify/.gitignore` unless the user explicitly asks to reset/overwrite.
    - **Do not** re-prompt for `workspace_id` when config already exists unless the user asks to change it.
    - Only fill **missing** ignore pieces (step 9), then jump to verify + ensure (steps 11–14).
@@ -32,7 +43,7 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 
 ## First-time bootstrap
 
-5. `clockify_list_workspaces` — build a numbered menu and ask the user to choose (use **AskQuestion** when available):
+5. `clockify_list_workspaces` with `config_root` — build a numbered menu and ask the user to choose (use **AskQuestion** when available):
 
    ```text
    Choose the Clockify workspace for this repo:
@@ -58,11 +69,11 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
    ```
 
 10. If `.clockify/` is **already tracked** in git, warn and ask before `git rm --cached`; never force-add `.clockify/` to the index.
-11. `clockify_get_config` - confirm `found: true`, path under `.clockify/config.yml`, and expected `projectName`.
-12. `clockify_ensure_project` - create/find project matching the repo name.
+11. `clockify_get_config` with `config_root` — confirm `found: true`, path under `.clockify/config.yml`, and expected `projectName`. If `found: false`, the file is actually missing (user-scoped MCP cwd is not the repo).
+12. `clockify_ensure_project` with `config_root` — create/find project matching the repo name.
 13. Sync GitHub labels → Clockify tasks (when any method has `task.from: github_label`):
     - `gh label list --json name` (or GitHub API)
-    - For each label: `clockify_ensure_task` with `project_id` + label `name`
+    - For each label: `clockify_ensure_task` with `config_root`, `project_id` + label `name`
 14. Summarize: whether this was first-time vs already present, config path, **ignored by default**, how to opt in (delete the managed gitignore stanza and commit on purpose), project id, tasks created vs existing. Mention `clockify-automate` if they want agent-mediated start/stop.
 
 ## Do not

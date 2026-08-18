@@ -162,13 +162,8 @@ export function resolveConfigPathInRoot(root: string): string | null {
   return existsSync(canonical) ? canonical : null;
 }
 
-/** Walk upward from startDir looking for .git or `.clockify/`. */
+/** Walk upward from startDir looking for .git or `.clockify/`. Does not read env. */
 export function findProjectRoot(startDir = process.cwd()): string | null {
-  const envRoot = process.env.CLOCKIFY_CONFIG_ROOT?.trim();
-  if (envRoot && existsSync(envRoot)) {
-    return resolve(envRoot);
-  }
-
   let dir = resolve(startDir);
   for (;;) {
     if (isProjectRootMarker(dir)) {
@@ -180,8 +175,51 @@ export function findProjectRoot(startDir = process.cwd()): string | null {
   }
 }
 
+export type LoadClockifyConfigOptions = {
+  /** Project root that contains `.clockify/config.yml`. Wins over cwd and CLOCKIFY_CONFIG_ROOT. */
+  configRoot?: string;
+};
+
+function loadFromKnownRoot(root: string): LoadedConfig {
+  const resolved = resolve(root);
+  const path = resolveConfigPathInRoot(resolved);
+  if (!path) {
+    return {
+      found: false,
+      path: join(resolved, CANONICAL_CONFIG_REL),
+      root: resolved,
+      config: defaultConfig(),
+    };
+  }
+  return {
+    found: true,
+    path,
+    root: resolved,
+    config: parseConfigFile(path),
+  };
+}
+
+/** Paths and env the loader considered. For get_config miss payloads. */
+export function describeConfigDiscovery(configRoot?: string): {
+  config_root: string | null;
+  CLOCKIFY_CONFIG_PATH: string | null;
+  CLOCKIFY_CONFIG_ROOT: string | null;
+  cwd: string;
+} {
+  return {
+    config_root: configRoot?.trim() || null,
+    CLOCKIFY_CONFIG_PATH: process.env.CLOCKIFY_CONFIG_PATH?.trim() || null,
+    CLOCKIFY_CONFIG_ROOT: process.env.CLOCKIFY_CONFIG_ROOT?.trim() || null,
+    cwd: process.cwd(),
+  };
+}
+
+/**
+ * Discovery order: CLOCKIFY_CONFIG_PATH, options.configRoot, CLOCKIFY_CONFIG_ROOT, walk from startDir.
+ */
 export function loadClockifyConfig(
   startDir = process.cwd(),
+  options?: LoadClockifyConfigOptions,
 ): LoadedConfig {
   const explicit = process.env.CLOCKIFY_CONFIG_PATH?.trim();
   if (explicit) {
@@ -201,6 +239,16 @@ export function loadClockifyConfig(
       root,
       config: parseConfigFile(path),
     };
+  }
+
+  const argRoot = options?.configRoot?.trim();
+  if (argRoot) {
+    return loadFromKnownRoot(argRoot);
+  }
+
+  const envRoot = process.env.CLOCKIFY_CONFIG_ROOT?.trim();
+  if (envRoot && existsSync(envRoot)) {
+    return loadFromKnownRoot(envRoot);
   }
 
   const root = findProjectRoot(startDir);
