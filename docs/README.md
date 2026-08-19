@@ -25,8 +25,9 @@ Index for the unofficial Clockify Agent Plugin (MCP tools and skills).
 | [Troubleshoot](./troubleshoot.md) | Node PATH, MCP not listed, idle agent | Anyone |
 | [Config](./config.md) | Init, gitignore, `config_root`, Cursor layouts, discovery and reuse | Anyone |
 | [config.yml](./schema/config.yml.md) | Field contract for `.clockify/config.yml` | Anyone |
-| [Develop](./develop.md) | Build, `--sandbox`, MCP tool names | Maintainers |
+| [Develop](./develop.md) | Build, Validation, `--sandbox`, MCP tool names | Maintainers |
 | [Publish](./publish.md) | GitHub Release → npm, cursor.directory | Maintainers |
+| [Structure](./structure.md) | Repo layout | Maintainers |
 | [Contributing](../CONTRIBUTING.md) | PRs and where the other maintainer docs live | Maintainers |
 
 ---
