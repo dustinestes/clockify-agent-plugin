@@ -10,7 +10,6 @@
  */
 import { execFileSync } from "node:child_process";
 import {
-  cpSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -328,8 +327,6 @@ function createSandbox(dryRun) {
 
   const distEntry = join(root, "dist", "index.js");
   const envFile = join(root, ".env");
-  const example = join(root, ".clockify", "config.yml.example");
-  const sandboxConfig = join(sandboxRoot, ".clockify", "config.yml");
   const node = whichNode();
 
   console.log("Planned sandbox:\n");
@@ -338,11 +335,6 @@ function createSandbox(dryRun) {
     console.log(`  [link] ${join(sandboxRoot, ".cursor", "skills", name)} -> ${join(root, "skills", name)}`);
   }
   console.log(`  [mcp]  ${join(sandboxRoot, ".cursor", "mcp.json")} → ${distEntry}`);
-  if (existsSync(sandboxConfig)) {
-    console.log(`  [skip] ${sandboxConfig} (already present)`);
-  } else if (existsSync(example)) {
-    console.log(`  [copy] ${example} -> ${sandboxConfig}`);
-  }
   console.log("");
 
   if (!existsSync(distEntry)) {
@@ -366,11 +358,6 @@ function createSandbox(dryRun) {
     symlinkSync(join(root, "skills", name), dest);
   }
 
-  if (!existsSync(sandboxConfig) && existsSync(example)) {
-    mkdirSync(join(sandboxRoot, ".clockify"), { recursive: true });
-    cpSync(example, sandboxConfig);
-  }
-
   writeJson(join(sandboxRoot, ".cursor", "mcp.json"), {
     mcpServers: {
       [serverId]: {
@@ -379,6 +366,7 @@ function createSandbox(dryRun) {
         args: [distEntry],
         envFile,
         env: {
+          CLOCKIFY_API_KEY: "insert_your_key_here",
           CLOCKIFY_CONFIG_ROOT: sandboxRoot,
         },
       },
@@ -394,8 +382,8 @@ Disposable workspace for playing with Clockify Agent Plugin changes from:
 \`${root}\`
 
 - Skills: symlinked from that checkout (should appear under \`/\`)
-- MCP: \`${serverId}\` → \`dist/index.js\` + checkout \`.env\`
-- Config root: this sandbox (safe to write \`.clockify/config.yml\` / rules here)
+- MCP: \`${serverId}\` → \`dist/index.js\` (set \`CLOCKIFY_API_KEY\` in \`.cursor/mcp.json\`)
+- No \`.clockify/config.yml\` until \`/clockify-init\`
 
 This is not a consumer install. Global Cursor MCP stays npx / \`clockify-cursor-install\`.
 

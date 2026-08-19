@@ -125,6 +125,8 @@ Sandbox (`clockify-cursor-install --sandbox`) already sets env `CLOCKIFY_CONFIG_
 
 <br>
 
+---
+
 <strong>Clockify Agent Plugin</strong>
 <div align="right">
 

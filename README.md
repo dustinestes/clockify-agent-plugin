@@ -52,14 +52,31 @@ Two modes. Both use the same Clockify project. Clockify still allows only **one 
 
 | Mode | How time gets in | Skills |
 |------|------------------|--------|
-| **Manual** | You (or the agent, when you ask) start/stop a timer or log a completed range | After `/clockify-init`: start-timer, stop-timer, enter-time, status, summarize |
-| **Automated** | Agent follows Cursor rules/hooks from `automated.triggers` (issue/PR events in session) | `/clockify-automate` on; `/clockify-unautomate` back to manual |
+| **Manual** | You (or the agent, when you ask) start/stop a timer or log a completed range | `/clockify-start-timer`, `clockify-stop-timer`, `/clockify-enter-time` |
+| **Automated** | Agent follows Cursor rules/hooks from `automated.triggers` (issue/PR events in session) | `/clockify-automate` on; `/clockify-unautomate` revert to manual |
 
 ---
 
 <br>
 
 ## Getting started
+
+### Prerequisites
+
+| Need | Why |
+|------|-----|
+| Node 18+ (npm / npx) | Install script and the MCP `npx` command |
+| Cursor (or AI Agent/IDE) | Run skills and MCP |
+| Clockify API key | MCP sevrver connection to Clockify |
+
+If Cursor cannot find `node` / `npx`, see [troubleshoot](docs/troubleshoot.md#node-not-found).
+
+#### Additional Prerequisites
+
+- [Develop Prerequisites](docs/develop.md#prerequisites)
+- [Publish Prerequisites](docs/publish.md#prerequisites)
+
+<br>
 
 ### Install the plugin (once per machine)
 

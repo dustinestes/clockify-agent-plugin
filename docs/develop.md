@@ -3,41 +3,40 @@
 <h1>Develop</h1>
 <br clear="both">
 
-How to change this plugin. Edit and build in this checkout. Play against those changes in a disposable sandbox. Test a consumer install with the same script subscribers use.
+How to change this plugin. Edit and build in this checkout. Validate against those changes in a disposable [sandbox](#sandbox). Test a consumer install with the same script subscribers use.
 
 <br>
 
 ## Contents
 
 - [Contents](#contents)
-- [Repo layout](#repo-layout)
+- [Prerequisites](#prerequisites)
 - [Build](#build)
-- [Sandbox](#sandbox)
-- [Consumer-like install](#consumer-like-install)
-- [MCP tools](#mcp-tools)
+- [Validate](#validate)
+  - [Scripted](#scripted)
+  - [Manual](#manual)
+- [Publish](#publish)
+- [Appendix](#appendix)
+  - [Sandbox](#sandbox)
+    - [Supported Commands and Parameters](#supported-commands-and-parameters)
+    - [What Sandbox Does](#what-sandbox-does)
+  - [Test prompts](#test-prompts)
 
 ---
 
 <br>
 
-## Repo layout
+## Prerequisites
 
-Directory scans `.mcp.json` and `skills/*/SKILL.md` only. It does not read this section.
+Also meet [Getting started](../README.md#getting-started) (Node 18+, Cursor, Clockify API key) prerequisites. Skip this section if this checkout already builds.
 
-```text
-clockify-agent-plugin/
-├── .cursor-plugin/plugin.json   # Cursor plugin + variables
-├── .mcp.json                    # Directory MCP discovery (npx)
-├── assets/
-├── docs/
-├── skills/                      # Agent Skills (Directory snapshot)
-├── src/                         # MCP server
-├── mcp.json                     # plugin MCP entry (npx; same shape as .mcp.json)
-├── package.json
-└── README.md
-```
+| Name | Description | Command |
+|------|-------------|---------|
+| Clone | Local checkout of this repo | `git clone https://github.com/dustinestes/clockify-agent-plugin.git` |
+| npm install | Install dependencies (including TypeScript) | `npm install` |
+| Checkout `.env` | API key for sandbox MCP (`envFile`) and `smoke:live`. The server does not auto-load `.env`. Consumers keep the key in user MCP env instead. | `printf 'CLOCKIFY_API_KEY=your_key_here\n' > .env` |
 
-`mcp.json` stays the unpinned npx shape. Do not point it at `dist/`.
+Pin the Clockify workspace ID in each test repo’s `.clockify/config.yml` (via `/clockify-init`), not in this checkout’s `.env`.
 
 ---
 
@@ -45,91 +44,155 @@ clockify-agent-plugin/
 
 ## Build
 
+Update the compiled files into `dist/` and `node_modules/`. These folders are referenced by the validation and sandbox operations to test locally before shipping changes. 
+
+> After `src/` changes: build again, then reload the window that is running the sandbox MCP.
+
 ```bash
-npm install
 npm run build
 ```
 
-`dist/` and `node_modules/` are normal TypeScript / npm artifacts. They are gitignored. The sandbox does **not** get its own `dist/` — it runs this checkout’s build.
-
-A gitignored `.env` with **only** `CLOCKIFY_API_KEY` is enough for sandbox MCP (`envFile`) and `smoke:live`. Pin the workspace in each test repo’s `.clockify/config.yml` (via `/clockify-init`). The server does not auto-load `.env`.
 
 ---
 
 <br>
 
-## Sandbox
+## Validate
+
+Test changes against local `dist/` without pushing to GitHub, publishing to npm, or cutting a release.
+
+### Scripted
+
+1. Create a fresh build: `npm run build`
+2. Setup the [sandbox](#sandbox): `npm run install:cursor -- --sandbox`
+3. Open Cursor: `cursor -n /tmp/clockify-agent-plugin-sandbox/`.
+4. Enable MCP server: `Customize → MCPs → clockify-agent-plugin-sandbox`
+5. Insert Clockify API Key: `clockify-agent-plugin-sandbox/mcp.json`
+6. Initialize plugin: `/clockify-init`
+   - Choose a clockify workspace ID when prompted
+7. Validate build: `use test prompts or custom validation`
+8. Tear down the [sandbox](#sandbox): `npm run install:cursor -- --sandbox --teardown`
+
+### Manual
+
+Use this only if you will not run the scripted validation setup. Pointing **user** MCP at `dist/` affects **every** Cursor window until you revert it.
+
+1. Create a fresh build: `npm run build`
+2. Edit user-scope `~/.cursor/mcp.json` and merge this into `mcpServers` (replace the path and key):
+
+    ```json
+    "clockify-agent-plugin": {
+      "command": "node",
+      "args": [
+        "/path/to/repo/clockify-agent-plugin/dist/index.js"
+      ],
+      "env": {
+        "CLOCKIFY_API_KEY": "insert_your_key_here"
+      }
+    }
+    ```
+
+3. Reload Cursor: `Command Palette → Developer: Reload Window`
+4. Enable MCP server: `Customize → MCPs → clockify-agent-plugin`
+5. Create temp folder: `mkdir /tmp/clockify-agent-plugin-validation`
+6. Open Cursor: `cursor /tmp/clockify-agent-plugin-validation`.
+7. Initialize git repo: `git init`
+8. Initialize clockify-agent-plugin: `/clockify-init`
+   - Choose a clockify workspace ID when prompted
+9. Copy skills into that repo or rely on user-global skills if you already have them. User MCP does not install this checkout’s `skills/` for you.
+10. Validate: `use test prompts or custom validation`
+12. Delete `/tmp/clockify-agent-plugin-validation`
+13. Revert user-scope `~/.cursor/mcp.json` to the published npx entry, or remove `clockify-agent-plugin` entirely
+
+---
+
+<br>
+
+## Publish
+
+When the change is ready to ship: 
+
+- Meet [publish prerequisites](./publish.md#prerequisites)
+- Read [publish.md](./publish.md)  
+
+---
+
+<br>
+
+## Appendix
+
+### Sandbox
 
 A disposable temp repo that points at this checkout’s `dist/`. It does **not** rewrite `~/.cursor/mcp.json` or this repo’s `mcp.json`.
 
-```bash
-npm run build
-npm run install:cursor -- --sandbox
-```
+- Created in the OS temp folder so it may vanish on reboot. Re-run `--sandbox` if the folder is gone.
+- This is not a consumer install. Do not treat a green sandbox MCP as proof that npx / Directory works.
 
-Prints an absolute path under `$TMPDIR/clockify-agent-plugin-sandbox`. Open that folder in a **separate** Cursor window.
-
-| What | Where |
+| Component | How it Works |
 |------|--------|
 | Skills | sandbox `.cursor/skills/` → this checkout’s `skills/` |
 | MCP | sandbox `.cursor/mcp.json` → `dist/index.js` + checkout `.env` |
-| Config | `CLOCKIFY_CONFIG_ROOT` = the sandbox (consumer path is tool arg `config_root`; see [config.md](./config.md)) |
+| Config | `CLOCKIFY_CONFIG_ROOT` = the sandbox ; see [config.md](./config.md)) |
 
-Project MCP often starts **disabled**. Enable `clockify-agent-plugin` under Customize → MCP.
+<br>
 
-After `src/` changes: `npm run build` in this checkout, then reload the sandbox window.
+#### Supported Commands and Parameters
 
-```bash
-npm run install:cursor -- --sandbox --teardown
+From this checkout: `npm run install:cursor -- {invocation}` 
+
+> Equivalent: `clockify-cursor-install {invocation}` with the same flags.
+
+| Invocation | What it does |
+|------------|----------------|
+| `--sandbox` | Create or refresh the temp repo at `$TMPDIR/clockify-agent-plugin-sandbox` |
+| `--sandbox --dry-run` | Print the create plan; write nothing |
+| `--sandbox --teardown` | Delete the temp repo |
+| `--sandbox --teardown --dry-run` | Print the teardown plan; write nothing |
+| `--help` | Usage for the whole install script (including sandbox) |
+
+<br>
+
+#### What Sandbox Does
+
+1. Create `$TMPDIR/clockify-agent-plugin-sandbox` if missing
+2. `git init` in that folder if it has no `.git`
+3. Symlink each `skills/clockify-*` from this checkout into the sandbox `.cursor/skills/`
+4. Write sandbox `.cursor/mcp.json` (stdio `node` + this checkout’s `dist/index.js`, `CLOCKIFY_API_KEY` placeholder, `CLOCKIFY_CONFIG_ROOT` = the sandbox, optional `envFile` pointing at this checkout’s `.env`)
+5. Write a short sandbox `README.md`
+
+> `--sandbox` does **not** change `~/.cursor/mcp.json`, `~/.cursor/skills/`, or this repo’s `mcp.json`. 
+> 
+> `--sandbox --teardown` deletes the entire temp folder. Close or reload any Cursor window that had it open. Clockify data already written in your Clockify workspace is not undone.
+
+---
+
+<br>
+
+### Test prompts
+
+```
+# Test Timer
+/clockify-start-timer [optional params]
+/clockify-stop-timer [optional params]
+
+# Test Manual Entry
+/clockify-enter-time [start/end] [optional params]
+
+# Test Automated
+/clockify-automate
+# Start work that would hit one of the triggers configured in config.yml
+/clockify-unautomate
+
+# Test Status and Summarizer
+/clockify-status
+/clockify-summarize
 ```
 
-OS temp may also vanish on reboot. Re-run `--sandbox` if the folder is gone.
-
-This is not a consumer install. Do not treat a green sandbox MCP as proof that npx / Directory works.
-
 ---
 
 <br>
 
-## Consumer-like install
-
-Behave like a subscriber on this machine:
-
-```bash
-npm run install:cursor -- --uninstall   # if you had a prior install
-npx -y -p @dustinestes/clockify-agent-plugin clockify-cursor-install
-```
-
-Or from this checkout: `npm run install:cursor`. Then open any empty repo (not this plugin checkout), reload Cursor, enable MCP, `/clockify-init`. Details: [install-cursor.md](./install-cursor.md).
-
 ---
-
-<br>
-
-## MCP tools
-
-The agent calls these; people use skills. Listed here for handshake tests and allowlists (`clockify-agent-plugin:*`). User-scoped MCP should pass `config_root` (git toplevel) on each call — [config.md](./config.md#which-repo-config_root).
-
-| Tool | Purpose |
-|------|---------|
-| `clockify_get_config` | Effective `.clockify/config.yml` standards (miss payload includes `tried` paths) |
-| `clockify_get_user` | Authenticated user + workspace IDs |
-| `clockify_list_workspaces` | List workspaces |
-| `clockify_list_projects` | List / filter projects |
-| `clockify_ensure_project` | Find or create project by name |
-| `clockify_list_tags` | List tags |
-| `clockify_list_tasks` | List tasks on a project |
-| `clockify_ensure_task` | Find or create task (e.g. GitHub label) |
-| `clockify_get_running_timer` | Current running timer (+ inactivity hint) |
-| `clockify_start_timer` | Start a timer (optional start time; description template fields) |
-| `clockify_stop_timer` | Stop the running timer (optional rounding) |
-| `clockify_create_time_entry` | Create a completed entry (explicit start/end; no rounding) |
-| `clockify_list_time_entries` | List entries in a window |
-| `clockify_today_summary` | Today's totals by project |
-
----
-
-<br>
 
 <strong>Clockify Agent Plugin</strong>
 <div align="right">

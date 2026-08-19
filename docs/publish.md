@@ -12,6 +12,7 @@ Maintainer skill: [`.cursor/skills/publish-release`](../.cursor/skills/publish-r
 ## Contents
 
 - [Contents](#contents)
+- [Prerequisites](#prerequisites)
 - [How a change ships](#how-a-change-ships)
 - [GitHub](#github)
   - [Topics](#topics)
@@ -22,6 +23,21 @@ Maintainer skill: [`.cursor/skills/publish-release`](../.cursor/skills/publish-r
 - [Agent platforms](#agent-platforms)
   - [Discovery files](#discovery-files)
   - [Cursor Directory](#cursor-directory)
+
+---
+
+<br>
+
+## Prerequisites
+
+Also meet [Getting started](../README.md#getting-started) and [develop prerequisites](./develop.md#prerequisites). You ship from a working checkout. Skip this section if you already publish this package.
+
+| Name | Description | Command |
+|------|-------------|---------|
+| GitHub CLI | Authenticated `gh` against this repo (releases, PRs) | `gh auth login` |
+| Release access | Merge to `main` and create a published GitHub Release (`vX.Y.Z`) | `gh release create vX.Y.Z --generate-notes` (after merge; see [Release](#release)) |
+| npm Trusted Publisher | One-time OIDC so `publish.yml` can `npm publish` (no `NPM_TOKEN`) | Configure on npmjs.com — [Trusted publishing](#trusted-publishing) |
+| cursor.directory owner | First listing submit; later catalog changes are **Edit**, never a second submit | [Cursor Directory](#cursor-directory) |
 
 ---
 
@@ -173,6 +189,8 @@ Do **not** submit a second listing for the same repo (duplicate name/repo is rej
 ---
 
 <br>
+
+---
 
 <strong>Clockify Agent Plugin</strong>
 <div align="right">
