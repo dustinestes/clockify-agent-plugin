@@ -64,9 +64,7 @@ The server name must match the MCP config key: **`clockify-agent-plugin`** (inst
 }
 ```
 
-Equivalent patterns if you prefer listing tools explicitly (same effect as `clockify-agent-plugin:*` today):
-
-`clockify_get_config`, `clockify_get_user`, `clockify_list_workspaces`, `clockify_list_projects`, `clockify_ensure_project`, `clockify_list_tags`, `clockify_list_tasks`, `clockify_ensure_task`, `clockify_get_running_timer`, `clockify_start_timer`, `clockify_stop_timer`, `clockify_create_time_entry`, `clockify_list_time_entries`, `clockify_today_summary`.
+Equivalent patterns if you prefer listing tools explicitly (same effect as `clockify-agent-plugin:*` today): see [mcp.md](./mcp.md#tools).
 
 When `permissions.json` defines `mcpAllowlist`, that key **replaces** the in-app MCP allowlist (the Settings editor becomes read-only for MCP). Per-user and per-repo files concatenate. Team admin policy, if any, overrides both. Do not use `*:*`.
 
@@ -119,6 +117,8 @@ Uninstalling the plugin itself is Cursor → remove Clockify Agent Plugin (or dr
 ---
 
 <br>
+
+---
 
 <strong>Clockify Agent Plugin</strong>
 <div align="right">

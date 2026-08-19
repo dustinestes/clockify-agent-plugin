@@ -65,6 +65,8 @@ Which path to pass in single-folder, multi-window, multi-root, and CLI layouts: 
 
 <br>
 
+---
+
 <strong>Clockify Agent Plugin</strong>
 <div align="right">
 

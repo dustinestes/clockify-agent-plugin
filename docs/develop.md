@@ -19,8 +19,8 @@ How to change this plugin. Edit and build in this checkout. Validate against tho
 - [Appendix](#appendix)
   - [Sandbox](#sandbox)
     - [Supported Commands and Parameters](#supported-commands-and-parameters)
+    - [What Sandbox Does](#what-sandbox-does)
   - [Test prompts](#test-prompts)
-  - [MCP tools](#mcp-tools)
 
 ---
 
@@ -65,12 +65,12 @@ Test changes against local `dist/` without pushing to GitHub, publishing to npm,
 
 1. Create a fresh build: `npm run build`
 2. Setup the [sandbox](#sandbox): `npm run install:cursor -- --sandbox`
-3. Open Cursor: `cursor /tmp/clockify-agent-plugin-validation`.
-4. Enable MCP server: `Customize → MCPs → clockify-agent-plugin`
-5. Initialize git repo: `git init`
-6. Initialize clockify-agent-plugin: `/clockify-init`
+3. Open Cursor: `cursor -n /tmp/clockify-agent-plugin-sandbox/`.
+4. Enable MCP server: `Customize → MCPs → clockify-agent-plugin-sandbox`
+5. Insert Clockify API Key: `clockify-agent-plugin-sandbox/mcp.json`
+6. Initialize plugin: `/clockify-init`
    - Choose a clockify workspace ID when prompted
-7. Validate: `use test prompts or custom validation`
+7. Validate build: `use test prompts or custom validation`
 8. Tear down the [sandbox](#sandbox): `npm run install:cursor -- --sandbox --teardown`
 
 ### Manual
@@ -138,7 +138,31 @@ A disposable temp repo that points at this checkout’s `dist/`. It does **not**
 
 #### Supported Commands and Parameters
 
-Agent TODO: Fill in section
+From this checkout: `npm run install:cursor -- {invocation}` 
+
+> Equivalent: `clockify-cursor-install {invocation}` with the same flags.
+
+| Invocation | What it does |
+|------------|----------------|
+| `--sandbox` | Create or refresh the temp repo at `$TMPDIR/clockify-agent-plugin-sandbox` |
+| `--sandbox --dry-run` | Print the create plan; write nothing |
+| `--sandbox --teardown` | Delete the temp repo |
+| `--sandbox --teardown --dry-run` | Print the teardown plan; write nothing |
+| `--help` | Usage for the whole install script (including sandbox) |
+
+<br>
+
+#### What Sandbox Does
+
+1. Create `$TMPDIR/clockify-agent-plugin-sandbox` if missing
+2. `git init` in that folder if it has no `.git`
+3. Symlink each `skills/clockify-*` from this checkout into the sandbox `.cursor/skills/`
+4. Write sandbox `.cursor/mcp.json` (stdio `node` + this checkout’s `dist/index.js`, `CLOCKIFY_API_KEY` placeholder, `CLOCKIFY_CONFIG_ROOT` = the sandbox, optional `envFile` pointing at this checkout’s `.env`)
+5. Write a short sandbox `README.md`
+
+> `--sandbox` does **not** change `~/.cursor/mcp.json`, `~/.cursor/skills/`, or this repo’s `mcp.json`. 
+> 
+> `--sandbox --teardown` deletes the entire temp folder. Close or reload any Cursor window that had it open. Clockify data already written in your Clockify workspace is not undone.
 
 ---
 
@@ -163,30 +187,6 @@ Agent TODO: Fill in section
 /clockify-status
 /clockify-summarize
 ```
----
-
-<br>
-
-### MCP tools
-
-The agent calls these; people use skills. Listed here for handshake tests and allowlists (`clockify-agent-plugin:*`). User-scoped MCP should pass `config_root` (git toplevel) on each call — [config.md](./config.md#which-repo-config_root).
-
-| Tool | Purpose |
-|------|---------|
-| `clockify_get_config` | Effective `.clockify/config.yml` standards (miss payload includes `tried` paths) |
-| `clockify_get_user` | Authenticated user + workspace IDs |
-| `clockify_list_workspaces` | List workspaces |
-| `clockify_list_projects` | List / filter projects |
-| `clockify_ensure_project` | Find or create project by name |
-| `clockify_list_tags` | List tags |
-| `clockify_list_tasks` | List tasks on a project |
-| `clockify_ensure_task` | Find or create task (e.g. GitHub label) |
-| `clockify_get_running_timer` | Current running timer (+ inactivity hint) |
-| `clockify_start_timer` | Start a timer (optional start time; description template fields) |
-| `clockify_stop_timer` | Stop the running timer (optional rounding) |
-| `clockify_create_time_entry` | Create a completed entry (explicit start/end; no rounding) |
-| `clockify_list_time_entries` | List entries in a window |
-| `clockify_today_summary` | Today's totals by project |
 
 ---
 

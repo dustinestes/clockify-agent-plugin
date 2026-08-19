@@ -105,6 +105,8 @@ automated:
 
 ## Tools that honor config
 
+Full catalog: [mcp.md](../mcp.md). Tools that read `.clockify/config.yml`:
+
 - `clockify_get_config` - effective yaml
 - `clockify_start_timer` - optional `start`, `entry_method`, `timer`/`automated` include_seconds + start rounding + gap-fit + overlap
 - `clockify_stop_timer` - `entry_method` end rounding, include_seconds, overlap

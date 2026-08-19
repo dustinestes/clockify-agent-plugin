@@ -190,6 +190,8 @@ Do **not** submit a second listing for the same repo (duplicate name/repo is rej
 
 <br>
 
+---
+
 <strong>Clockify Agent Plugin</strong>
 <div align="right">
 

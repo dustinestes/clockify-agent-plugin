@@ -97,6 +97,8 @@ Copy skills manually: symlink or copy each `skills/clockify-*` folder into `~/.c
 
 <br>
 
+---
+
 <strong>Clockify Agent Plugin</strong>
 <div align="right">
 
