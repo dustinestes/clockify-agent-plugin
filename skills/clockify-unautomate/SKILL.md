@@ -16,9 +16,10 @@ To remove config as well, use [`clockify-uninit`](../clockify-uninit/SKILL.md).
 
 ## Confirm
 
-1. Summarize what will be removed (rule + Clockify-owned hooks only).
-2. Do **not** delete `.clockify/` or the managed `.clockify/` gitignore line.
-3. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
+1. In **chat** (not the confirm UI), list what will be removed (rule + Clockify-owned hooks only). Note that `.clockify/` and the managed `.clockify/` gitignore line stay.
+2. Ask only a short confirm (use **AskQuestion** when available), e.g. “Turn off Clockify agent mode in this repo?” — do **not** put the inventory in the question box.
+3. Do **not** delete `.clockify/` or the managed `.clockify/` gitignore line.
+4. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
 
 ## Removals
 
