@@ -65,7 +65,7 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
    ```gitignore
    # Clockify Agent Plugin — personal time-tracking (delete this block to share with the team)
    .clockify/
-   .cursor/rules/clockify-time.mdc
+   .cursor/rules/clockify.mdc
    ```
 
 10. If `.clockify/` is **already tracked** in git, warn and ask before `git rm --cached`; never force-add `.clockify/` to the index.
