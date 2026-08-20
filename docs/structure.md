@@ -20,13 +20,12 @@ Architecural and structural elements of the repo.
 
 ```text
 clockify-agent-plugin/
-├── .cursor-plugin/plugin.json   # Cursor plugin + variables
-├── .mcp.json                    # Directory MCP discovery (npx)
+├── .cursor-plugin/plugin.json   # Cursor plugin + variables (mcpServers → .mcp.json)
+├── .mcp.json                    # Directory + Cursor plugin MCP (npx)
 ├── assets/
 ├── docs/
 ├── skills/                      # Agent Skills (Directory snapshot)
 ├── src/                         # MCP server
-├── mcp.json                     # plugin MCP entry (npx; same shape as .mcp.json)
 ├── package.json
 └── README.md
 ```

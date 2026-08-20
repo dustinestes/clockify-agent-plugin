@@ -80,7 +80,7 @@ People who already clicked Add still have the old skill snapshot until they Add 
 
 Public repo: [dustinestes/clockify-agent-plugin](https://github.com/dustinestes/clockify-agent-plugin). Tags are `v` plus the shared version (`v0.1.0`). GitHub redirects the old `clockify-mcp-server` URL.
 
-Leave `mcp.json` and `.mcp.json` as unpinned npx. Do not point them at `dist/`.
+Leave `.mcp.json` as unpinned npx. Do not point it at `dist/`.
 
 ### Topics
 
@@ -96,7 +96,7 @@ One shared version: `package.json`, `plugin.json`, and `.cursor-plugin/plugin.js
 
 `@dustinestes/clockify-mcp-server@0.1.0` is leftover on npm under the old name. Do **not** npx that. First CI publish of **`@dustinestes/clockify-agent-plugin`** can be `0.1.0` (this tree) via GitHub Release `v0.1.0`.
 
-1. Confirm `mcp.json` and `.mcp.json` are still the unpinned npx shape.
+1. Confirm `.mcp.json` is still the unpinned npx shape.
 2. Bump the three manifests (and lockfile) together. Merge to `main`.
 3. `gh release create vX.Y.Z --generate-notes` (not a draft, not a prerelease).
 4. [`.github/workflows/publish.yml`](../.github/workflows/publish.yml) runs on `release: published` and publishes npm (next section).
@@ -112,7 +112,7 @@ Do not auto-bump on merge. Do not publish from tag-push alone (a tag without a p
 
 Package: [`@dustinestes/clockify-agent-plugin`](https://www.npmjs.com/package/@dustinestes/clockify-agent-plugin). This is what Directory users actually run.
 
-Keep `.mcp.json` and `mcp.json` **unpinned** (`npx -y @dustinestes/clockify-agent-plugin`, no `@1.2.3`) so each Cursor start resolves latest npm. Do not rewrite them to a local `dist/` path. Play against a checkout build with `clockify-install-cursor --sandbox` ([develop.md](./develop.md#sandbox)).
+Keep `.mcp.json` **unpinned** (`npx -y @dustinestes/clockify-agent-plugin`, no `@1.2.3`) so each Cursor start resolves latest npm. Do not rewrite it to a local `dist/` path. Play against a checkout build with `clockify-install-cursor --sandbox` ([develop.md](./develop.md#sandbox)).
 
 ```json
 {
@@ -164,11 +164,10 @@ Platforms scan **paths**, not the README.
 
 | File | Role |
 |------|------|
-| `.mcp.json` | Directory MCP discovery (unpinned `npx`) |
+| `.mcp.json` | Directory MCP discovery + Cursor plugin MCP (`mcpServers` in `.cursor-plugin/plugin.json`; unpinned `npx`) |
 | `skills/*/SKILL.md` | Directory skill snapshot |
-| `.cursor-plugin/plugin.json` | Cursor plugin manifest (local install + variables) |
+| `.cursor-plugin/plugin.json` | Cursor plugin manifest (local install + variables; points at `.mcp.json`) |
 | `plugin.json` | [Agent Plugins](https://agent-plugins.org) portable manifest |
-| `mcp.json` | MCP entry for the Cursor plugin (same unpinned npx shape) |
 
 There is no plugin-root `rules/*.mdc`, so Directory will not show a Rules Add button. Init may write a rule into the *consumer* repo.
 
