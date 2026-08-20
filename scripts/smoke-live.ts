@@ -1,7 +1,7 @@
 /**
  * Live smoke test against Clockify API.
- * Requires CLOCKIFY_API_KEY (loads .env from repo root when present).
- * Skips with exit 0 if no key is set (CI-friendly).
+ * Requires CLOCKIFY_API_KEY, or CLOCKIFY_API_KEY_SANDBOX in checkout .env.
+ * Loads .env from repo root when present. Skips with exit 0 if no key (CI-friendly).
  */
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -52,9 +52,15 @@ function smokeWorkspaceId(): string | undefined {
 
 async function main(): Promise<void> {
   loadDotEnv();
+  if (!process.env.CLOCKIFY_API_KEY?.trim()) {
+    const sandboxKey = process.env.CLOCKIFY_API_KEY_SANDBOX?.trim();
+    if (sandboxKey) process.env.CLOCKIFY_API_KEY = sandboxKey;
+  }
   const apiKey = process.env.CLOCKIFY_API_KEY?.trim();
   if (!apiKey) {
-    console.log("SKIP: CLOCKIFY_API_KEY not set");
+    console.log(
+      "SKIP: CLOCKIFY_API_KEY / CLOCKIFY_API_KEY_SANDBOX not set",
+    );
     return;
   }
 

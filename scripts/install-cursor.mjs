@@ -29,6 +29,8 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const serverId = "clockify-agent-plugin";
+const sandboxServerId = "clockify-agent-plugin-sandbox";
+const sandboxApiKeyEnv = "CLOCKIFY_API_KEY_SANDBOX";
 const userSkillsDir = join(homedir(), ".cursor", "skills");
 const userMcpPath = join(homedir(), ".cursor", "mcp.json");
 const sandboxRoot = join(tmpdir(), "clockify-agent-plugin-sandbox");
@@ -55,7 +57,8 @@ Installs (user-global):
 Sandbox (maintainer; does not touch ~/.cursor/mcp.json):
   • Repo    → $TMPDIR/clockify-agent-plugin-sandbox
   • Skills  → sandbox .cursor/skills/ (symlinks into this checkout)
-  • MCP     → sandbox .cursor/mcp.json → this checkout's dist/index.js
+  • MCP     → sandbox .cursor/mcp.json → ${sandboxServerId} → dist/index.js
+  • API key → bake from checkout .env ${sandboxApiKeyEnv} (or empty for hand-fill)
 
 After install: reload Cursor, enable MCP under Customize → MCP, then
 /clockify-init in each repo (workspace ID is chosen per repo there).
@@ -154,6 +157,27 @@ function whichNode() {
   } catch {
     return "node";
   }
+}
+
+/** Read a single key from a dotenv file (no expansion). Undefined if missing. */
+function readDotEnvValue(filePath, key) {
+  if (!existsSync(filePath)) return undefined;
+  for (const line of readFileSync(filePath, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    if (trimmed.slice(0, eq).trim() !== key) continue;
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    return value;
+  }
+  return undefined;
 }
 
 function buildMcpEntry(apiKey) {
@@ -341,7 +365,9 @@ function createSandbox(dryRun) {
   }
 
   const distEntry = join(root, "dist", "index.js");
-  const envFile = join(root, ".env");
+  const checkoutEnv = join(root, ".env");
+  const seededKey =
+    readDotEnvValue(checkoutEnv, sandboxApiKeyEnv)?.trim() || "";
   const node = whichNode();
 
   console.log("Planned sandbox:\n");
@@ -349,7 +375,18 @@ function createSandbox(dryRun) {
   for (const name of skillNames) {
     console.log(`  [link] ${join(sandboxRoot, ".cursor", "skills", name)} -> ${join(root, "skills", name)}`);
   }
-  console.log(`  [mcp]  ${join(sandboxRoot, ".cursor", "mcp.json")} → ${distEntry}`);
+  console.log(
+    `  [mcp]  ${join(sandboxRoot, ".cursor", "mcp.json")} → ${sandboxServerId} → ${distEntry}`,
+  );
+  if (seededKey) {
+    console.log(
+      `  [key]  ${sandboxApiKeyEnv} from checkout .env (baked into mcp env; value not shown)`,
+    );
+  } else {
+    console.log(
+      `  [key]  CLOCKIFY_API_KEY left empty — set ${sandboxApiKeyEnv} in checkout .env, or hand-fill sandbox mcp.json env`,
+    );
+  }
   console.log("");
 
   if (!existsSync(distEntry)) {
@@ -375,13 +412,12 @@ function createSandbox(dryRun) {
 
   writeJson(join(sandboxRoot, ".cursor", "mcp.json"), {
     mcpServers: {
-      [serverId]: {
+      [sandboxServerId]: {
         type: "stdio",
         command: node,
         args: [distEntry],
-        envFile,
         env: {
-          CLOCKIFY_API_KEY: "insert_your_key_here",
+          CLOCKIFY_API_KEY: seededKey,
           CLOCKIFY_CONFIG_ROOT: sandboxRoot,
         },
       },
@@ -397,7 +433,8 @@ Disposable workspace for playing with Clockify Agent Plugin changes from:
 \`${root}\`
 
 - Skills: symlinked from that checkout (should appear under \`/\`)
-- MCP: \`${serverId}\` → \`dist/index.js\` (set \`CLOCKIFY_API_KEY\` in \`.cursor/mcp.json\`)
+- MCP: **${sandboxServerId}** → \`dist/index.js\` (distinct from consumer \`${serverId}\`)
+- API key: baked from checkout \`.env\` \`${sandboxApiKeyEnv}\`, or edit \`env.CLOCKIFY_API_KEY\` in \`.cursor/mcp.json\` if empty
 - No \`.clockify/config.yml\` until \`/clockify-init\`
 
 This is not a consumer install. Global Cursor MCP stays npx / \`${binName}\`.
@@ -407,9 +444,10 @@ This is not a consumer install. Global Cursor MCP stays npx / \`${binName}\`.
 Project MCP servers often appear in **Customize → MCP** as **disabled** until you turn them on.
 
 1. Open **Customize → MCP**
-2. Find **${serverId}** (may be grouped under this sandbox folder)
+2. Find **${sandboxServerId}** (may be grouped under this sandbox folder)
 3. Toggle it **enabled** (green)
-4. If it stays red, open **Output → MCP Logs**
+4. Leave user **${serverId}** disabled in this window (both enabled → duplicate Clockify tools)
+5. If it stays red, open **Output → MCP Logs**
 
 Rebuild the plugin checkout after \`src/\` changes (\`npm run build\`), then reload this window.
 `,
@@ -418,8 +456,13 @@ Rebuild the plugin checkout after \`src/\` changes (\`npm run build\`), then rel
   console.log(`Sandbox ready: ${sandboxRoot}`);
   console.log("Open that folder in Cursor (separate window).");
   console.log(
-    `Skills should work via /. Project MCP often starts DISABLED — enable ${serverId} under Customize → MCP.`,
+    `Skills should work via /. Enable ${sandboxServerId} under Customize → MCP (leave ${serverId} off in this window).`,
   );
+  if (!seededKey) {
+    console.log(
+      `API key empty — add ${sandboxApiKeyEnv} to ${checkoutEnv} and re-run --sandbox, or edit sandbox .cursor/mcp.json env.CLOCKIFY_API_KEY.`,
+    );
+  }
 }
 
 function teardownSandbox(dryRun) {
@@ -461,7 +504,9 @@ async function main() {
     failUsage("Use either --sandbox or --uninstall, not both");
   }
   if (opts.sandbox && opts.apiKeyFromFlag) {
-    failUsage("--sandbox does not take --api-key (uses the checkout .env via envFile)");
+    failUsage(
+      `--sandbox does not take --api-key (seed checkout .env ${sandboxApiKeyEnv}, or hand-fill sandbox mcp.json)`,
+    );
   }
   if (opts.sandbox && opts.teardown) {
     teardownSandbox(opts.dryRun);

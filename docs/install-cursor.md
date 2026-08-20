@@ -49,7 +49,7 @@ npm run install:cursor -- --sandbox
 npm run install:cursor -- --sandbox --teardown
 ```
 
-Open the printed `$TMPDIR` path in a separate Cursor window. Or use `npm run sandbox:debug` / `npm run sandbox:teardown` (**Stop** force-deletes the folder; Ctrl+C confirms so you can keep it; closing or reloading the sandbox editor does not tear down).
+Open the printed `$TMPDIR` path in a separate Cursor window. Or use `npm run sandbox:debug` / `npm run sandbox:teardown`. API key: optional `CLOCKIFY_API_KEY_SANDBOX` in checkout `.env` is baked into sandbox mcp.json; otherwise hand-fill `env.CLOCKIFY_API_KEY`. Enable **`clockify-agent-plugin-sandbox`** (not the consumer server) in that window. **Stop** force-deletes the folder; Ctrl+C confirms so you can keep it; closing or reloading the sandbox editor does not tear down.
 
 ### After install
 
