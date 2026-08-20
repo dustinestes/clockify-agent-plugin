@@ -3,14 +3,17 @@
  * Maintainer DX helper for Run and Debug → Sandbox.
  * Wraps existing install:cursor --sandbox flags; does not change that CLI.
  *
- *   npm run sandbox:debug              # build, create, keep-alive until Stop/Ctrl+C/window close
+ *   npm run sandbox:debug              # build, create, keep-alive until Stop/Ctrl+C
  *   npm run sandbox:teardown           # confirm, then --sandbox --teardown
  *   npm run sandbox:teardown -- --force  # no prompt (postDebugTask / Stop cleanup)
  *
- * Opens the sandbox with cursor/code --new-window --wait (detached process
- * group so Ctrl+C hits this script only). Closing that window ends the wait
- * and triggers teardown. Stop force-tears down (session already over);
- * Ctrl+C confirms so you can keep the live sandbox.
+ * Opens the sandbox with cursor/code --new-window (no --wait). Reload Window
+ * in that editor must not tear down the temp folder.
+ *
+ * Stop (SIGTERM): exit 0 immediately — launch.json postDebugTask runs
+ * --force teardown. Do not tear down in the signal handler or the debugger
+ * force-kills the process mid-npm and the terminal shows "Killed".
+ * Ctrl+C (SIGINT): confirm, then tear down in-process.
  */
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -34,7 +37,7 @@ function runNpm(args) {
   }
 }
 
-/** @returns {{ bin: string, child: import("node:child_process").ChildProcess } | null} */
+/** Fire-and-forget: open a new window; do not attach --wait (Reload ends wait). */
 function openSandboxWindow(path) {
   for (const bin of ["cursor", "code"]) {
     const probe = spawnSync(bin, ["--version"], {
@@ -44,31 +47,30 @@ function openSandboxWindow(path) {
     if (probe.error || (probe.status !== 0 && probe.status !== null)) {
       continue;
     }
-    const child = spawn(bin, ["--new-window", "--wait", path], {
+    const child = spawn(bin, ["--new-window", path], {
       stdio: "ignore",
-      // Own process group: terminal Ctrl+C must not SIGINT the wait tree
-      // (that raced our confirm prompt and looked like "window closed").
       detached: true,
       shell: process.platform === "win32",
     });
+    child.unref();
     child.on("error", (err) => {
-      console.warn(`Failed to keep ${bin} --wait attached: ${err.message}`);
+      console.warn(`Failed to open ${bin}: ${err.message}`);
     });
     console.log(`Opened new ${bin} window: ${path}`);
     console.log(
-      "Close that window, or Stop debugging / Ctrl+C, to tear down the sandbox.",
+      "Stop debugging or Ctrl+C to tear down the sandbox (closing or reloading the editor window does not).",
     );
-    return { bin, child };
+    return true;
   }
   console.warn(
     `cursor/code not on PATH — open manually in a new window:\n  ${path}`,
   );
-  return null;
+  return false;
 }
 
 async function confirmTeardown() {
   if (!input.isTTY) {
-    // Stop / non-interactive: sandbox is disposable; tear down.
+    // Non-interactive: sandbox is disposable; tear down.
     return true;
   }
   const rl = createInterface({ input, output });
@@ -84,11 +86,7 @@ async function confirmTeardown() {
   }
 }
 
-async function teardown({
-  force = false,
-  /** When false, the editor wait already ended (window closed). */
-  windowMayRemain = true,
-} = {}) {
+async function teardown({ force = false } = {}) {
   if (!existsSync(sandboxRoot)) {
     console.log(`Nothing to remove: ${sandboxRoot}`);
     return true;
@@ -100,117 +98,58 @@ async function teardown({
     return false;
   }
   runNpm(["run", "install:cursor", "--", "--sandbox", "--teardown"]);
-  if (windowMayRemain) {
-    console.log(
-      "Close any leftover editor window that still pointed at the sandbox folder (Stop/Ctrl+C does not close it).",
-    );
-  }
+  console.log(
+    "Close any leftover editor window that still pointed at the sandbox folder (Stop/Ctrl+C does not close it).",
+  );
   return true;
 }
 
-function stopEditorWait(child) {
-  if (child?.pid) {
-    child.removeAllListeners("exit");
-  }
-  if (process.platform === "win32") {
-    try {
-      child?.kill("SIGTERM");
-    } catch {
-      // already gone
-    }
-    return;
-  }
-  // cursor --wait forks past the direct child; match only this sandbox's wait tree
-  // (not the main Cursor instance). `--` so patterns starting with - are not flags.
-  spawnSync("pkill", ["-f", "--", `--wait ${sandboxRoot}`], { stdio: "ignore" });
-  try {
-    if (child?.pid) {
-      process.kill(-child.pid, "SIGTERM");
-    }
-  } catch {
-    try {
-      child?.kill("SIGTERM");
-    } catch {
-      // already gone
-    }
-  }
-}
-
 /**
- * Stay alive until the editor --wait child exits (window closed) or a signal.
- * Falls back to a heartbeat if no editor CLI was available.
+ * Stay alive until Stop (SIGTERM) or Ctrl+C (SIGINT). Editor window close /
+ * Reload Window intentionally do not end this process.
  */
-function keepAlive(editor) {
+function keepAlive() {
   return new Promise((resolvePromise) => {
     let stopping = false;
-    /** When true, wait-child exit is a side effect of our signal handling — ignore it. */
-    let ignoreWaitExit = false;
-    const heartbeat = editor?.child
-      ? null
-      : setInterval(() => {}, 60_000);
+    const heartbeat = setInterval(() => {}, 60_000);
 
     const done = () => {
-      if (heartbeat) clearInterval(heartbeat);
+      clearInterval(heartbeat);
       resolvePromise();
     };
 
-    const finish = (reason, opts) => {
+    const onStopSignal = (sig) => {
+      // Exit cleanly so the debug terminal is not force-killed mid-teardown.
+      // launch.json postDebugTask runs sandbox:teardown --force next.
       if (stopping) return;
       stopping = true;
-      ignoreWaitExit = true;
-      console.log(`\n${reason}`);
-      stopEditorWait(editor?.child);
-      void teardown(opts).finally(done);
+      clearInterval(heartbeat);
+      console.log(
+        `\nReceived ${sig}. Exiting; postDebugTask (or npm run sandbox:teardown) removes the sandbox.`,
+      );
+      process.exit(0);
     };
 
-    if (editor?.child) {
-      editor.child.on("exit", (code, signal) => {
-        if (ignoreWaitExit || stopping) return;
-        // Window closed (or wait ended on its own) — tear down now.
-        finish(
-          `Editor wait exited (code=${code ?? "null"}, signal=${signal ?? "null"}).`,
-          { force: true, windowMayRemain: false },
-        );
-      });
-    }
-
-    const onSignal = (sig) => {
-      // SIGTERM: debug Stop — no prompt (session is ending). postDebugTask
-      // --force is belt-and-suspenders if this handler does not finish.
-      // SIGINT: confirm (default Y) so Ctrl+C can keep a live sandbox.
-      const force = sig === "SIGTERM" || sig === "SIGHUP";
-      if (force) {
-        finish(`Received ${sig}.`, { force: true, windowMayRemain: true });
-        return;
-      }
+    const onInterrupt = () => {
       if (stopping) return;
-      ignoreWaitExit = true;
-      console.log(`\nReceived ${sig}.`);
+      console.log("\nReceived SIGINT.");
       void (async () => {
-        const ok = await teardown({ force: false, windowMayRemain: true });
+        const ok = await teardown({ force: false });
         if (ok === false) {
-          ignoreWaitExit = false;
-          console.log(
-            "Still waiting for the sandbox editor window to close (or Stop / Ctrl+C again).",
-          );
+          console.log("Still waiting for Stop or Ctrl+C again.");
           return;
         }
         stopping = true;
-        stopEditorWait(editor?.child);
         done();
       })();
     };
 
-    process.on("SIGINT", () => onSignal("SIGINT"));
-    process.on("SIGTERM", () => onSignal("SIGTERM"));
-    process.on("SIGHUP", () => onSignal("SIGHUP"));
+    process.on("SIGINT", onInterrupt);
+    process.on("SIGTERM", () => onStopSignal("SIGTERM"));
+    process.on("SIGHUP", () => onStopSignal("SIGHUP"));
 
     console.log(`Sandbox path: ${sandboxRoot}`);
-    if (!editor?.child) {
-      console.log(
-        "Stop debugging or Ctrl+C to tear down (no editor --wait attached).",
-      );
-    }
+    console.log("Stop debugging or Ctrl+C to tear down.");
   });
 }
 
@@ -218,14 +157,14 @@ async function main() {
   const teardownOnly = process.argv.includes("--teardown");
   const force = process.argv.includes("--force");
   if (teardownOnly) {
-    await teardown({ force, windowMayRemain: true });
+    await teardown({ force });
     return;
   }
 
   runNpm(["run", "build"]);
   runNpm(["run", "install:cursor", "--", "--sandbox"]);
-  const editor = openSandboxWindow(sandboxRoot);
-  await keepAlive(editor);
+  openSandboxWindow(sandboxRoot);
+  await keepAlive();
 }
 
 main()
