@@ -49,7 +49,7 @@ npm run install:cursor -- --sandbox
 npm run install:cursor -- --sandbox --teardown
 ```
 
-Open the printed `$TMPDIR` path in a separate Cursor window. Or use `npm run sandbox:debug` / `npm run sandbox:teardown` (teardown deletes the folder but does not close the editor window).
+Open the printed `$TMPDIR` path in a separate Cursor window. Or use `npm run sandbox:debug` / `npm run sandbox:teardown` (`sandbox:debug` uses `--wait` so closing the sandbox window tears down; **Stop** force-deletes the folder; Ctrl+C confirms so you can keep it).
 
 ### After install
 

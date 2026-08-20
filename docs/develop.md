@@ -64,19 +64,19 @@ Test changes against local `dist/` without pushing to GitHub, publishing to npm,
 
 ### Run and Debug
 
-Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `cursor` or `code` is on `PATH`, and keeps a dedicated debug terminal alive. 
+Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `cursor` or `code` is on `PATH` (`--wait` so closing that window ends the session), and keeps a dedicated debug terminal alive.
 
 1. Open Code/Cursor Run and Debug panel
 2. Select launch configuration: `Sandbox`
 3. Click: `Start Debugging` or press: `F5`
 4. Validate build: `use test prompts or custom validation`
-5. **Stop** (or Ctrl+C in the dedicated debug terminal) performs `sandbox: teardown`; answer `n` on the confirm prompt to keep it. 
+5. Tear down by **closing the sandbox editor window**, **Stop** (always deletes the folder; no prompt — the session is already ending), or Ctrl+C in the debug terminal (confirms; answer `n` to keep the folder and stay attached).
 
 <br>
 
-> Note: Teardown does **not** close the editor window — the CLI cannot safely close one window in a shared Cursor instance, and a separate `--user-data-dir` instance drops your profile (login / Agents UI / folder never opens). A leftover window on an unreachable sandbox path is expected; close it yourself. 
-> 
-> Closing the debug terminal tab alone is not a reliable cleanup hook — use **Stop**, or **Sandbox: teardown** if you started the sandbox from the CLI.
+> Note: Prefer **closing the sandbox editor window** to end the session cleanly. **Stop** / Ctrl+C (if you confirm) delete the sandbox folder but do **not** close the editor window (no safe shared-instance close API). A leftover window on an unreachable path is expected in that case — close it yourself.
+>
+> Closing the debug terminal tab alone is not a reliable cleanup hook — use window close, **Stop**, or **Sandbox: teardown**.
 
 ### CLI
 
@@ -171,8 +171,9 @@ Related npm scripts (wrappers only; same flags underneath):
 
 | Script | What it does |
 |--------|----------------|
-| `npm run sandbox:debug` | Build, `--sandbox`, keep-alive for Run and Debug → **Sandbox** |
+| `npm run sandbox:debug` | Build, `--sandbox`, open editor with `--wait`, keep-alive for Run and Debug → **Sandbox** |
 | `npm run sandbox:teardown` | Confirm, then `--sandbox --teardown` |
+| `npm run sandbox:teardown -- --force` | Same without prompt (used after debug **Stop**) |
 
 <br>
 

@@ -3,18 +3,25 @@
   "configurations": [
     {
       "name": "Sandbox",
-      "type": "node-terminal",
+      "type": "node",
       "request": "launch",
-      "command": "npm run sandbox:debug",
+      "program": "${workspaceFolder}/scripts/sandbox-debug.mjs",
       "cwd": "${workspaceFolder}",
-      "postDebugTask": "sandbox:teardown"
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": false,
+      "skipFiles": ["<node_internals>/**"],
+      "postDebugTask": "sandbox:teardown:force"
     },
     {
       "name": "Sandbox: teardown",
-      "type": "node-terminal",
+      "type": "node",
       "request": "launch",
-      "command": "npm run sandbox:teardown",
-      "cwd": "${workspaceFolder}"
+      "program": "${workspaceFolder}/scripts/sandbox-debug.mjs",
+      "args": ["--teardown"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": false,
+      "skipFiles": ["<node_internals>/**"]
     }
   ]
 }

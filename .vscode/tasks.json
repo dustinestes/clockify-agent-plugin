@@ -2,16 +2,17 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "sandbox:teardown",
+      "label": "sandbox:teardown:force",
       "type": "shell",
-      "command": "npm run sandbox:teardown",
+      "command": "node scripts/sandbox-debug.mjs --teardown --force",
       "options": {
         "cwd": "${workspaceFolder}"
       },
       "presentation": {
-        "reveal": "always",
+        "reveal": "silent",
         "panel": "dedicated",
-        "focus": true
+        "showReuseMessage": false,
+        "clear": false
       },
       "problemMatcher": []
     }
