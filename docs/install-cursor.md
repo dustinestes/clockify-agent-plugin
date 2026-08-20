@@ -10,7 +10,7 @@ One-time machine setup: MCP tools + Agent Skills. Per-repo setup: [`/clockify-in
 ## Recommended: install script
 
 ```bash
-npx -y -p @dustinestes/clockify-agent-plugin clockify-cursor-install
+npx -y -p @dustinestes/clockify-agent-plugin clockify-install-cursor
 ```
 
 This writes **user-global** Cursor config:
@@ -26,14 +26,16 @@ Workspace ID is **not** set at install time. Each repo chooses a Clockify worksp
 ### Options
 
 ```bash
-clockify-cursor-install --help                 # usage
-clockify-cursor-install --dry-run              # show planned changes, write nothing
-clockify-cursor-install --uninstall            # remove symlinks + MCP entry
-clockify-cursor-install --sandbox              # maintainer: temp repo → checkout dist/
-clockify-cursor-install --sandbox --teardown   # remove that temp repo
+clockify-install-cursor --help                 # usage
+clockify-install-cursor --dry-run              # show planned changes, write nothing
+clockify-install-cursor --uninstall            # remove symlinks + MCP entry
+clockify-install-cursor --sandbox              # maintainer: temp repo → checkout dist/
+clockify-install-cursor --sandbox --teardown   # remove that temp repo
 ```
 
 From a plugin checkout: `npm run install:cursor`
+
+`clockify-cursor-install` remains a temporary alias and prints a deprecation warning.
 
 ### Maintainer sandbox
 

@@ -5,6 +5,7 @@
   "type": "module",
   "bin": {
     "clockify-agent-plugin": "dist/index.js",
+    "clockify-install-cursor": "scripts/install-cursor.mjs",
     "clockify-cursor-install": "scripts/install-cursor.mjs"
   },
   "main": "./dist/index.js",
