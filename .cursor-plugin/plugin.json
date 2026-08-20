@@ -13,7 +13,7 @@
   "keywords": ["clockify", "mcp", "time-tracking", "productivity"],
   "logo": "assets/logo.svg",
   "skills": "./skills/",
-  "mcpServers": "mcp.json",
+  "mcpServers": ".mcp.json",
   "variables": {
     "type": "object",
     "properties": {

@@ -140,7 +140,7 @@ When the change is ready to ship:
 
 ### Sandbox
 
-A disposable temp repo that points at this checkout’s `dist/`. It does **not** rewrite `~/.cursor/mcp.json` or this repo’s `mcp.json`.
+A disposable temp repo that points at this checkout’s `dist/`. It does **not** rewrite `~/.cursor/mcp.json` or this repo’s `.mcp.json`.
 
 - Created in the OS temp folder so it may vanish on reboot. Re-run `--sandbox` if the folder is gone.
 - This is not a consumer install. Do not treat a green sandbox MCP as proof that npx / Directory works.
@@ -185,7 +185,7 @@ Related npm scripts (wrappers only; same flags underneath):
 4. Write sandbox `.cursor/mcp.json` (stdio `node` + this checkout’s `dist/index.js`, `CLOCKIFY_API_KEY` placeholder, `CLOCKIFY_CONFIG_ROOT` = the sandbox, optional `envFile` pointing at this checkout’s `.env`)
 5. Write a short sandbox `README.md`
 
-> `--sandbox` does **not** change `~/.cursor/mcp.json`, `~/.cursor/skills/`, or this repo’s `mcp.json`. 
+> `--sandbox` does **not** change `~/.cursor/mcp.json`, `~/.cursor/skills/`, or this repo’s `.mcp.json`. 
 > 
 > `--sandbox --teardown` deletes the entire temp folder. Close or reload any Cursor window that had it open. Clockify data already written in your Clockify workspace is not undone.
 
