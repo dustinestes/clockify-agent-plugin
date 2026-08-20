@@ -25,7 +25,7 @@ If config already exists, do not overwrite it. Continue with After init.
 ## After init
 
 1. `clockify_get_config` with `config_root` — read `automated.triggers`, `automated.inactivity`, `automated.task`, `automated.overlap`. If `automated.triggers` is empty, stop and point at `.clockify/config.yml.example`.
-2. Add or update `.cursor/rules/clockify-time.mdc` so the agent:
+2. Add or update `.cursor/rules/clockify.mdc` so the agent:
    - Passes `config_root` on Clockify MCP calls: reuse the known git toplevel this session; re-resolve only if the folder or focused root changed (cwd first, not the open file)
    - Passes `entry_method: automated` on `clockify_start_timer` / `clockify_stop_timer`
    - On starting work / planning for an issue → start with issue fields; honor `task.from` / `task.if_missing` (create Clockify tasks from labels; if no label, no task)
@@ -33,7 +33,9 @@ If config already exists, do not overwrite it. Continue with After init.
    - On switching issues → **warn** with the running timer’s description/duration; stop-then-start only after the user confirms
    - On session start / resume → `clockify_get_running_timer`; if `inactivity.pastThreshold`, stop (or ask)
    - If a tool returns `overlap: true`, ask before `confirm_overlap: true` unless `overlap.on_conflict` is `override`
-3. Optionally add Cursor hooks (`sessionStart` / `sessionEnd` / `stop`) for the inactivity check — fail-open so hooks never block coding if Clockify is down. Prefer entries clearly owned by Clockify so `clockify-unautomate` can remove them surgically. There is no PR-close Cursor hook; `pr_closed` is the agent rule when the user closes or abandons a PR in this session.
+3. Leftover rename: if `.cursor/rules/clockify-time.mdc` still exists, move its content into `clockify.mdc` (or delete it after writing the new file). Do **not** leave both rule files.
+4. In the managed `.gitignore` stanza, ensure `.cursor/rules/clockify.mdc` is listed and drop any `.cursor/rules/clockify-time.mdc` line.
+5. Optionally add Cursor hooks (`sessionStart` / `sessionEnd` / `stop`) for the inactivity check — fail-open so hooks never block coding if Clockify is down. Prefer entries clearly owned by Clockify so `clockify-unautomate` can remove them surgically. There is no PR-close Cursor hook; `pr_closed` is the agent rule when the user closes or abandons a PR in this session.
 
 Cursor glue is personal (init already gitignores the rule path). Do not commit rules/hooks unless the team opts in; do not gitignore all of `.cursor/`.
 

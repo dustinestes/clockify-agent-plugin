@@ -2,7 +2,7 @@
 name: clockify-uninit
 description: >-
   Remove Clockify integration artifacts from a consumer repo: .clockify/,
-  clockify-time rule, Clockify-owned hooks, and the managed gitignore stanza.
+  clockify rule, Clockify-owned hooks, and the managed gitignore stanza.
   Use when uninstalling repo Clockify standards. To keep config and only turn
   off agent mode, use clockify-unautomate instead. Does not uninstall the
   Clockify Agent Plugin unless the user asks.

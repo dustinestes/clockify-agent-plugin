@@ -1,8 +1,8 @@
 ---
 name: clockify-unautomate
 description: >-
-  Turn off agent-mediated Clockify tracking: remove the clockify-time Cursor
-  rule and Clockify-owned hooks. Keeps .clockify/config.yml so start-timer and
+  Turn off agent-mediated Clockify tracking: remove the clockify Cursor rule
+  and Clockify-owned hooks. Keeps .clockify/config.yml so start-timer and
   enter-time still work. Use when the user wants to stop automation without
   uninstalling repo Clockify standards.
 disable-model-invocation: true
@@ -22,9 +22,9 @@ To remove config as well, use [`clockify-uninit`](../clockify-uninit/SKILL.md).
 
 ## Removals
 
-1. Delete `.cursor/rules/clockify-time.mdc` only (leave other rules alone).
+1. Delete `.cursor/rules/clockify.mdc` only (leave other rules alone). Also delete leftover `.cursor/rules/clockify-time.mdc` if present — do not leave either file.
 2. Edit `.cursor/hooks.json`: drop **only** Clockify-owned hook entries (those that only invoke Clockify tools / were added by `clockify-automate`). Leave unrelated hooks intact. If the file becomes empty or `{}` with no remaining hooks, delete `hooks.json`.
-3. If the managed gitignore stanza includes `.cursor/rules/clockify-time.mdc`, remove that one line (the rule file is gone). Keep:
+3. If the managed gitignore stanza includes `.cursor/rules/clockify.mdc` or `.cursor/rules/clockify-time.mdc`, remove those lines (the rule file is gone). Keep:
 
    ```gitignore
    # Clockify Agent Plugin — personal time-tracking (delete this block to share with the team)
