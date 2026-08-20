@@ -64,19 +64,20 @@ Test changes against local `dist/` without pushing to GitHub, publishing to npm,
 
 ### Run and Debug
 
-Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `cursor` or `code` is on `PATH` (`--wait` so closing that window ends the session), and keeps a dedicated debug terminal alive.
+Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `cursor` or `code` is on `PATH`, and keeps a dedicated debug terminal alive until **Stop** or Ctrl+C. Closing or **Developer: Reload Window** in the sandbox editor does **not** tear down the temp folder (reload is how you pick up MCP / build changes).
 
 1. Open Code/Cursor Run and Debug panel
 2. Select launch configuration: `Sandbox`
 3. Click: `Start Debugging` or press: `F5`
-4. Validate build: `use test prompts or custom validation`
-5. Tear down by **closing the sandbox editor window**, **Stop** (always deletes the folder; no prompt — the session is already ending), or Ctrl+C in the debug terminal (confirms; answer `n` to keep the folder and stay attached).
+4. In the sandbox window: **Developer: Reload Window** if needed, then enable MCP under Customize → MCPs
+5. Validate build: `use test prompts or custom validation`
+6. Tear down with **Stop** (always deletes the folder via `postDebugTask` — no prompt; the session is already ending), or Ctrl+C in the debug terminal (confirms; answer `n` to keep the folder and stay attached). Or run **Sandbox: teardown** / `npm run sandbox:teardown`.
 
 <br>
 
-> Note: Prefer **closing the sandbox editor window** to end the session cleanly. **Stop** / Ctrl+C (if you confirm) delete the sandbox folder but do **not** close the editor window (no safe shared-instance close API). A leftover window on an unreachable path is expected in that case — close it yourself.
+> Note: **Stop** sends SIGTERM (`killBehavior: polite`), the script exits cleanly, then the force-teardown task deletes the sandbox folder. It does **not** close the editor window (no safe shared-instance close API). Close any leftover window yourself after teardown.
 >
-> Closing the debug terminal tab alone is not a reliable cleanup hook — use window close, **Stop**, or **Sandbox: teardown**.
+> Closing the debug terminal tab alone is not a reliable cleanup hook — use **Stop**, Ctrl+C, or **Sandbox: teardown**.
 
 ### CLI
 
@@ -171,7 +172,7 @@ Related npm scripts (wrappers only; same flags underneath):
 
 | Script | What it does |
 |--------|----------------|
-| `npm run sandbox:debug` | Build, `--sandbox`, open editor with `--wait`, keep-alive for Run and Debug → **Sandbox** |
+| `npm run sandbox:debug` | Build, `--sandbox`, open editor, keep-alive until Stop/Ctrl+C for Run and Debug → **Sandbox** |
 | `npm run sandbox:teardown` | Confirm, then `--sandbox --teardown` |
 | `npm run sandbox:teardown -- --force` | Same without prompt (used after debug **Stop**) |
 

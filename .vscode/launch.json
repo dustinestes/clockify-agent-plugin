@@ -10,6 +10,9 @@
       "console": "integratedTerminal",
       "autoAttachChildProcesses": false,
       "skipFiles": ["<node_internals>/**"],
+      // Default is forceful (SIGKILL → red "Killed"). Polite sends SIGTERM so
+      // the script can exit 0; postDebugTask still force-tears down the sandbox.
+      "killBehavior": "polite",
       "postDebugTask": "sandbox:teardown:force"
     },
     {
