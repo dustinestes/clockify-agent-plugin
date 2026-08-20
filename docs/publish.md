@@ -112,7 +112,7 @@ Do not auto-bump on merge. Do not publish from tag-push alone (a tag without a p
 
 Package: [`@dustinestes/clockify-agent-plugin`](https://www.npmjs.com/package/@dustinestes/clockify-agent-plugin). This is what Directory users actually run.
 
-Keep `.mcp.json` and `mcp.json` **unpinned** (`npx -y @dustinestes/clockify-agent-plugin`, no `@1.2.3`) so each Cursor start resolves latest npm. Do not rewrite them to a local `dist/` path. Play against a checkout build with `clockify-cursor-install --sandbox` ([develop.md](./develop.md#sandbox)).
+Keep `.mcp.json` and `mcp.json` **unpinned** (`npx -y @dustinestes/clockify-agent-plugin`, no `@1.2.3`) so each Cursor start resolves latest npm. Do not rewrite them to a local `dist/` path. Play against a checkout build with `clockify-install-cursor --sandbox` ([develop.md](./develop.md#sandbox)).
 
 ```json
 {
@@ -174,12 +174,12 @@ There is no plugin-root `rules/*.mdc`, so Directory will not show a Rules Add bu
 
 ### Cursor Directory
 
-**Primary consumer install:** [docs/install-cursor.md](../install-cursor.md) (`clockify-cursor-install` — skills + global MCP in one command). Directory is a secondary discovery path: its MCP button installs **MCP only** (no skills, no workspace picker). After merging MCP shape changes, owner **Edit** the listing so Directory re-parses GitHub `HEAD`.
+**Primary consumer install:** [docs/install-cursor.md](../install-cursor.md) (`clockify-install-cursor` — skills + global MCP in one command). Directory is a secondary discovery path: its MCP button installs **MCP only** (no skills, no workspace picker). After merging MCP shape changes, owner **Edit** the listing so Directory re-parses GitHub `HEAD`.
 
 One-time submit after the repo is public and npm `latest` matches `main` (skills on GitHub `HEAD` would otherwise pair with stale MCP tools). Directory does not read git tags or semver.
 
 1. Confirm `.mcp.json` is still the publish/npx shape (never a local `dist/` path).
-2. For a clean subscriber check, use `clockify-cursor-install` (or npx published), not `--sandbox`.
+2. For a clean subscriber check, use `clockify-install-cursor` (or npx published), not `--sandbox`.
 3. Listing copy must state this is an **unofficial** third-party connector (not affiliated with Clockify/Cake.com). Public title **Clockify Agent Plugin**; plugin id `clockify-agent-plugin`. If the form auto-fills `clockify`, override it.
 4. Submit at [cursor.directory/plugins/new](https://cursor.directory/plugins/new): sign in, paste `https://github.com/dustinestes/clockify-agent-plugin`. Directory auto-detects `.mcp.json` and `skills/*/SKILL.md`. It does **not** pick up `.cursor/skills/` (maintainer skills).
 5. Wait for the automated safety scan (`safe`). The listing appears when it passes.

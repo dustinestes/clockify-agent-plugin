@@ -5,8 +5,10 @@
  *   - Default: symlink skills → ~/.cursor/skills/; merge MCP → ~/.cursor/mcp.json
  *   - --sandbox: disposable temp repo with project MCP → dist/index.js
  *
- *   npx -y -p @dustinestes/clockify-agent-plugin clockify-cursor-install
- *   npx -y -p @dustinestes/clockify-agent-plugin clockify-cursor-install --help
+ *   npx -y -p @dustinestes/clockify-agent-plugin clockify-install-cursor
+ *   npx -y -p @dustinestes/clockify-agent-plugin clockify-install-cursor --help
+ *
+ * Deprecated alias (same script): clockify-cursor-install
  */
 import { execFileSync } from "node:child_process";
 import {
@@ -21,7 +23,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 
@@ -30,11 +32,13 @@ const serverId = "clockify-agent-plugin";
 const userSkillsDir = join(homedir(), ".cursor", "skills");
 const userMcpPath = join(homedir(), ".cursor", "mcp.json");
 const sandboxRoot = join(tmpdir(), "clockify-agent-plugin-sandbox");
+const binName = "clockify-install-cursor";
+const deprecatedBinName = "clockify-cursor-install";
 
-const HELP = `clockify-cursor-install — install Clockify Agent Plugin for Cursor
+const HELP = `${binName} — install Clockify Agent Plugin for Cursor
 
 Usage:
-  clockify-cursor-install [options]
+  ${binName} [options]
 
 Options:
   --help              Show this help
@@ -57,12 +61,23 @@ After install: reload Cursor, enable MCP under Customize → MCP, then
 /clockify-init in each repo (workspace ID is chosen per repo there).
 
 Examples:
-  npx -y -p @dustinestes/clockify-agent-plugin clockify-cursor-install
-  clockify-cursor-install --dry-run
-  CLOCKIFY_API_KEY=... clockify-cursor-install --dry-run
-  clockify-cursor-install --sandbox
-  clockify-cursor-install --sandbox --teardown
+  npx -y -p @dustinestes/clockify-agent-plugin ${binName}
+  ${binName} --dry-run
+  CLOCKIFY_API_KEY=... ${binName} --dry-run
+  ${binName} --sandbox
+  ${binName} --sandbox --teardown
 `;
+
+function invokedBinName() {
+  return basename(process.argv[1] ?? "").replace(/\.(cmd|exe|ps1)$/i, "");
+}
+
+function warnIfDeprecatedBin() {
+  if (invokedBinName() !== deprecatedBinName) return;
+  console.warn(
+    `Warning: ${deprecatedBinName} is deprecated; use ${binName} instead.`,
+  );
+}
 
 function parseArgs(argv) {
   const opts = {
@@ -385,7 +400,7 @@ Disposable workspace for playing with Clockify Agent Plugin changes from:
 - MCP: \`${serverId}\` → \`dist/index.js\` (set \`CLOCKIFY_API_KEY\` in \`.cursor/mcp.json\`)
 - No \`.clockify/config.yml\` until \`/clockify-init\`
 
-This is not a consumer install. Global Cursor MCP stays npx / \`clockify-cursor-install\`.
+This is not a consumer install. Global Cursor MCP stays npx / \`${binName}\`.
 
 ## Enable MCP (required once)
 
@@ -433,6 +448,7 @@ function teardownSandbox(dryRun) {
 }
 
 async function main() {
+  warnIfDeprecatedBin();
   const opts = parseArgs(process.argv.slice(2));
   if (opts.help) {
     console.log(HELP);

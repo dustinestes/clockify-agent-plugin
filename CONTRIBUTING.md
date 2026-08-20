@@ -5,7 +5,7 @@ Thanks for wanting to work on the unofficial **Clockify Agent Plugin**.
 ## Use vs change
 
 - **Use it:** [README](README.md) and [docs/use.md](docs/use.md).
-- **Change this repo:** [docs/develop.md](docs/develop.md) (build + Validation / `--sandbox`; consumer install via `clockify-cursor-install`). Layout: [docs/structure.md](docs/structure.md).
+- **Change this repo:** [docs/develop.md](docs/develop.md) (build + Validation / `--sandbox`; consumer install via `clockify-install-cursor`). Layout: [docs/structure.md](docs/structure.md).
 - **Ship a version or Directory listing:** [docs/publish.md](docs/publish.md).
 
 ## Pull requests

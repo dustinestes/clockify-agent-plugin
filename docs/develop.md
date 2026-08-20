@@ -140,7 +140,7 @@ A disposable temp repo that points at this checkout’s `dist/`. It does **not**
 
 From this checkout: `npm run install:cursor -- {invocation}` 
 
-> Equivalent: `clockify-cursor-install {invocation}` with the same flags.
+> Equivalent: `clockify-install-cursor {invocation}` with the same flags.
 
 | Invocation | What it does |
 |------------|----------------|

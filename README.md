@@ -81,7 +81,7 @@ If Cursor cannot find `node` / `npx`, see [troubleshoot](docs/troubleshoot.md#no
 ### Install the plugin (once per machine)
 
 1. Create a Clockify API key (Preferences → Advanced → Manage API Keys).
-2. Run **`npx -y -p @dustinestes/clockify-agent-plugin clockify-cursor-install`** — installs skills + global MCP ([docs/install-cursor.md](docs/install-cursor.md)). Optional: Directory MCP button (MCP only; [caveats](docs/install-cursor.md#cursordirectory-optional)).
+2. Run **`npx -y -p @dustinestes/clockify-agent-plugin clockify-install-cursor`** — installs skills + global MCP ([docs/install-cursor.md](docs/install-cursor.md)). Optional: Directory MCP button (MCP only; [caveats](docs/install-cursor.md#cursordirectory-optional)).
 3. Reload Cursor; confirm **Customize → MCP** shows **clockify-agent-plugin** enabled.
 4. Optional: [pre-allow Clockify MCP tools](docs/use.md#pre-enable-clockify-tools) so agents do not stall on an Allow / Always allow prompt mid-run.
 

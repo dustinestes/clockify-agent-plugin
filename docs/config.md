@@ -117,7 +117,7 @@ Consumer install stays **user** MCP (API key only). Do not set `CLOCKIFY_CONFIG_
 
 If you want process-level pinning in **one** repo, a project `.cursor/mcp.json` can set `CLOCKIFY_CONFIG_ROOT` to `${workspaceFolder}` (that interpolation is the folder that contains the project `mcp.json`). Project MCP of the same server name **replaces** the user server, so you must still supply the API key (or `${env:CLOCKIFY_API_KEY}`). Project MCP can be flaky in multi-root windows; `config_root` on each tool call is the supported path.
 
-Sandbox (`clockify-cursor-install --sandbox`) already sets env `CLOCKIFY_CONFIG_ROOT` on a project MCP pointing at this checkout’s `dist/`. That is a maintainer overlay, not the consumer install.
+Sandbox (`clockify-install-cursor --sandbox`) already sets env `CLOCKIFY_CONFIG_ROOT` on a project MCP pointing at this checkout’s `dist/`. That is a maintainer overlay, not the consumer install.
 
 `CLOCKIFY_CONFIG_PATH` can still point at an explicit yaml file (tests).
 
