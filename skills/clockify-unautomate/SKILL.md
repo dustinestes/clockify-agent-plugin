@@ -31,10 +31,12 @@ To remove config as well, use [`clockify-uninit`](../clockify-uninit/SKILL.md).
    .clockify/
    ```
 
+   Normal path: the `.clockify/` stanza remains, so leave `.gitignore` in place. Edge case only: if after removing rule lines the file is empty or whitespace-only, delete it (same as empty `hooks.json`). Never delete a non-empty `.gitignore`. Full stanza teardown (and deleting an emptied file) is `clockify-uninit`.
+
 ## Do not
 
 - Wipe unrelated Cursor hooks or rules
-- Delete `.clockify/` or the user’s entire `.gitignore`
+- Delete `.clockify/` or a non-empty `.gitignore`
 - Uninstall Directory / local plugin or clear `CLOCKIFY_API_KEY`
 
 ## After

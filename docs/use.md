@@ -110,7 +110,7 @@ The Directory / npx **plugin stays installed**. These skills only change the cur
 | Want | Skill | What it does |
 |------|-------|----------------|
 | Back to **manual** entry | `/clockify-unautomate` | Removes the Clockify Cursor rule and Clockify-owned hooks. Keeps `.clockify/` so start-timer, enter-time, and summarize still work. |
-| **All** Clockify files gone from this repo | `/clockify-uninit` | Unautomate, then deletes `.clockify/` and the managed gitignore stanza. Does not uninstall the plugin or clear `CLOCKIFY_API_KEY` unless you ask. |
+| **All** Clockify files gone from this repo | `/clockify-uninit` | Unautomate, then deletes `.clockify/` and the managed gitignore stanza (and `.gitignore` itself if that left the file empty). Does not uninstall the plugin or clear `CLOCKIFY_API_KEY` unless you ask. |
 
 Uninstalling the plugin itself is Cursor → remove Clockify Agent Plugin (or drop the npx MCP server). That is separate from uninit.
 

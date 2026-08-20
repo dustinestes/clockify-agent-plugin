@@ -17,7 +17,7 @@ If they only want to stop agent-mediated timers and **keep** `.clockify/config.y
 
 ## Confirm
 
-1. Summarize what will be removed (unautomate paths plus `.clockify/` and the remaining gitignore stanza).
+1. Summarize what will be removed (unautomate paths plus `.clockify/`, the remaining gitignore stanza, and `.gitignore` itself if that leaves the file empty).
 2. If `.clockify/.managed-by-init` is missing, still offer to remove the same well-known paths after explicit confirmation (user may have edited by hand).
 3. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
 
@@ -37,10 +37,12 @@ Perform [`clockify-unautomate`](../clockify-unautomate/SKILL.md) first (rule + C
 
    If the stanza still lists the rule path (unautomate not run yet), remove those lines together.
 
+3. After stanza removal: if `.gitignore` is empty or whitespace-only, delete the file (same idea as deleting empty `hooks.json` in unautomate). If any other ignore rules remain, keep the file. Never delete a non-empty `.gitignore`. No need to know whether init created the file — emptiness after our stanza is gone is enough.
+
 ## Do not
 
 - Wipe unrelated Cursor hooks or rules
-- Delete the user’s entire `.gitignore`
+- Delete a non-empty `.gitignore` (empty / whitespace-only after stanza removal is OK — see above)
 - Uninstall Directory / local plugin or clear `CLOCKIFY_API_KEY` unless asked
 - Invent paths outside the well-known set above
 
