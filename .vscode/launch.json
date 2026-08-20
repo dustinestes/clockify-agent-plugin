@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Sandbox",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run sandbox:debug",
+      "cwd": "${workspaceFolder}",
+      "postDebugTask": "sandbox:teardown"
+    },
+    {
+      "name": "Sandbox: teardown",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run sandbox:teardown",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

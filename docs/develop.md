@@ -13,7 +13,8 @@ How to change this plugin. Edit and build in this checkout. Validate against tho
 - [Prerequisites](#prerequisites)
 - [Build](#build)
 - [Validate](#validate)
-  - [Scripted](#scripted)
+  - [Run and Debug](#run-and-debug)
+  - [CLI](#cli)
   - [Manual](#manual)
 - [Publish](#publish)
 - [Appendix](#appendix)
@@ -61,7 +62,23 @@ npm run build
 
 Test changes against local `dist/` without pushing to GitHub, publishing to npm, or cutting a release.
 
-### Scripted
+### Run and Debug
+
+Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `cursor` or `code` is on `PATH`, and keeps a dedicated debug terminal alive. 
+
+1. Open Code/Cursor Run and Debug panel
+2. Select launch configuration: `Sandbox`
+3. Click: `Start Debugging` or press: `F5`
+4. Validate build: `use test prompts or custom validation`
+5. **Stop** (or Ctrl+C in the dedicated debug terminal) performs `sandbox: teardown`; answer `n` on the confirm prompt to keep it. 
+
+<br>
+
+> Note: Teardown does **not** close the editor window — the CLI cannot safely close one window in a shared Cursor instance, and a separate `--user-data-dir` instance drops your profile (login / Agents UI / folder never opens). A leftover window on an unreachable sandbox path is expected; close it yourself. 
+> 
+> Closing the debug terminal tab alone is not a reliable cleanup hook — use **Stop**, or **Sandbox: teardown** if you started the sandbox from the CLI.
+
+### CLI
 
 1. Create a fresh build: `npm run build`
 2. Setup the [sandbox](#sandbox): `npm run install:cursor -- --sandbox`
@@ -149,6 +166,13 @@ From this checkout: `npm run install:cursor -- {invocation}`
 | `--sandbox --teardown` | Delete the temp repo |
 | `--sandbox --teardown --dry-run` | Print the teardown plan; write nothing |
 | `--help` | Usage for the whole install script (including sandbox) |
+
+Related npm scripts (wrappers only; same flags underneath):
+
+| Script | What it does |
+|--------|----------------|
+| `npm run sandbox:debug` | Build, `--sandbox`, keep-alive for Run and Debug → **Sandbox** |
+| `npm run sandbox:teardown` | Confirm, then `--sandbox --teardown` |
 
 <br>
 
