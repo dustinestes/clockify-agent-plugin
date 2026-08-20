@@ -17,9 +17,10 @@ If they only want to stop agent-mediated timers and **keep** `.clockify/config.y
 
 ## Confirm
 
-1. Summarize what will be removed (unautomate paths plus `.clockify/`, the remaining gitignore stanza, and `.gitignore` itself if that leaves the file empty).
-2. If `.clockify/.managed-by-init` is missing, still offer to remove the same well-known paths after explicit confirmation (user may have edited by hand).
-3. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
+1. In **chat** (not the confirm UI), list what will be removed: unautomate paths plus `.clockify/`, the remaining gitignore stanza, and `.gitignore` itself if that leaves the file empty. Note that the Clockify Agent Plugin stays installed unless they ask otherwise.
+2. If `.clockify/.managed-by-init` is missing, still include those well-known paths in the chat inventory (user may have edited by hand).
+3. Ask only a short confirm (use **AskQuestion** when available), e.g. “Remove Clockify files from this repo?” — do **not** put the inventory in the question box.
+4. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
 
 ## Removals
 
