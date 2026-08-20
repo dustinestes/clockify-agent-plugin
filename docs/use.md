@@ -50,7 +50,7 @@ You can approve tools as they appear, or pre-allow them so unattended runs do no
 
 User-wide if you use Clockify from many repos on this machine. Per-repo if teammates should inherit the same allowlist, or you only want it in one workspace.
 
-The server name must match the MCP config key: **`clockify-agent-plugin`** (install script, Directory / npx, and the maintainer sandbox).
+The server name must match the MCP config key: **`clockify-agent-plugin`** for consumer / Directory / npx installs. The maintainer sandbox uses a distinct id **`clockify-agent-plugin-sandbox`** so both can appear in Customize → MCP without confusion — enable only the sandbox server in the sandbox window (both enabled → duplicate tools). Allowlist that server with `clockify-agent-plugin-sandbox:*` when testing.
 
 **Sample — allow all Clockify Agent Plugin MCP tools:**
 

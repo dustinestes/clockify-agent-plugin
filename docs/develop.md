@@ -35,7 +35,7 @@ Also meet [Getting started](../README.md#getting-started) (Node 18+, Cursor, Clo
 |------|-------------|---------|
 | Clone | Local checkout of this repo | `git clone https://github.com/dustinestes/clockify-agent-plugin.git` |
 | npm install | Install dependencies (including TypeScript) | `npm install` |
-| Checkout `.env` | API key for sandbox MCP (`envFile`) and `smoke:live`. The server does not auto-load `.env`. Consumers keep the key in user MCP env instead. | `printf 'CLOCKIFY_API_KEY=your_key_here\n' > .env` |
+| Checkout `.env` | Optional `CLOCKIFY_API_KEY_SANDBOX` seed for sandbox MCP / `smoke:live`. Copied into sandbox mcp.json at create time. The MCP server does not read `.env`. Do not put consumer `CLOCKIFY_API_KEY` here. | See [`.env.example`](../.env.example) |
 
 Pin the Clockify workspace ID in each test repo’s `.clockify/config.yml` (via `/clockify-init`), not in this checkout’s `.env`.
 
@@ -69,7 +69,7 @@ Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `
 1. Open Code/Cursor Run and Debug panel
 2. Select launch configuration: `Sandbox`
 3. Click: `Start Debugging` or press: `F5`
-4. In the sandbox window: **Developer: Reload Window** if needed, then enable MCP under Customize → MCPs
+4. In the sandbox window: **Developer: Reload Window** if needed, then enable **`clockify-agent-plugin-sandbox`** under Customize → MCPs (leave user **`clockify-agent-plugin`** disabled in that window)
 5. Validate build: `use test prompts or custom validation`
 6. Tear down with **Stop** (always deletes the folder via `postDebugTask` — no prompt; the session is already ending), or Ctrl+C in the debug terminal (confirms; answer `n` to keep the folder and stay attached). Or run **Sandbox: teardown** / `npm run sandbox:teardown`.
 
@@ -82,10 +82,10 @@ Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `
 ### CLI
 
 1. Create a fresh build: `npm run build`
-2. Setup the [sandbox](#sandbox): `npm run install:cursor -- --sandbox`
-3. Open Cursor: `cursor -n /tmp/clockify-agent-plugin-sandbox/`.
-4. Enable MCP server: `Customize → MCPs → clockify-agent-plugin-sandbox`
-5. Insert Clockify API Key: `clockify-agent-plugin-sandbox/mcp.json`
+2. Optional: set `CLOCKIFY_API_KEY_SANDBOX` in checkout `.env` (see [`.env.example`](../.env.example))
+3. Setup the [sandbox](#sandbox): `npm run install:cursor -- --sandbox`
+4. Open Cursor: `cursor -n /tmp/clockify-agent-plugin-sandbox/`.
+5. Enable MCP server: `Customize → MCPs → clockify-agent-plugin-sandbox` (leave user `clockify-agent-plugin` off in this window). If the key was not seeded, hand-fill `env.CLOCKIFY_API_KEY` in sandbox `.cursor/mcp.json`.
 6. Initialize plugin: `/clockify-init`
    - Choose a clockify workspace ID when prompted
 7. Validate build: `use test prompts or custom validation`
@@ -149,7 +149,7 @@ A disposable temp repo that points at this checkout’s `dist/`. It does **not**
 | Component | How it Works |
 |------|--------|
 | Skills | sandbox `.cursor/skills/` → this checkout’s `skills/` |
-| MCP | sandbox `.cursor/mcp.json` → `dist/index.js` + checkout `.env` |
+| MCP | sandbox `.cursor/mcp.json` → **`clockify-agent-plugin-sandbox`** → `dist/index.js`; `CLOCKIFY_API_KEY` baked from checkout `.env` `CLOCKIFY_API_KEY_SANDBOX` (or empty for hand-fill) |
 | Config | `CLOCKIFY_CONFIG_ROOT` = the sandbox ; see [config.md](./config.md)) |
 
 <br>
@@ -183,7 +183,7 @@ Related npm scripts (wrappers only; same flags underneath):
 1. Create `$TMPDIR/clockify-agent-plugin-sandbox` if missing
 2. `git init` in that folder if it has no `.git`
 3. Symlink each `skills/clockify-*` from this checkout into the sandbox `.cursor/skills/`
-4. Write sandbox `.cursor/mcp.json` (stdio `node` + this checkout’s `dist/index.js`, `CLOCKIFY_API_KEY` placeholder, `CLOCKIFY_CONFIG_ROOT` = the sandbox, optional `envFile` pointing at this checkout’s `.env`)
+4. Write sandbox `.cursor/mcp.json` under server id **`clockify-agent-plugin-sandbox`** (stdio `node` + this checkout’s `dist/index.js`, `CLOCKIFY_API_KEY` from checkout `.env` `CLOCKIFY_API_KEY_SANDBOX` or `""`, `CLOCKIFY_CONFIG_ROOT` = the sandbox). No `envFile`.
 5. Write a short sandbox `README.md`
 
 > `--sandbox` does **not** change `~/.cursor/mcp.json`, `~/.cursor/skills/`, or this repo’s `.mcp.json`. 
