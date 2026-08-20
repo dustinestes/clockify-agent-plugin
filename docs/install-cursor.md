@@ -41,13 +41,15 @@ From a plugin checkout: `npm run install:cursor`
 
 Play against this checkout’s `dist/` in a disposable temp repo. Does **not** rewrite `~/.cursor/mcp.json`.
 
+From this plugin checkout, prefer **Run and Debug → Sandbox** (see [develop.md](./develop.md#sandbox)). CLI equivalent:
+
 ```bash
 npm run build
 npm run install:cursor -- --sandbox
 npm run install:cursor -- --sandbox --teardown
 ```
 
-Open the printed `$TMPDIR` path in a separate Cursor window. See [develop.md](./develop.md#sandbox).
+Open the printed `$TMPDIR` path in a separate Cursor window. Or use `npm run sandbox:debug` / `npm run sandbox:teardown` (`sandbox:debug` uses `--wait` so closing the sandbox window tears down; **Stop** force-deletes the folder; Ctrl+C confirms so you can keep it).
 
 ### After install
 

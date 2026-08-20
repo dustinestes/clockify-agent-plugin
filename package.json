@@ -37,6 +37,8 @@
     "test:config": "tsx scripts/check-config.ts",
     "check:versions": "node scripts/check-versions.mjs",
     "install:cursor": "node scripts/install-cursor.mjs",
+    "sandbox:debug": "node scripts/sandbox-debug.mjs",
+    "sandbox:teardown": "node scripts/sandbox-debug.mjs --teardown",
     "prepublishOnly": "npm run check:versions && npm run build"
   },
   "engines": {
