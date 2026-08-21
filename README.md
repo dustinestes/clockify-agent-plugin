@@ -8,9 +8,9 @@
 <br>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-pre--release-2F4A34?style=flat-square&labelColor=2A2620" alt="Pre-release">
-  <img src="https://img.shields.io/badge/stack-TypeScript%20%2F%20MCP-2F4A34?style=flat-square&labelColor=2A2620" alt="TypeScript / MCP">
-  <img src="https://img.shields.io/badge/license-MIT-2F4A34?style=flat-square&labelColor=2A2620" alt="MIT">
+  <img src="https://img.shields.io/badge/status-pre--release-C9A227?style=flat-square&labelColor=2A2A2A" alt="Pre-release">
+  <img src="https://img.shields.io/badge/stack-TypeScript%20%2F%20MCP-C9A227?style=flat-square&labelColor=2A2A2A" alt="TypeScript / MCP">
+  <img src="https://img.shields.io/badge/license-MIT-C9A227?style=flat-square&labelColor=2A2A2A" alt="MIT">
 </p>
 
 <br>
