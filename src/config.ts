@@ -41,16 +41,23 @@ const descriptionSchema = (fromDefault: "prompt" | "template") =>
     })
     .default({});
 
+/** Manual enter-time: caller supplies text. No issue templates (see #74). */
+const manualDescriptionSchema = z
+  .object({
+    from: z.literal("prompt").default("prompt"),
+  })
+  .default({});
+
 const interactiveTaskSchema = z
   .object({
-    from: z.enum(["prompt", "github_label", "none"]).default("prompt"),
+    from: z.enum(["prompt", "github_label", "repo", "none"]).default("prompt"),
     if_missing: z.enum(["prompt", "create", "none"]).default("prompt"),
   })
   .default({});
 
 const automatedTaskSchema = z
   .object({
-    from: z.enum(["github_label", "none"]).default("github_label"),
+    from: z.enum(["github_label", "repo", "none"]).default("github_label"),
     if_missing: z.enum(["create", "none"]).default("create"),
   })
   .default({});
@@ -94,7 +101,7 @@ export const clockifyConfigSchema = z.object({
     .default({}),
   manual: z
     .object({
-      description: descriptionSchema("prompt"),
+      description: manualDescriptionSchema,
       task: interactiveTaskSchema,
       overlap: overlapSchema,
     })
@@ -122,7 +129,9 @@ export const clockifyConfigSchema = z.object({
 export type ClockifyConfig = z.infer<typeof clockifyConfigSchema>;
 export type RoundingConfig = ClockifyConfig["timer"]["rounding"];
 export type InactivityConfig = ClockifyConfig["automated"]["inactivity"];
-export type DescriptionConfig = ClockifyConfig["timer"]["description"];
+export type DescriptionConfig =
+  | ClockifyConfig["timer"]["description"]
+  | ClockifyConfig["manual"]["description"];
 
 export type LoadedConfig = {
   found: boolean;
@@ -318,6 +327,12 @@ export function resolveProjectName(
   if (config.project.name?.trim()) {
     return config.project.name.trim();
   }
+  if (!root) return null;
+  return basename(root);
+}
+
+/** Git toplevel folder name (always); ignores `project.from`. */
+export function resolveRepoName(root: string | null): string | null {
   if (!root) return null;
   return basename(root);
 }

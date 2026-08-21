@@ -30,9 +30,10 @@ Root keys: `version`, `workspace_id`, `project`, `timer`, `manual`, `automated`.
 |-----|---------|
 | `workspace_id` | Optional Clockify workspace pin (set during `/clockify-init`). Never put the API key here. |
 | `project.from` | `repo` (folder name) or `fixed` with `project.name` — see [shapes](../config.md#shape) |
-| `*.description.from` | `prompt` (caller supplies the string) or `template` |
-| `*.description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
-| `*.task.from` | `prompt`, `github_label`, or `none`. Automated allows `github_label` or `none` only (`repo` [coming soon](https://github.com/dustinestes/clockify-agent-plugin/issues/70) for [repo as task](../config.md#repo-as-task)) |
+| `timer` / `automated` `description.from` | `prompt` (caller supplies the string) or `template` |
+| `timer` / `automated` `description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
+| `manual.description.from` | `prompt` only (enter-time is not issue-driven; richer sources in [#74](https://github.com/dustinestes/clockify-agent-plugin/issues/74)). Leftover `template` keys are ignored |
+| `*.task.from` | `prompt`, `github_label`, `repo` (git toplevel folder name), or `none`. Automated allows `github_label`, `repo`, or `none` only — see [repo as task](../config.md#repo-as-task) |
 | `*.task.if_missing` | When the Clockify task does not exist: `prompt`, `create` (`ensure_task`), or `none`. Automated: `create` or `none` |
 | `timer.rounding` / `automated.rounding` | `enabled`, `increment_minutes`, `mode` (`nearest` \| `up` \| `down`), optional `start_mode` / `stop_mode` / `minimum_minutes` |
 | `*.overlap.on_conflict` | `prompt` or `override` when a completed interval overlaps another entry |
@@ -48,7 +49,7 @@ timer:
     template: "{issue_number} - {issue_title}"
 ```
 
-With `issue_number: 1` and `issue_title: Wire Clockify MCP` that becomes `#1 - Wire Clockify MCP`. When `from: prompt`, an omitted description is left blank rather than filled from the template.
+With `issue_number: 1` and `issue_title: Wire Clockify MCP` that becomes `#1 - Wire Clockify MCP`. When `from: prompt`, an omitted description is left blank rather than filled from the template. Manual enter-time does not use templates — only `manual.description.from: prompt`.
 
 ### Rounding
 
