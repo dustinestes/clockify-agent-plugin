@@ -1,0 +1,26 @@
+{
+  "name": "clockify-agent-plugin",
+  "scheme": "dark-grey-gold-white",
+  "colors": {
+    "grey-dark": {
+      "hex": "#2A2A2A",
+      "role": "Logo background, dark surfaces"
+    },
+    "gold": {
+      "hex": "#C9A227",
+      "role": "Accent: face or hands; badge message"
+    },
+    "gold-muted": {
+      "hex": "#8B7355",
+      "role": "Badge label / secondary gold on dark"
+    },
+    "white": {
+      "hex": "#F8F8F8",
+      "role": "Face or hands; light text on dark"
+    },
+    "white-pure": {
+      "hex": "#FFFFFF",
+      "role": "Optional pure white"
+    }
+  }
+}
