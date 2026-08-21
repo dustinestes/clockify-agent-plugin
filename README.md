@@ -37,8 +37,7 @@ Unofficial agent plugin for [Clockify](https://clockify.me): [MCP](https://model
 | IDE Layouts                          | Supports: single-window, multi-window, multi-root code workspace | [Config: which repo](docs/config.md#which-repo-config_root)  |
 | Customize Time Entry                     | Configure nearest/up/down rounding, start/stop, increment, minimums, include seconds    | [schema: rounding](docs/schema/config.yml.md#rounding)       |
 | Overlap guards                          | Handle overlapping time entries based on config                                 | [schema: overlap](docs/schema/config.yml.md#overlap)         |
-| Git repo ↔ Clockify project             | Set project repo name as Clockify project; 1:1 match on both surfaces                          | [`/clockify-init`](skills/clockify-init/SKILL.md)            |
-| GitHub labels ↔ Clockify tasks          | Set github labels as Clockify tasks; 1:1 match on both surfaces                                                        | [schema](docs/schema/config.yml.md)                          |
+| Config shapes                           | Repo as project (default) or repo as task — how git lines up with Clockify                    | [Config: shape](docs/config.md#shape)                        |
 | Description templates                   | Use tokenized string with github properties or have the agent prompt you              | [schema](docs/schema/config.yml.md#description-placeholders) |
 | Timer Runaway Prevention  | Stop a timer after inactivity to prevent timer runaway                                  | [schema: inactivity](docs/schema/config.yml.md#inactivity)   |
 
@@ -48,7 +47,7 @@ Unofficial agent plugin for [Clockify](https://clockify.me): [MCP](https://model
 
 ## How it works
 
-Two modes. Both use the same Clockify project. Clockify still allows only **one running timer**.
+Two modes. Both use the same Clockify project for a given repo config. Clockify still allows only **one running timer**. How that project maps to git (repo as project vs repo as task): [Config: shape](docs/config.md#shape).
 
 | Mode | How time gets in | Skills |
 |------|------------------|--------|

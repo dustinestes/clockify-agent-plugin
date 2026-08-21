@@ -3,7 +3,7 @@
 <h1>config.yml</h1>
 <br clear="both">
 
-Field contract for `.clockify/config.yml`: project identity plus per-method description, task, rounding, overlap, and automation. How the file gets on disk and how the server finds it (`config_root`, Cursor layouts): [config.md](../config.md). Copy-paste source: [`.clockify/config.yml.example`](../../.clockify/config.yml.example). Never put API keys here.
+Field contract for `.clockify/config.yml`: project identity plus per-method description, task, rounding, overlap, and automation. How the file gets on disk and how the server finds it (`config_root`, Cursor layouts): [config.md](../config.md). How git lines up with Clockify (repo as project vs repo as task): [config.md — shape](../config.md#shape). Copy-paste source: [`.clockify/config.yml.example`](../../.clockify/config.yml.example). Never put API keys here.
 
 <br>
 
@@ -29,10 +29,10 @@ Root keys: `version`, `workspace_id`, `project`, `timer`, `manual`, `automated`.
 | Key | Purpose |
 |-----|---------|
 | `workspace_id` | Optional Clockify workspace pin (set during `/clockify-init`). Never put the API key here. |
-| `project.from` | `repo` (folder name) or `fixed` with `project.name` |
+| `project.from` | `repo` (folder name) or `fixed` with `project.name` — see [shapes](../config.md#shape) |
 | `*.description.from` | `prompt` (caller supplies the string) or `template` |
 | `*.description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
-| `*.task.from` | `prompt`, `github_label`, or `none`. Automated allows `github_label` or `none` only |
+| `*.task.from` | `prompt`, `github_label`, or `none`. Automated allows `github_label` or `none` only (`repo` [coming soon](https://github.com/dustinestes/clockify-agent-plugin/issues/70) for [repo as task](../config.md#repo-as-task)) |
 | `*.task.if_missing` | When the Clockify task does not exist: `prompt`, `create` (`ensure_task`), or `none`. Automated: `create` or `none` |
 | `timer.rounding` / `automated.rounding` | `enabled`, `increment_minutes`, `mode` (`nearest` \| `up` \| `down`), optional `start_mode` / `stop_mode` / `minimum_minutes` |
 | `*.overlap.on_conflict` | `prompt` or `override` when a completed interval overlaps another entry |
