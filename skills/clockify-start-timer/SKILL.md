@@ -28,6 +28,7 @@ Interactive **Timer** method (`entry_method: timer`). Agent-mediated starts belo
 3. Resolve task from `timer.task.from`:
    - `prompt` — ask (or none).
    - `github_label` — `ensure_task` when `if_missing` is `create` and a label is known; `prompt` or skip per `if_missing`. No label → no task.
+   - `repo` — use `repoName` from `clockify_get_config` (git toplevel folder name). `ensure_task` when `if_missing` is `create`; `prompt` or skip per `if_missing`.
    - `none` — no task.
 4. `clockify_start_timer` with `config_root`, `entry_method: timer`, `project_id`, optional `task_id`, description or issue fields, and optional `start` (ISO) if they asked to backdate.
 5. If the tool returns `overlap: true`, show the clash. Retry with `confirm_overlap: true` only if they agree (or `timer.overlap.on_conflict` is `override`).

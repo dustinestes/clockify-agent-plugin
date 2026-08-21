@@ -43,14 +43,14 @@ const descriptionSchema = (fromDefault: "prompt" | "template") =>
 
 const interactiveTaskSchema = z
   .object({
-    from: z.enum(["prompt", "github_label", "none"]).default("prompt"),
+    from: z.enum(["prompt", "github_label", "repo", "none"]).default("prompt"),
     if_missing: z.enum(["prompt", "create", "none"]).default("prompt"),
   })
   .default({});
 
 const automatedTaskSchema = z
   .object({
-    from: z.enum(["github_label", "none"]).default("github_label"),
+    from: z.enum(["github_label", "repo", "none"]).default("github_label"),
     if_missing: z.enum(["create", "none"]).default("create"),
   })
   .default({});
@@ -318,6 +318,12 @@ export function resolveProjectName(
   if (config.project.name?.trim()) {
     return config.project.name.trim();
   }
+  if (!root) return null;
+  return basename(root);
+}
+
+/** Git toplevel folder name (always); ignores `project.from`. */
+export function resolveRepoName(root: string | null): string | null {
   if (!root) return null;
   return basename(root);
 }

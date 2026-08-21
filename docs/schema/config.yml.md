@@ -32,7 +32,7 @@ Root keys: `version`, `workspace_id`, `project`, `timer`, `manual`, `automated`.
 | `project.from` | `repo` (folder name) or `fixed` with `project.name` — see [shapes](../config.md#shape) |
 | `*.description.from` | `prompt` (caller supplies the string) or `template` |
 | `*.description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
-| `*.task.from` | `prompt`, `github_label`, or `none`. Automated allows `github_label` or `none` only (`repo` [coming soon](https://github.com/dustinestes/clockify-agent-plugin/issues/70) for [repo as task](../config.md#repo-as-task)) |
+| `*.task.from` | `prompt`, `github_label`, `repo` (git toplevel folder name), or `none`. Automated allows `github_label`, `repo`, or `none` only — see [repo as task](../config.md#repo-as-task) |
 | `*.task.if_missing` | When the Clockify task does not exist: `prompt`, `create` (`ensure_task`), or `none`. Automated: `create` or `none` |
 | `timer.rounding` / `automated.rounding` | `enabled`, `increment_minutes`, `mode` (`nearest` \| `up` \| `down`), optional `start_mode` / `stop_mode` / `minimum_minutes` |
 | `*.overlap.on_conflict` | `prompt` or `override` when a completed interval overlaps another entry |

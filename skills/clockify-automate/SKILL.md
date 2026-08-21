@@ -28,7 +28,7 @@ If config already exists, do not overwrite it. Continue with After init.
 2. Add or update `.cursor/rules/clockify.mdc` so the agent:
    - Passes `config_root` on Clockify MCP calls: reuse the known git toplevel this session; re-resolve only if the folder or focused root changed (cwd first, not the open file)
    - Passes `entry_method: automated` on `clockify_start_timer` / `clockify_stop_timer`
-   - On starting work / planning for an issue → start with issue fields; honor `task.from` / `task.if_missing` (create Clockify tasks from labels; if no label, no task)
+   - On starting work / planning for an issue → start with issue fields; honor `task.from` / `task.if_missing` (create Clockify tasks from GitHub labels or from `repoName` when `from` is `repo`; if no label and not repo, no task)
    - On finishing issue work, shipping a PR, or closing/abandoning a PR in-session → stop
    - On switching issues → **warn** with the running timer’s description/duration; stop-then-start only after the user confirms
    - On session start / resume → `clockify_get_running_timer`; if `inactivity.pastThreshold`, stop (or ask)
@@ -55,7 +55,8 @@ root. Do not pass the .code-workspace parent.
 
 When the user starts work or planning on a GitHub issue, start a Clockify timer
 with entry_method: automated (issue_number + issue_title; project/task from
-automated.task). If another timer is running, warn and confirm before stopping it.
+automated.task — github_label or repo folder name via repoName). If another
+timer is running, warn and confirm before stopping it.
 
 When they finish the issue, switch issues (after confirm), ship the PR, or close
 or abandon the PR in this session, stop the timer with entry_method: automated.

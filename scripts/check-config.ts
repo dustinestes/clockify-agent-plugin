@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import {
@@ -29,6 +29,7 @@ import {
   resolveConfigPathInRoot,
   resolveEntryDescription,
   resolveProjectName,
+  resolveRepoName,
   roundDate,
 } from "../src/config.js";
 
@@ -180,6 +181,8 @@ withFixture((dir) => {
   assert.equal(loaded.path, join(dir, ".clockify", "config.yml"));
   assert.equal(loaded.root, dir);
   assert.equal(resolveProjectName(loaded.config, loaded.root), "FixtureRepo");
+  assert.equal(resolveRepoName(loaded.root), basename(dir));
+  assert.notEqual(resolveRepoName(loaded.root), "FixtureRepo");
   assert.equal(loaded.config.workspace_id, "ws_from_yaml");
   assert.equal(
     resolveConfiguredWorkspaceId(loaded.config),
@@ -198,6 +201,25 @@ const leftoverNameFrom = parseClockifyConfig({
 });
 assert.equal(leftoverNameFrom.project.from, "repo");
 assert.equal(parseClockifyConfig({ workspace_id: "  " }).workspace_id, undefined);
+
+const repoTaskCfg = parseClockifyConfig({
+  project: { from: "fixed", name: "Application modernization" },
+  timer: { task: { from: "repo", if_missing: "create" } },
+  manual: { task: { from: "repo", if_missing: "create" } },
+  automated: { task: { from: "repo", if_missing: "create" } },
+});
+assert.equal(resolveRepoName(null), null);
+assert.equal(repoTaskCfg.timer.task.from, "repo");
+assert.equal(repoTaskCfg.manual.task.from, "repo");
+assert.equal(repoTaskCfg.automated.task.from, "repo");
+assert.throws(
+  () => parseClockifyConfig({ timer: { task: { from: "unknown" } } }),
+  /Invalid Clockify config/,
+);
+assert.throws(
+  () => parseClockifyConfig({ automated: { task: { from: "prompt" } } }),
+  /Invalid Clockify config/,
+);
 
 withFixture((dir) => {
   mkdirSync(join(dir, ".clockify"), { recursive: true });

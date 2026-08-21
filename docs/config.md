@@ -117,8 +117,6 @@ Example: workspace *Acme Labs*, client *Northwind*, project *Application moderni
 
 #### Configuration
 
-`task.from: repo` is [coming soon](https://github.com/dustinestes/clockify-agent-plugin/issues/70) so this shape is first-class. Until then, use `prompt` and pass the repo name when starting or entering time.
-
 ```yaml
 project:
   from: fixed
@@ -129,32 +127,31 @@ timer:
     from: template
     template: "{issue_number} - {issue_title}"
   task:
-    from: prompt
-    if_missing: prompt
+    from: repo
+    if_missing: create
 
 manual:
   description:
     from: template
     template: "{issue_number} - {issue_title}"
   task:
-    from: prompt
-    if_missing: prompt
+    from: repo
+    if_missing: create
 
 automated:
   description:
     from: template
     template: "{issue_number} - {issue_title}"
-  # automated.task.from allows github_label | none only until task.from: repo lands
   task:
-    from: none
-    if_missing: none
+    from: repo
+    if_missing: create
 ```
 
 #### How to use
 
 1. Run `/clockify-init`; pick a Clockify workspace.
 2. Set `project.from: fixed` and `project.name` to the shared Clockify project.
-3. When logging time, supply the repo name as the task (prompt), or `ensure_task` with that name. After `task.from: repo` ships, the folder name fills the task automatically.
+3. Init (or timer/enter-time skills) uses `repoName` from `clockify_get_config` — the git toplevel folder name — as the Clockify task (`ensure_task` when `if_missing` is `create`).
 
 ---
 

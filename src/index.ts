@@ -25,6 +25,7 @@ import {
   resolveConfiguredWorkspaceId,
   resolveEntryDescription,
   resolveProjectName,
+  resolveRepoName,
   type LoadedConfig,
   type TimerEntryMethod,
 } from "./config.js";
@@ -118,7 +119,7 @@ function resolveDescription(
   configRoot?: string,
 ): string | undefined {
   const loaded = loadConfig(configRoot);
-  const repo = resolveProjectName(loaded.config, loaded.root) ?? undefined;
+  const repo = resolveRepoName(loaded.root) ?? undefined;
   return resolveEntryDescription(loaded.config[method].description, {
     ...input,
     repo,
@@ -199,6 +200,7 @@ server.registerTool(
         path: loaded.path,
         root: loaded.root,
         projectName: resolveProjectName(loaded.config, loaded.root),
+        repoName: resolveRepoName(loaded.root),
         workspaceId: resolveConfiguredWorkspaceId(loaded.config) ?? null,
         config: loaded.config,
         tried: loaded.found ? undefined : describeConfigDiscovery(config_root),
