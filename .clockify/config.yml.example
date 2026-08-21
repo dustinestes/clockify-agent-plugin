@@ -28,7 +28,6 @@ timer:
 manual:
   description:
     from: prompt
-    template: "{issue_number} - {issue_title}"
   task:
     from: prompt
     if_missing: prompt

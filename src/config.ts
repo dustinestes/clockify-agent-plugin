@@ -41,6 +41,13 @@ const descriptionSchema = (fromDefault: "prompt" | "template") =>
     })
     .default({});
 
+/** Manual enter-time: caller supplies text. No issue templates (see #74). */
+const manualDescriptionSchema = z
+  .object({
+    from: z.literal("prompt").default("prompt"),
+  })
+  .default({});
+
 const interactiveTaskSchema = z
   .object({
     from: z.enum(["prompt", "github_label", "repo", "none"]).default("prompt"),
@@ -94,7 +101,7 @@ export const clockifyConfigSchema = z.object({
     .default({}),
   manual: z
     .object({
-      description: descriptionSchema("prompt"),
+      description: manualDescriptionSchema,
       task: interactiveTaskSchema,
       overlap: overlapSchema,
     })
@@ -122,7 +129,9 @@ export const clockifyConfigSchema = z.object({
 export type ClockifyConfig = z.infer<typeof clockifyConfigSchema>;
 export type RoundingConfig = ClockifyConfig["timer"]["rounding"];
 export type InactivityConfig = ClockifyConfig["automated"]["inactivity"];
-export type DescriptionConfig = ClockifyConfig["timer"]["description"];
+export type DescriptionConfig =
+  | ClockifyConfig["timer"]["description"]
+  | ClockifyConfig["manual"]["description"];
 
 export type LoadedConfig = {
   found: boolean;

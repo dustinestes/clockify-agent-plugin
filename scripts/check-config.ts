@@ -221,6 +221,24 @@ assert.throws(
   /Invalid Clockify config/,
 );
 
+const manualPromptOnly = parseClockifyConfig({
+  manual: {
+    description: { from: "prompt", template: "ignored leftover" },
+  },
+});
+assert.equal(manualPromptOnly.manual.description.from, "prompt");
+assert.equal(
+  "template" in manualPromptOnly.manual.description,
+  false,
+);
+assert.throws(
+  () =>
+    parseClockifyConfig({
+      manual: { description: { from: "template" } },
+    }),
+  /Invalid Clockify config/,
+);
+
 withFixture((dir) => {
   mkdirSync(join(dir, ".clockify"), { recursive: true });
   const configPath = join(dir, ".clockify", "config.yml");

@@ -65,7 +65,7 @@ Example: workspace *Acme Labs*, client *Northwind*, project = repo name, task = 
 - Workspace → user defined
 - Project → repo name
 - Task → GitHub label
-- Description → `{issue_number} - {issue_title}`
+- Description → `{issue_number} - {issue_title}` (timer / automated). Manual enter-time is always `prompt`.
 
 #### Configuration
 
@@ -83,8 +83,7 @@ timer:
 
 manual:
   description:
-    from: template
-    template: "{issue_number} - {issue_title}"
+    from: prompt
   task:
     from: github_label
     if_missing: create
@@ -113,7 +112,7 @@ Example: workspace *Acme Labs*, client *Northwind*, project *Application moderni
 - Workspace → user defined
 - Project → fixed name (`project.from: fixed`)
 - Task → repo name
-- Description → issue fields; add `{repo}` only if you still want the name in the text
+- Description → issue fields on timer / automated; add `{repo}` only if you still want the name in the text. Manual is always `prompt`.
 
 #### Configuration
 
@@ -132,8 +131,7 @@ timer:
 
 manual:
   description:
-    from: template
-    template: "{issue_number} - {issue_title}"
+    from: prompt
   task:
     from: repo
     if_missing: create

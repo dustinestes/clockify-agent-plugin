@@ -21,7 +21,7 @@ description: >-
 
 1. `clockify_get_running_timer` with `config_root`. If a timer is already running for this same work, do not double-count — point at `clockify-stop-timer`.
 2. Resolve project (list/ensure). Resolve task from `manual.task.from` / `if_missing` (same rules as start-timer: prompt, github_label, repo, or none).
-3. Description: `prompt` → ask or use their text. `template` → issue fields, omit `description`.
+3. Description: ask or use their text (`manual.description.from` is always `prompt`; no issue templates).
 4. **Times given** (e.g. 09:30–09:45): convert to ISO and create. Do not round.
 5. **Times omitted** (forgot to track): infer start from cheap signals — git log / branch checkout, conversation timestamps, recent file edits. End defaults to now unless they give one. **Show the inferred window and confirm.** Never silently log hours.
 6. `clockify_create_time_entry` with `config_root` and `entry_method: manual`. If `overlap: true`, show the clash. Retry with `confirm_overlap: true` only if they agree (or `on_conflict` is `override`). Override is how parallel completed streams can stack; do not treat that as the default.
