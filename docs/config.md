@@ -14,6 +14,13 @@ How `.clockify/config.yml` gets on disk, how git treats it, and how the server f
 
 - [Contents](#contents)
 - [Setup](#setup)
+- [Shape](#shape)
+  - [Repo as project](#repo-as-project)
+    - [Configuration](#configuration)
+    - [How to use](#how-to-use)
+  - [Repo as task](#repo-as-task)
+    - [Configuration](#configuration-1)
+    - [How to use](#how-to-use-1)
 - [Git hygiene](#git-hygiene)
 - [Discovery](#discovery)
 - [Which repo (`config_root`)](#which-repo-config_root)
@@ -36,6 +43,118 @@ cp path/to/clockify-agent-plugin/.clockify/config.yml.example .clockify/config.y
 ```
 
 Skills pass `config_root` on Clockify tool calls so a user-scoped MCP process can find this file. Resolve it once, then reuse — [When to reuse `config_root`](#when-to-reuse-config_root). How to pick the path: [Which repo (`config_root`)](#which-repo-config_root).
+
+---
+
+<br>
+
+## Shape
+
+These shapes are how you line up git/GitHub with Clockify’s tree (workspace → project → task → description) taxonomy, not extra timer modes. Pick the shape that matches how you want to track and report; then encode it in `.clockify/config.yml`.
+
+**Workspace:** this plugin does not define a workspace by shape. You choose this when running `/clockify-init` (personal, team, client space).
+
+**Clients:** this plugin does not set Clockify clients (they are optional on a project). Assign one in Clockify: **Projects** → **Select Project** → **Settings** → **Client** dropdown.
+
+### Repo as project
+
+Granular 1:1. The Clockify project name **is** the git repo name. GitHub labels become tasks so you can report time on work labeled as features, bugs, docs, and so on inside that repo. This is what `/clockify-init` and the README default story describe.
+
+Example: workspace *Acme Labs*, client *Northwind*, project = repo name, task = GitHub label.
+
+- Workspace → user defined
+- Project → repo name
+- Task → GitHub label
+- Description → `{issue_number} - {issue_title}`
+
+#### Configuration
+
+```yaml
+project:
+  from: repo
+
+timer:
+  description:
+    from: template
+    template: "{issue_number} - {issue_title}"
+  task:
+    from: github_label
+    if_missing: create
+
+manual:
+  description:
+    from: template
+    template: "{issue_number} - {issue_title}"
+  task:
+    from: github_label
+    if_missing: create
+
+automated:
+  description:
+    from: template
+    template: "{issue_number} - {issue_title}"
+  task:
+    from: github_label
+    if_missing: create
+```
+
+#### How to use
+
+1. In the repo, run `/clockify-init`; pick a Clockify workspace; leave `project.from: repo`.
+2. Init creates/finds a Clockify project named like the repo folder and can sync GitHub labels → tasks when `task.from` is `github_label`.
+3. Start/stop timers or automate as usual; descriptions and tasks follow the yaml.
+
+### Repo as task
+
+Compact. For when you do not need label-level granularity. Many sibling repos report under one fixed Clockify project (a milestone or initiative). Each repo is a **task** under that project.
+
+Example: workspace *Acme Labs*, client *Northwind*, project *Application modernization*, tasks = repo name (i.e. `webapp`, `mobileapp`, `database`, `website`).
+
+- Workspace → user defined
+- Project → fixed name (`project.from: fixed`)
+- Task → repo name
+- Description → issue fields; add `{repo}` only if you still want the name in the text
+
+#### Configuration
+
+`task.from: repo` is [coming soon](https://github.com/dustinestes/clockify-agent-plugin/issues/70) so this shape is first-class. Until then, use `prompt` and pass the repo name when starting or entering time.
+
+```yaml
+project:
+  from: fixed
+  name: Application modernization
+
+timer:
+  description:
+    from: template
+    template: "{issue_number} - {issue_title}"
+  task:
+    from: prompt
+    if_missing: prompt
+
+manual:
+  description:
+    from: template
+    template: "{issue_number} - {issue_title}"
+  task:
+    from: prompt
+    if_missing: prompt
+
+automated:
+  description:
+    from: template
+    template: "{issue_number} - {issue_title}"
+  # automated.task.from allows github_label | none only until task.from: repo lands
+  task:
+    from: none
+    if_missing: none
+```
+
+#### How to use
+
+1. Run `/clockify-init`; pick a Clockify workspace.
+2. Set `project.from: fixed` and `project.name` to the shared Clockify project.
+3. When logging time, supply the repo name as the task (prompt), or `ensure_task` with that name. After `task.from: repo` ships, the folder name fills the task automatically.
 
 ---
 
