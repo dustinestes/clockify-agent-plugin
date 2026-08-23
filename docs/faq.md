@@ -22,7 +22,7 @@ A collection of answers to popular questions about this plugin.
   <summary>What happens if my repo has no git remotes or labels?</summary>
 
   <br>
-  The agent will identify this and simply skip creating/updating tasks on the Clockify platform.
+  For shape **1** (repo as project), the agent skips creating/updating tasks on Clockify when there are no remotes or labels. The project may still be ensured.
   
   Output
 
@@ -30,6 +30,14 @@ A collection of answers to popular questions about this plugin.
   GitHub label → Clockify task sync was skipped: this repo has no git remotes. No tasks were created or updated.
   ```
 </details>
+
+<details>
+  <summary>Does init always create a Clockify project?</summary>
+
+  <br>
+  No. First-time `/clockify-init` AskQuestions for workspace, then shape. Choose **0** to write local config only. Shapes **1** and **2** create or find the project (and tasks) after that choice.
+</details>
+
 
 
 ---

@@ -3,7 +3,7 @@
 <h1>config.yml</h1>
 <br clear="both">
 
-Field contract for `.clockify/config.yml`: project identity plus per-method description, task, rounding, overlap, and automation. How the file gets on disk and how the server finds it (`config_root`, Cursor layouts): [config.md](../config.md). How git lines up with Clockify (repo as project vs repo as task): [config.md — shape](../config.md#shape). Copy-paste source: [`.clockify/config.yml.example`](../../.clockify/config.yml.example). Never put API keys here.
+Field contract for `.clockify/config.yml`: project identity plus per-method description, task, rounding, overlap, and automation. How the file gets on disk and how the server finds it (`config_root`, Cursor layouts): [config.md](../config.md). How git lines up with Clockify (init shape 0/1/2): [config.md — shape](../config.md#shape). Copy-paste source (shape 0 scaffold): [`.clockify/config.yml.example`](../../.clockify/config.yml.example). Never put API keys here.
 
 <br>
 
@@ -29,7 +29,7 @@ Root keys: `version`, `workspace_id`, `project`, `timer`, `manual`, `automated`.
 | Key | Purpose |
 |-----|---------|
 | `workspace_id` | Optional Clockify workspace pin (set during `/clockify-init`). Never put the API key here. |
-| `project.from` | `repo` (folder name) or `fixed` with `project.name` — see [shapes](../config.md#shape) |
+| `project.from` | `repo` (folder name) or `fixed` with `project.name` — set by `/clockify-init` shape 1 or 2; see [shapes](../config.md#shape) |
 | `timer` / `automated` `description.from` | `prompt` (caller supplies the string) or `template` |
 | `timer` / `automated` `description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
 | `manual.description.from` | `prompt` only (enter-time is not issue-driven; richer sources in [#74](https://github.com/dustinestes/clockify-agent-plugin/issues/74)). Leftover `template` keys are ignored |
