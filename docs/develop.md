@@ -69,7 +69,7 @@ Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `
 1. Open Code/Cursor Run and Debug panel
 2. Select launch configuration: `Sandbox`
 3. Click: `Start Debugging` or press: `F5`
-4. In the sandbox window: **Developer: Reload Window** if needed, then enable **`clockify-agent-plugin-sandbox`** under Customize → MCPs (leave user **`clockify-agent-plugin`** disabled in that window)
+4. In the sandbox window: **Developer: Reload Window** if needed, then enable **`clockify-agent-plugin-sandbox`** under Customize → MCPs (leave user **`clockify-agent-plugin`** disabled in that window). Open **Output → MCP Logs** ([logging.md](./logging.md)); sandbox sets `CLOCKIFY_MCP_LOG=debug`.
 5. Validate build: `use test prompts or custom validation`
 6. Tear down with **Stop** (always deletes the folder via `postDebugTask` — no prompt; the session is already ending), or Ctrl+C in the debug terminal (confirms; answer `n` to keep the folder and stay attached). Or run **Sandbox: teardown** / `npm run sandbox:teardown`.
 
@@ -85,10 +85,10 @@ Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `
 2. Optional: set `CLOCKIFY_API_KEY_SANDBOX` in checkout `.env` (see [`.env.example`](../.env.example))
 3. Setup the [sandbox](#sandbox): `npm run install:cursor -- --sandbox`
 4. Open Cursor: `cursor -n /tmp/clockify-agent-plugin-sandbox/`.
-5. Enable MCP server: `Customize → MCPs → clockify-agent-plugin-sandbox` (leave user `clockify-agent-plugin` off in this window). If the key was not seeded, hand-fill `env.CLOCKIFY_API_KEY` in sandbox `.cursor/mcp.json`.
+5. Enable MCP server: `Customize → MCPs → clockify-agent-plugin-sandbox` (leave user `clockify-agent-plugin` off in this window). If the key was not seeded, hand-fill `env.CLOCKIFY_API_KEY` in sandbox `.cursor/mcp.json`. Logs: [logging.md](./logging.md) (**Output → MCP Logs**).
 6. Initialize plugin: `/clockify-init`
    - Choose a clockify workspace ID when prompted
-7. Validate build: `use test prompts or custom validation`
+7. Validate build: `use test prompts or custom validation`​
 8. Tear down the [sandbox](#sandbox): `npm run install:cursor -- --sandbox --teardown`
 
 ### Manual
@@ -145,11 +145,13 @@ A disposable temp repo that points at this checkout’s `dist/`. It does **not**
 
 - Created in the OS temp folder so it may vanish on reboot. Re-run `--sandbox` if the folder is gone.
 - This is not a consumer install. Do not treat a green sandbox MCP as proof that npx / Directory works.
+- Cursor may show the sandbox MCP as disabled while `node …/dist/index.js` is still running ([logging.md](./logging.md#toggle-red-output-quiet-after-ready)). Teardown can leave a process with cwd `(deleted)`.
+- After `npm run build`, kill that process (Reload Window is not enough) so the next enable loads new `dist/` ([logging.md](./logging.md#how-many-node-processes)).
 
 | Component | How it Works |
 |------|--------|
 | Skills | sandbox `.cursor/skills/` → this checkout’s `skills/` |
-| MCP | sandbox `.cursor/mcp.json` → **`clockify-agent-plugin-sandbox`** → `dist/index.js`; `CLOCKIFY_API_KEY` baked from checkout `.env` `CLOCKIFY_API_KEY_SANDBOX` (or empty for hand-fill) |
+| MCP | sandbox `.cursor/mcp.json` → **`clockify-agent-plugin-sandbox`** → `dist/index.js`; `CLOCKIFY_API_KEY` baked from checkout `.env` `CLOCKIFY_API_KEY_SANDBOX` (or empty for hand-fill); `CLOCKIFY_MCP_LOG=debug` |
 | Config | `CLOCKIFY_CONFIG_ROOT` = the sandbox ; see [config.md](./config.md)) |
 
 <br>

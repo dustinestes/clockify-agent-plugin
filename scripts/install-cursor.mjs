@@ -419,6 +419,7 @@ function createSandbox(dryRun) {
         env: {
           CLOCKIFY_API_KEY: seededKey,
           CLOCKIFY_CONFIG_ROOT: sandboxRoot,
+          CLOCKIFY_MCP_LOG: "debug",
         },
       },
     },
@@ -434,6 +435,7 @@ Disposable workspace for playing with Clockify Agent Plugin changes from:
 
 - Skills: symlinked from that checkout (should appear under \`/\`)
 - MCP: **${sandboxServerId}** → \`dist/index.js\` (distinct from consumer \`${serverId}\`)
+- Logs: \`CLOCKIFY_MCP_LOG=debug\` (stderr JSON; Cursor **Output → MCP Logs**). See plugin checkout \`docs/logging.md\`.
 - API key: baked from checkout \`.env\` \`${sandboxApiKeyEnv}\`, or edit \`env.CLOCKIFY_API_KEY\` in \`.cursor/mcp.json\` if empty
 - No \`.clockify/config.yml\` until \`/clockify-init\`
 
@@ -447,7 +449,7 @@ Project MCP servers often appear in **Customize → MCP** as **disabled** until 
 2. Find **${sandboxServerId}** (may be grouped under this sandbox folder)
 3. Toggle it **enabled** (green)
 4. Leave user **${serverId}** disabled in this window (both enabled → duplicate Clockify tools)
-5. If it stays red, open **Output → MCP Logs**
+5. If it stays red or later disables itself, open **Output → MCP Logs** (see plugin checkout \`docs/logging.md\`)
 
 Rebuild the plugin checkout after \`src/\` changes (\`npm run build\`), then reload this window.
 `,

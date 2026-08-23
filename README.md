@@ -68,7 +68,7 @@ Two modes. Both use the same Clockify project for a given repo config. Clockify 
 | Cursor (or AI Agent/IDE) | Run skills and MCP |
 | Clockify API key | MCP sevrver connection to Clockify |
 
-If Cursor cannot find `node` / `npx`, see [troubleshoot](docs/troubleshoot.md#node-not-found).
+If Cursor cannot find `node` / `npx`, see [troubleshoot](docs/troubleshoot.md#node-not-found). MCP process logs: [logging](docs/logging.md).
 
 #### Additional Prerequisites
 

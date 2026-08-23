@@ -11,6 +11,7 @@ Install and use the unofficial Clockify Agent Plugin.
 
 - [Contents](#contents)
 - [Credentials](#credentials)
+- [Logging](#logging)
 - [Pre-enable Clockify tools](#pre-enable-clockify-tools)
 - [Other MCP hosts](#other-mcp-hosts)
   - [Claude Code / Desktop](#claude-code--desktop)
@@ -26,6 +27,14 @@ Install and use the unofficial Clockify Agent Plugin.
 **`CLOCKIFY_API_KEY` (required)** — Clockify → Preferences → Advanced → Manage API Keys ([Clockify API](https://docs.clockify.me)). Set it as a Cursor plugin / MCP env variable when you install. Do not put it in `.clockify/config.yml`. Do not add a Clockify `.env` to the repo you are tracking time in.
 
 **Workspace (optional)** — pin `workspace_id` in `.clockify/config.yml` per repo (Clockify URL `/workspaces/{id}/`, or `clockify_list_workspaces` during `/clockify-init`). File on disk and how the server finds it (including `config_root` / Cursor layouts): [config.md](./config.md). Fields: [config.yml](./schema/config.yml.md).
+
+---
+
+<br>
+
+## Logging
+
+MCP writes JSON lines to **stderr** (Cursor **Output → MCP Logs**). Optional `CLOCKIFY_MCP_LOG` in MCP `env`: `debug` | `info` (default) | `error` | `off`. Full catalog and how to read it: [logging.md](./logging.md).
 
 ---
 

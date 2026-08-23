@@ -1,3 +1,5 @@
+import { formatLogError, log } from "./log.js";
+
 const API_BASE = "https://api.clockify.me/api/v1";
 
 export type ClockifyUser = {
@@ -55,6 +57,8 @@ export class ClockifyError extends Error {
     message: string,
     readonly status: number,
     readonly body: string,
+    readonly method?: string,
+    readonly path?: string,
   ) {
     super(message);
     this.name = "ClockifyError";
@@ -84,22 +88,43 @@ export class ClockifyClient {
     path: string,
     init: RequestInit = {},
   ): Promise<T> {
-    const response = await fetch(`${API_BASE}${path}`, {
-      ...init,
-      headers: {
-        "X-Api-Key": this.apiKey,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...(init.headers ?? {}),
-      },
-    });
+    const method = (init.method ?? "GET").toUpperCase();
+    const started = Date.now();
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE}${path}`, {
+        ...init,
+        headers: {
+          "X-Api-Key": this.apiKey,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(init.headers ?? {}),
+        },
+      });
+    } catch (error) {
+      log.error("http_throw", {
+        method,
+        path,
+        ms: Date.now() - started,
+        err: formatLogError(error),
+      });
+      throw error;
+    }
 
     const text = await response.text();
+    log.debug("http", {
+      method,
+      path,
+      status: response.status,
+      ms: Date.now() - started,
+    });
     if (!response.ok) {
       throw new ClockifyError(
         formatApiError(response.status, text || response.statusText),
         response.status,
         text,
+        method,
+        path,
       );
     }
 

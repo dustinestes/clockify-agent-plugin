@@ -11,7 +11,7 @@ Thanks for wanting to work on the unofficial **Clockify Agent Plugin**.
 ## Pull requests
 
 1. Branch from `main`.
-2. Keep subscriber docs (README, use, troubleshoot, config, schema) separate from maintainer docs (develop, publish, structure) unless a rename forces a link update.
+2. Keep subscriber docs (README, use, troubleshoot, logging, config, schema) separate from maintainer docs (develop, publish, structure) unless a rename forces a link update.
 3. Do not commit `.env` or API keys. Leave `.mcp.json` as the unpinned npx shape.
 4. PR CI runs build, config tests, version check, and MCP handshake (no Clockify credentials).
 
