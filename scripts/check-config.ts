@@ -358,7 +358,12 @@ const examplePath = join(
   ".clockify",
   "config.yml.example",
 );
-clockifyConfigSchema.parse(parseYaml(readFileSync(examplePath, "utf8")));
+const exampleCfg = clockifyConfigSchema.parse(
+  parseYaml(readFileSync(examplePath, "utf8")),
+);
+assert.equal(exampleCfg.project.from, "repo");
+assert.equal(exampleCfg.timer.task.from, "prompt");
+assert.equal(exampleCfg.automated.task.from, "none");
 
 assert.equal(
   floorToMinute("2026-08-15T21:07:32.500Z"),

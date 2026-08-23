@@ -18,7 +18,7 @@ Pass `config_root` on Clockify MCP calls. If it is already known this session an
 
 ## Init first (if needed)
 
-If `.clockify/config.yml` is missing (`clockify_get_config` with `config_root` returns `found: false`), **perform [`clockify-init`](../clockify-init/SKILL.md) in full**. It is idempotent. Then only the steps below. Do not restate or fork that skill’s config/ignore/project/task steps.
+If `.clockify/config.yml` is missing (`clockify_get_config` with `config_root` returns `found: false`), **perform [`clockify-init`](../clockify-init/SKILL.md) in full** (workspace AskQuestion, then shape `0`/`1`/`2`, then ensure only for shapes 1 and 2). It is idempotent. Then only the steps below. Do not restate or fork that skill’s config/ignore/project/task steps. If they chose shape **0**, config exists but there may be no Clockify project yet — still write Cursor glue; do not invent a project.
 
 If config already exists, do not overwrite it. Continue with After init.
 
@@ -70,4 +70,4 @@ Use Clockify MCP tools only; never invent project/task ids.
 - Duplicate `clockify-init` steps here when config already exists
 - Treat `pr_merged` as valid — GitHub merge is an unwatched action and is not supported
 - Install a background daemon
-- Skip init when config, ignore defaults, project, or tasks are missing
+- Skip init when config or ignore defaults are missing (project/tasks are skipped on purpose for init shape 0)

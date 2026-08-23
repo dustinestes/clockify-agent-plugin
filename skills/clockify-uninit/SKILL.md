@@ -17,10 +17,11 @@ If they only want to stop agent-mediated timers and **keep** `.clockify/config.y
 
 ## Confirm
 
-1. In **chat** (not the confirm UI), list what will be removed: unautomate paths plus `.clockify/`, the remaining gitignore stanza, and `.gitignore` itself if that leaves the file empty. Note that the Clockify Agent Plugin stays installed unless they ask otherwise.
-2. If `.clockify/.managed-by-init` is missing, still include those well-known paths in the chat inventory (user may have edited by hand).
-3. Ask only a short confirm (use **AskQuestion** when available), e.g. “Remove Clockify files from this repo?” — do **not** put the inventory in the question box.
-4. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
+1. Inventory with tools if needed, then **repeat the result in a normal chat message** the user can read without opening tool output. Use a short markdown list of **paths that exist** (and optionally “not found” for expected paths). Tool snippets / terminals are not the inventory.
+2. That chat list is the confirm surface: unautomate paths plus `.clockify/`, the remaining gitignore stanza, and `.gitignore` itself if removing the stanza would leave the file empty. Note that the Clockify Agent Plugin stays installed unless they ask otherwise.
+3. If `.clockify/.managed-by-init` is missing, still include those well-known paths in the chat inventory (user may have edited by hand).
+4. Then AskQuestion with **only** a short confirm, e.g. “Remove Clockify files from this repo?” — do **not** put the inventory in the question box, and do **not** skip the chat list.
+5. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
 
 ## Removals
 
@@ -46,6 +47,7 @@ Perform [`clockify-unautomate`](../clockify-unautomate/SKILL.md) first (rule + C
 - Delete a non-empty `.gitignore` (empty / whitespace-only after stanza removal is OK — see above)
 - Uninstall Directory / local plugin or clear `CLOCKIFY_API_KEY` unless asked
 - Invent paths outside the well-known set above
+- Treat tool output as the user-visible inventory (always restate paths in chat before AskQuestion)
 
 ## After
 

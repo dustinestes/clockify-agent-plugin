@@ -61,7 +61,7 @@ Sandbox (maintainer; does not touch ~/.cursor/mcp.json):
   • API key → bake from checkout .env ${sandboxApiKeyEnv} (or empty for hand-fill)
 
 After install: reload Cursor, enable MCP under Customize → MCP, then
-/clockify-init in each repo (workspace ID is chosen per repo there).
+/clockify-init in each repo (workspace and shape are chosen per repo there).
 
 Examples:
   npx -y -p @dustinestes/clockify-agent-plugin ${binName}
@@ -353,7 +353,7 @@ async function install(opts) {
 Next:
   1. Reload Cursor (Developer: Reload Window)
   2. Customize → MCP: enable "${serverId}"
-  3. In each repo: /clockify-init (choose workspace per repo)
+  3. In each repo: /clockify-init (choose workspace and shape per repo)
 `);
 }
 

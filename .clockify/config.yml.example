@@ -1,5 +1,6 @@
-# Example project standards for the Clockify Agent Plugin.
-# Init writes this as `.clockify/config.yml` in the consumer repo (or copy manually).
+# Example / local-only (shape 0) scaffold for the Clockify Agent Plugin.
+# /clockify-init copies this, then overlays shape 1 (repo as project) or 2 (repo as task)
+# after AskQuestion. Shape 0 leaves this file as-is and does not create Clockify entities.
 # Personal by default — see docs/config.md (git hygiene). Fields: docs/schema/config.yml.md. Never put API keys here.
 version: 1
 # Optional Clockify workspace pin (not the git project). Set during /clockify-init.
@@ -40,8 +41,8 @@ automated:
     from: template
     template: "{issue_number} - {issue_title}"
   task:
-    from: github_label
-    if_missing: create
+    from: none
+    if_missing: none
   rounding:
     enabled: true
     increment_minutes: 15

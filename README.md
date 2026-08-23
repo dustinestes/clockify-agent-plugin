@@ -37,7 +37,7 @@ Unofficial agent plugin for [Clockify](https://clockify.me): [MCP](https://model
 | IDE Layouts                          | Supports: single-window, multi-window, multi-root code workspace | [Config: which repo](docs/config.md#which-repo-config_root)  |
 | Customize Time Entry                     | Configure nearest/up/down rounding, start/stop, increment, minimums, include seconds    | [schema: rounding](docs/schema/config.yml.md#rounding)       |
 | Overlap guards                          | Handle overlapping time entries based on config                                 | [schema: overlap](docs/schema/config.yml.md#overlap)         |
-| Config shapes                           | Repo as project (default) or repo as task — how git lines up with Clockify                    | [Config: shape](docs/config.md#shape)                        |
+| Config shapes                           | Init picker: none, repo as project, or repo as task — how git lines up with Clockify          | [Config: shape](docs/config.md#shape)                        |
 | Description templates                   | Use tokenized string with github properties or have the agent prompt you              | [schema](docs/schema/config.yml.md#description-placeholders) |
 | Timer Runaway Prevention  | Stop a timer after inactivity to prevent timer runaway                                  | [schema: inactivity](docs/schema/config.yml.md#inactivity)   |
 
@@ -47,7 +47,7 @@ Unofficial agent plugin for [Clockify](https://clockify.me): [MCP](https://model
 
 ## How it works
 
-Two modes. Both use the same Clockify project for a given repo config. Clockify still allows only **one running timer**. How that project maps to git (repo as project vs repo as task): [Config: shape](docs/config.md#shape).
+Two modes. Both use the same Clockify project for a given repo config (when you chose init shape 1 or 2). Clockify still allows only **one running timer**. How that project maps to git: [Config: shape](docs/config.md#shape).
 
 | Mode | How time gets in | Skills |
 |------|------------------|--------|
@@ -88,7 +88,7 @@ Credentials, allowlists, and non-Cursor hosts: [docs/use.md](docs/use.md).
 
 ### Add Clockify to a repo (each repo)
 
-1. In that repo, run `/clockify-init` — choose Clockify workspace, write config, ignore, Clockify project, optional GitHub label→task sync. After this you can enter time with skills (start/stop timer, enter-time, summarize).
+1. In that repo, run `/clockify-init` — choose Clockify workspace, then shape (`0` local only, `1` repo as project, `2` repo as task). Shapes 1 and 2 create/find the Clockify project and tasks; shape 0 writes local config only. After this you can enter time with skills (start/stop timer, enter-time, summarize).
 2. Optional: run `/clockify-automate` so the agent starts/stops timers from `automated.triggers` (issues/PRs).
 
 To undo a repo without uninstalling the plugin: [docs/use.md](docs/use.md#remove-clockify-from-a-repo).
@@ -105,7 +105,7 @@ You talk to the agent in plain language (or run a `/skill`). The agent calls MCP
 
 | Group | Skill | Purpose | Example |
 |-------|-------|---------|---------|
-| Repo | [`clockify-init`](skills/clockify-init/SKILL.md) | Setup the current working directory (config + ignore + project + GitHub label→task sync) | `/clockify-init` |
+| Repo | [`clockify-init`](skills/clockify-init/SKILL.md) | Setup the current working directory (workspace + shape, config + ignore; project/tasks when shape is 1 or 2) | `/clockify-init` |
 | Repo | [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Full local teardown (keep plugin unless asked) | `/clockify-uninit` |
 | Mode | [`clockify-automate`](skills/clockify-automate/SKILL.md) | Agent mode on: Cursor rules/hooks from `automated.triggers` | `/clockify-automate` |
 | Mode | [`clockify-unautomate`](skills/clockify-unautomate/SKILL.md) | Agent mode off: remove rule/hooks; keep `.clockify/` | `/clockify-unautomate` |

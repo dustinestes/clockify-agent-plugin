@@ -15,6 +15,7 @@ How `.clockify/config.yml` gets on disk, how git treats it, and how the server f
 - [Contents](#contents)
 - [Setup](#setup)
 - [Shape](#shape)
+  - [None (local only)](#none-local-only)
   - [Repo as project](#repo-as-project)
     - [Configuration](#configuration)
     - [How to use](#how-to-use)
@@ -35,7 +36,7 @@ How `.clockify/config.yml` gets on disk, how git treats it, and how the server f
 
 The API key lives in **user** MCP (`~/.cursor/mcp.json`). Each git repo keeps its own `.clockify/config.yml` (workspace, project, rounding, templates, triggers). Do not put API keys in the yaml.
 
-Preferred: `/clockify-init` in the repo (writes config, ignore defaults, Clockify project). Or copy by hand:
+Preferred: `/clockify-init` in the repo (workspace picker, **shape** picker, ignore defaults; Clockify project/tasks only for shapes 1 and 2). Or copy by hand:
 
 ```bash
 mkdir -p .clockify
@@ -50,15 +51,25 @@ Skills pass `config_root` on Clockify tool calls so a user-scoped MCP process ca
 
 ## Shape
 
-These shapes are how you line up git/GitHub with Clockify’s tree (workspace → project → task → description) taxonomy, not extra timer modes. Pick the shape that matches how you want to track and report; then encode it in `.clockify/config.yml`.
+These shapes are how you line up git/GitHub with Clockify’s tree (workspace → project → task → description) taxonomy. `/clockify-init` uses the AskQuestions tool for workspace, then shape, **before** creating Clockify projects or tasks:
+
+```text
+0 - None (local config only; no project/tasks yet)
+1 - Repo as project (project = repo folder; GitHub labels → tasks)
+2 - Repo as task (fixed Clockify project; task = repo folder)
+```
 
 **Workspace:** this plugin does not define a workspace by shape. You choose this when running `/clockify-init` (personal, team, client space).
 
 **Clients:** this plugin does not set Clockify clients (they are optional on a project). Assign one in Clockify: **Projects** → **Select Project** → **Settings** → **Client** dropdown.
 
+### None (local only)
+
+Writes `.clockify/config.yml` from [`.clockify/config.yml.example`](../.clockify/config.yml.example) (gitignore and markers too) and **does not** create a Clockify project or tasks. Timer/manual tasks stay `prompt`; `automated.task.from` is `none` so a later `/clockify-init` re-run still skips ensure. Edit the yaml toward shape 1 or 2 (or ask to reset config) when you are ready to map into Clockify.
+
 ### Repo as project
 
-Granular 1:1. The Clockify project name **is** the git repo name. GitHub labels become tasks so you can report time on work labeled as features, bugs, docs, and so on inside that repo. This is what `/clockify-init` and the README default story describe.
+Granular 1:1. The Clockify project name **is** the git repo name. GitHub labels become tasks so you can report time on work labeled as features, bugs, docs, and so on inside that repo. Init shape **1**. The README default story when you pick this shape.
 
 Example: workspace *Acme Labs*, client *Northwind*, project = repo name, task = GitHub label.
 
@@ -99,8 +110,8 @@ automated:
 
 #### How to use
 
-1. In the repo, run `/clockify-init`; pick a Clockify workspace; leave `project.from: repo`.
-2. Init creates/finds a Clockify project named like the repo folder and can sync GitHub labels → tasks when `task.from` is `github_label`.
+1. In the repo, run `/clockify-init`; pick a Clockify workspace; choose shape **1**.
+2. Init writes the yaml above and creates/finds a Clockify project named like the repo folder, then syncs GitHub labels → tasks.
 3. Start/stop timers or automate as usual; descriptions and tasks follow the yaml.
 
 ### Repo as task
@@ -147,9 +158,9 @@ automated:
 
 #### How to use
 
-1. Run `/clockify-init`; pick a Clockify workspace.
-2. Set `project.from: fixed` and `project.name` to the shared Clockify project.
-3. Init (or timer/enter-time skills) uses `repoName` from `clockify_get_config` — the git toplevel folder name — as the Clockify task (`ensure_task` when `if_missing` is `create`).
+1. Run `/clockify-init`; pick a Clockify workspace; choose shape **2**.
+2. When asked, give the shared Clockify **project name** (`project.from: fixed` + `project.name`).
+3. Init creates/finds that project and ensures a task named like the git toplevel folder (`repoName`). Timer/enter-time skills use the same mapping.
 
 ---
 

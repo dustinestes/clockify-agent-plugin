@@ -16,10 +16,11 @@ To remove config as well, use [`clockify-uninit`](../clockify-uninit/SKILL.md).
 
 ## Confirm
 
-1. In **chat** (not the confirm UI), list what will be removed (rule + Clockify-owned hooks only). Note that `.clockify/` and the managed `.clockify/` gitignore line stay.
-2. Ask only a short confirm (use **AskQuestion** when available), e.g. “Turn off Clockify agent mode in this repo?” — do **not** put the inventory in the question box.
-3. Do **not** delete `.clockify/` or the managed `.clockify/` gitignore line.
-4. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
+1. Inventory with tools if needed, then **repeat the result in a normal chat message** (markdown list of paths). Do not rely on tool snippets as the only listing.
+2. Chat list: rule + Clockify-owned hooks only. Note that `.clockify/` and the managed `.clockify/` gitignore line stay.
+3. Then AskQuestion with **only** a short confirm, e.g. “Turn off Clockify agent mode in this repo?” — do **not** put the inventory in the question box.
+4. Do **not** delete `.clockify/` or the managed `.clockify/` gitignore line.
+5. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
 
 ## Removals
 
@@ -39,6 +40,7 @@ To remove config as well, use [`clockify-uninit`](../clockify-uninit/SKILL.md).
 - Wipe unrelated Cursor hooks or rules
 - Delete `.clockify/` or a non-empty `.gitignore`
 - Uninstall Directory / local plugin or clear `CLOCKIFY_API_KEY`
+- Treat tool output as the user-visible inventory (always restate paths in chat before AskQuestion)
 
 ## After
 
