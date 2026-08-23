@@ -29,6 +29,7 @@ import {
   type LoadedConfig,
   type TimerEntryMethod,
 } from "./config.js";
+import { formatLogError, installProcessLogHandlers, log } from "./log.js";
 
 function requireApiKey(): string {
   const key = process.env.CLOCKIFY_API_KEY?.trim();
@@ -102,10 +103,66 @@ function errorResult(error: unknown) {
       : error instanceof Error
         ? error.message
         : String(error);
+  if (error instanceof ClockifyError) {
+    log.error("clockify_http_error", formatLogError(error));
+  }
   return {
     isError: true,
     content: [{ type: "text" as const, text: message }],
   };
+}
+
+function toolEndFields(result: {
+  isError?: boolean;
+  content?: Array<{ type: string; text?: string }>;
+}): Record<string, unknown> {
+  if (!result.isError) return { status: "success" };
+  const text = result.content?.find((part) => part.type === "text")?.text;
+  if (!text) return { status: "fail", expected: false, reason: "empty" };
+  try {
+    const parsed = JSON.parse(text) as {
+      found?: boolean;
+      overlap?: boolean;
+      hint?: string;
+      path?: string;
+      root?: string;
+      tried?: unknown;
+      on_conflict?: string;
+      entries?: unknown[];
+    };
+    if (parsed.found === false) {
+      return {
+        status: "warning",
+        expected: true,
+        reason: "config_miss",
+        path: parsed.path,
+        root: parsed.root,
+        tried: parsed.tried,
+      };
+    }
+    if (parsed.overlap) {
+      return {
+        status: "warning",
+        expected: true,
+        reason: "overlap",
+        on_conflict: parsed.on_conflict,
+        overlapCount: Array.isArray(parsed.entries) ? parsed.entries.length : undefined,
+      };
+    }
+    return {
+      status: "fail",
+      expected: false,
+      reason: "error",
+      message: text.replace(/\s+/g, " ").slice(0, 300),
+    };
+  } catch {
+    return {
+      status: "fail",
+      expected: false,
+      reason: "unparsed",
+      message: text.replace(/\s+/g, " ").slice(0, 300),
+    };
+  }
 }
 
 function resolveDescription(
@@ -181,7 +238,47 @@ const server = new McpServer({
   version: "0.1.0",
 });
 
-server.registerTool(
+function registerClockifyTool(
+  name: string,
+  config: object,
+  // SDK tool callbacks are overloaded; do not contextual-type handler args.
+  handler: (args: any, extra?: any) => unknown,
+): void {
+  const run = handler as (args: object, extra?: object) => unknown;
+  (
+    server.registerTool as (
+      n: string,
+      c: object,
+      h: (args: object, extra?: object) => unknown,
+    ) => void
+  )(name, config, async (args: object, extra?: object) => {
+    const started = Date.now();
+    log.info("tool_start", { tool: name });
+    try {
+      const result = (await run(args, extra)) as {
+        isError?: boolean;
+        content?: Array<{ type: string; text?: string }>;
+      };
+      const fields = toolEndFields(result);
+      const line = { tool: name, ms: Date.now() - started, ...fields };
+      if (result.isError && fields.expected !== true) {
+        log.error("tool_end", line);
+      } else {
+        log.info("tool_end", line);
+      }
+      return result;
+    } catch (error) {
+      log.error("tool_throw", {
+        tool: name,
+        ms: Date.now() - started,
+        err: formatLogError(error),
+      });
+      throw error;
+    }
+  });
+}
+
+registerClockifyTool(
   "clockify_get_config",
   {
     title: "Get project Clockify config",
@@ -214,7 +311,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_get_user",
   {
     title: "Get Clockify user",
@@ -234,7 +331,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_list_workspaces",
   {
     title: "List Clockify workspaces",
@@ -254,7 +351,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_list_projects",
   {
     title: "List Clockify projects",
@@ -287,7 +384,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_ensure_project",
   {
     title: "Ensure Clockify project",
@@ -325,7 +422,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_list_tags",
   {
     title: "List Clockify tags",
@@ -345,7 +442,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_list_tasks",
   {
     title: "List Clockify tasks",
@@ -369,7 +466,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_ensure_task",
   {
     title: "Ensure Clockify task",
@@ -394,7 +491,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_get_running_timer",
   {
     title: "Get running timer",
@@ -433,7 +530,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_start_timer",
   {
     title: "Start timer",
@@ -562,7 +659,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_stop_timer",
   {
     title: "Stop timer",
@@ -663,7 +760,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_create_time_entry",
   {
     title: "Create time entry",
@@ -714,7 +811,7 @@ server.registerTool(
       if (!loaded.found) {
         return configMissResult(loaded, config_root);
       }
-      const method = entry_method ?? "manual";
+      const method = (entry_method ?? "manual") as TimerEntryMethod;
       const onConflict = loaded.config[method].overlap.on_conflict;
       const resolvedDescription = resolveDescription(
         method,
@@ -754,7 +851,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_list_time_entries",
   {
     title: "List time entries",
@@ -785,7 +882,7 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+registerClockifyTool(
   "clockify_today_summary",
   {
     title: "Today summary",
@@ -855,11 +952,19 @@ server.registerTool(
 );
 
 async function main() {
+  installProcessLogHandlers();
+  log.info("ready", {
+    pid: process.pid,
+    version: log.version,
+    log: log.level,
+    transport: "stdio",
+  });
   const transport = new StdioServerTransport();
   await server.connect(transport);
+  log.info("connected");
 }
 
 main().catch((error) => {
-  console.error(error);
+  log.error("fatal", { err: formatLogError(error) });
   process.exit(1);
 });

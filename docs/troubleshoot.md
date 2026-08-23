@@ -12,6 +12,7 @@ Some troubleshooting steps for common issues.
 - [Contents](#contents)
 - [Node not found](#node-not-found)
 - [`.clockify/config.yml` not found](#clockifyconfigyml-not-found)
+- [MCP server red or disabled](#mcp-server-red-or-disabled)
 - [Common symptoms](#common-symptoms)
 
 ---
@@ -26,7 +27,7 @@ Cursor launched from a desktop entry often has a minimal PATH, so `"command": "n
 command -v node   # use the absolute path in MCP config if needed
 ```
 
-After changing config, reload Cursor. If MCP is red, open **Output → MCP Logs**.
+After changing config, reload Cursor. If MCP is red, see [MCP server red or disabled](#mcp-server-red-or-disabled).
 
 ---
 
@@ -50,11 +51,26 @@ Which path to pass in single-folder, multi-window, multi-root, and CLI layouts: 
 
 <br>
 
+## MCP server red or disabled
+
+The Clockify MCP toggle is red, never turns green, or goes red after a short time with little or nothing in Output.
+
+1. Confirm **Customize → MCP** is enabling the right server (`clockify-agent-plugin` vs sandbox `clockify-agent-plugin-sandbox`).
+2. Open **View → Output** and pick the Clockify channel in the dropdown (sandbox names can be doubled). JSON catalog: [logging.md](./logging.md).
+3. If there are **no** plugin JSON lines at all (`ready` missing), the host never started Node (PATH / `npx`) — [Node not found](#node-not-found).
+4. If you see `ready` / `connected` then the toggle goes red and Output stays quiet: Cursor often **detaches the UI while Node is still running**. Check [logging.md — toggle red](./logging.md#toggle-red-output-quiet-after-ready) (`ps` for `dist/index.js`). That is not a plugin crash.
+5. If Output has `uncaughtException` or `fatal`, include those lines when filing an issue.
+
+---
+
+<br>
+
 ## Common symptoms
 
 | Symptom | Likely cause |
 |---------|----------------|
 | Server not listed under Customize → MCP | Unloaded path; invalid json; Node not on PATH |
+| MCP Output `[error]` on every line, JSON says `"level":"info"` / `"status":"success"` | Cursor labels all stderr as error — [logging.md](./logging.md#cursor-error-on-every-line) |
 | `CLOCKIFY_API_KEY is required` | Missing plugin / MCP `env` |
 | `clockify_get_config` `found: false` but yaml exists | User MCP cwd is not the repo; missing `config_root` or leftover PATH/ROOT env — [config not found](#clockifyconfigyml-not-found) |
 | Workspace ID not found | Typo in `.clockify/config.yml` `workspace_id`; re-run `/clockify-init` to pick a workspace |

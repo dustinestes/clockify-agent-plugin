@@ -11,6 +11,7 @@ Clockify Agent Plugin MCP tools and other configuration information.
 
 - [Contents](#contents)
 - [Tools](#tools)
+- [Logging](#logging)
 
 ---
 
@@ -36,6 +37,14 @@ Clockify Agent Plugin MCP tools and other configuration information.
 | `clockify_today_summary` | Today's totals by project |
 
 Which of these honor yaml: [schema — tools that honor config](./schema/config.yml.md#tools-that-honor-config).
+
+---
+
+<br>
+
+## Logging
+
+Tool success/failure and process lifecycle go to stderr as JSON lines. Where to open them in Cursor, `CLOCKIFY_MCP_LOG` levels, and the `msg` catalog: [logging.md](./logging.md). Symptom-oriented steps (red toggle, Node PATH): [troubleshoot.md](./troubleshoot.md).
 
 ---
 

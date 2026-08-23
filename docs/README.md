@@ -23,6 +23,7 @@ Index for the unofficial Clockify Agent Plugin (MCP tools and skills).
 | [Install for Cursor](./install-cursor.md) | One-command setup (skills + MCP) | Anyone |
 | [Use](./use.md) | API key, allowlist, other hosts, remove from a repo | Anyone |
 | [Troubleshoot](./troubleshoot.md) | Node PATH, MCP not listed, idle agent | Anyone |
+| [Logging](./logging.md) | MCP stderr JSON logs: where, levels, expected lines | Anyone |
 | [MCP](./mcp.md) | Tool names, `config_root`, allowlist / handshake | Anyone |
 | [Config](./config.md) | Init, shapes (repo as project / repo as task), gitignore, `config_root`, Cursor layouts | Anyone |
 | [config.yml](./schema/config.yml.md) | Field contract for `.clockify/config.yml` | Anyone |

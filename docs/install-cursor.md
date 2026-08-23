@@ -58,6 +58,8 @@ Open the printed `$TMPDIR` path in a separate Cursor window. Or use `npm run san
 3. Optional: [pre-allow MCP tools](use.md#pre-enable-clockify-tools).
 4. In each repo: `/clockify-init`.
 
+MCP stderr logs (success/failure): [logging.md](./logging.md).
+
 ---
 
 <br>
