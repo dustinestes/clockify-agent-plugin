@@ -953,12 +953,16 @@ registerClockifyTool(
 
 async function main() {
   installProcessLogHandlers();
-  log.info("ready", {
+  const ready: Record<string, unknown> = {
     pid: process.pid,
     version: log.version,
     log: log.level,
     transport: "stdio",
-  });
+  };
+  if (process.env.CLOCKIFY_MCP_SANDBOX === "1") {
+    ready.sandbox = true;
+  }
+  log.info("ready", ready);
   const transport = new StdioServerTransport();
   await server.connect(transport);
   log.info("connected");

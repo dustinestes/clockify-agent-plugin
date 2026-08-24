@@ -70,8 +70,9 @@ Each line is JSON. Common fields: `ts` (ISO-8601), `level`, `msg`. Extra fields 
 
 | `msg` | Level | Meaning |
 |-------|-------|---------|
-| `ready` | info | Process started (`pid`, `version`, `log`, `transport: stdio`) |
+| `ready` | info | Process started (`pid`, `version`, `log`, `transport: stdio`; sandbox MCP also has `sandbox: true`) |
 | `connected` | info | MCP stdio transport connected |
+| `shutdown` | info | Process received SIGTERM/SIGINT (`signal`, `pid`). Sandbox teardown sends this so Output shows the kill. |
 | `tool_start` | info | Host invoked a tool (`tool`) |
 | `tool_end` | info or error | Tool returned. `status`: `success` (completed), `warning` (`reason`: `config_miss` or `overlap`), `fail` (`reason`: `error` recognized payload, `unparsed` non-JSON text, `empty` no body; `level: error`, plus `message` when present) |
 | `clockify_http_error` | error | Clockify REST returned 4xx/5xx (`status` is the HTTP code, `method`, `path`, `message`) |
@@ -110,19 +111,21 @@ The trailing `undefined` is the host logger (an extra format argument), not a pl
 
 ### How many Node processes
 
-Each **enabled** MCP server id should have **one** `node …/dist/index.js` (or `npx` child) process.
+Each **enabled** MCP server id should have **one** process (`node …/dist/index.js` for sandbox, or an `npx` child for the consumer install).
 
-Two processes is correct when **both** user `clockify-agent-plugin` and sandbox `clockify-agent-plugin-sandbox` are enabled (different ids). Two processes with the **same** id, or a process whose cwd is `(deleted)` after sandbox teardown, is a leftover: Cursor can show the toggle as disabled without killing Node (see below). A reboot clears those. Before a clean sandbox respawn:
+Two processes is **correct** when both user `clockify-agent-plugin` and sandbox `clockify-agent-plugin-sandbox` are enabled, or when **different** project `mcp.json` files are enabled in different Cursor windows. Do not treat that as a health failure.
+
+Two processes with the **same** sandbox command line (this checkout’s `dist/index.js` plus `CLOCKIFY_MCP_SANDBOX=1`), or a process whose cwd is `(deleted)` after a folder delete, is a leftover: Cursor can show the toggle as disabled without killing Node (see below). **Stop** / `npm run sandbox:teardown` deletes the temp folder **then** SIGTERM those tagged PIDs. `--sandbox` create runs that same teardown first (quietly), then creates. A reboot also clears them. Manual check:
 
 ```bash
 ps aux | grep clockify-agent-plugin/dist/index.js | grep -v grep
 ```
 
-Kill extras if the same command line appears more than once per server.
+Kill extras only if the same sandbox command line appears more than once. Leave user `npx` MCP alone.
 
 **Disable then enable does not start a new process** if Node is still alive. Cursor keeps the stdio Unix sockets open when the toggle goes red, then reattaches. `ps` `START` / elapsed time will not change. **Reload Window** is the same: the process already has `dist/` in memory.
 
-To load a new build: wait until `ps` shows **no** `dist/index.js` (or `kill` that pid), *then* enable the server. A few seconds after disable is usually not enough.
+To load a new sandbox build: Stop or teardown (tagged Node is reaped), *then* enable the server. Disable-only is usually not enough.
 
 ### Init and other “errors” that are expected
 
@@ -136,7 +139,7 @@ Cursor can mark the MCP **disabled** and stop appending to that Output channel w
 ps aux | grep clockify-agent-plugin/dist/index.js | grep -v grep
 ```
 
-That is host UI/session state, not a plugin exception. Reload Window may keep the old process; after sandbox teardown you can also be left with a process whose cwd is `(deleted)`. Kill leftover `dist/index.js` processes if you need a clean spawn.
+That is host UI/session state, not a plugin exception. Reload Window may keep the old process; after a folder delete you can also be left with a process whose cwd is `(deleted)`. Sandbox teardown (including the teardown `--sandbox` runs first) reaps processes tagged `CLOCKIFY_MCP_SANDBOX=1`. If one is still there, `kill` that pid, then enable again so it loads a new `dist/`.
 
 If `ps` shows **no** process and Output has `uncaughtException` / `fatal`, that is a real plugin crash — include those JSON lines when reporting.
 
@@ -154,9 +157,11 @@ Logs never include `CLOCKIFY_API_KEY`, request headers, or response bodies. HTTP
 
 ## Sandbox
 
-Maintainer sandbox (see [develop.md](./develop.md#sandbox)) writes `CLOCKIFY_MCP_LOG=debug` into the temp `.cursor/mcp.json`. In the **sandbox window**, Output → the channel whose name includes **`clockify-agent-plugin-sandbox`**.
+Maintainer sandbox (see [develop.md](./develop.md#sandbox)) writes `CLOCKIFY_MCP_LOG=debug` and `CLOCKIFY_MCP_SANDBOX=1` into the temp `.cursor/mcp.json`. **Only one sandbox MCP runs at a time:** `--sandbox` tears down any existing sandbox (folder + tagged process) then creates; `--sandbox --teardown` only tears down. User npx MCP is left alone. In the **sandbox window**, use **View → Output**, then the channel whose name includes **`clockify-agent-plugin-sandbox`** (not only the generic **MCP Logs** / **MCP Process** host channels). Plugin JSON is stderr: `ready` with `sandbox: true`, tools, HTTP debug, and `shutdown` when teardown SIGTERMs the process.
 
-After `src/` changes: `npm run build`, then **stop the MCP process** (`ps` must show none) and enable the sandbox server again. **Developer: Reload Window** is not enough if Node is still running.
+Installer `console.log` from `--sandbox` / teardown stays in the debug terminal. It is not MCP Output.
+
+After `src/` changes: `npm run build`, then Stop (or teardown) so tagged Node is reaped, then enable the sandbox server again. **Developer: Reload Window** is not enough if Node is still running.
 
 ---
 

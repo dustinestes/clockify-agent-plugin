@@ -101,6 +101,12 @@ export function installProcessLogHandlers(): void {
   process.on("unhandledRejection", (reason) => {
     log.error("unhandledRejection", { err: formatLogError(reason) });
   });
+  const onStop = (signal: string) => {
+    log.info("shutdown", { signal, pid: process.pid });
+    process.exit(0);
+  };
+  process.once("SIGTERM", () => onStop("SIGTERM"));
+  process.once("SIGINT", () => onStop("SIGINT"));
   process.stdin.on("end", () => {
     log.info("stdin_end");
   });

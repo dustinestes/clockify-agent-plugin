@@ -75,7 +75,7 @@ Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `
 
 <br>
 
-> Note: **Stop** sends SIGTERM (`killBehavior: polite`), the script exits cleanly, then the force-teardown task deletes the sandbox folder. It does **not** close the editor window (no safe shared-instance close API). Close any leftover window yourself after teardown.
+> Note: **Stop** sends SIGTERM (`killBehavior: polite`), the script exits cleanly, then the force-teardown task deletes the sandbox folder and SIGTERMs leftover Node tagged `CLOCKIFY_MCP_SANDBOX=1`. It does **not** close the editor window (no safe shared-instance close API). Close any leftover window yourself after teardown.
 >
 > Closing the debug terminal tab alone is not a reliable cleanup hook — use **Stop**, Ctrl+C, or **Sandbox: teardown**.
 
@@ -143,15 +143,17 @@ When the change is ready to ship:
 
 A disposable temp repo that points at this checkout’s `dist/`. It does **not** rewrite `~/.cursor/mcp.json` or this repo’s `.mcp.json`.
 
+**One sandbox at a time.** There is a single path (`$TMPDIR/clockify-agent-plugin-sandbox`) and a single tagged MCP (`CLOCKIFY_MCP_SANDBOX=1` → this checkout’s `dist/index.js`). `--sandbox` **runs the same teardown** as `--sandbox --teardown` (remove the folder, then SIGTERM tagged Node), then creates. That is the contract: you do not get a teardown plan on create, and you do not keep a previous sandbox yaml/`dist/` in memory. Do not treat extra sandbox windows as parallel test environments. User `npx` `clockify-agent-plugin` is separate and is not killed. `--sandbox --dry-run` prints the create plan only and does not tear down.
+
 - Created in the OS temp folder so it may vanish on reboot. Re-run `--sandbox` if the folder is gone.
 - This is not a consumer install. Do not treat a green sandbox MCP as proof that npx / Directory works.
-- Cursor may show the sandbox MCP as disabled while `node …/dist/index.js` is still running ([logging.md](./logging.md#toggle-red-output-quiet-after-ready)). Teardown can leave a process with cwd `(deleted)`.
-- After `npm run build`, kill that process (Reload Window is not enough) so the next enable loads new `dist/` ([logging.md](./logging.md#how-many-node-processes)).
+- Cursor may show the sandbox MCP as disabled while `node …/dist/index.js` is still running ([logging.md](./logging.md#toggle-red-output-quiet-after-ready)). Teardown (including the teardown `--sandbox` runs first) deletes the folder then reaps processes tagged `CLOCKIFY_MCP_SANDBOX=1`.
+- After `npm run build`, Stop or teardown so that process is gone (Reload Window is not enough) so the next enable loads new `dist/` ([logging.md](./logging.md#how-many-node-processes)).
 
 | Component | How it Works |
 |------|--------|
 | Skills | sandbox `.cursor/skills/` → this checkout’s `skills/` |
-| MCP | sandbox `.cursor/mcp.json` → **`clockify-agent-plugin-sandbox`** → `dist/index.js`; `CLOCKIFY_API_KEY` baked from checkout `.env` `CLOCKIFY_API_KEY_SANDBOX` (or empty for hand-fill); `CLOCKIFY_MCP_LOG=debug` |
+| MCP | sandbox `.cursor/mcp.json` → **`clockify-agent-plugin-sandbox`** → `dist/index.js`; `CLOCKIFY_API_KEY` baked from checkout `.env` `CLOCKIFY_API_KEY_SANDBOX` (or empty for hand-fill); `CLOCKIFY_MCP_LOG=debug`; `CLOCKIFY_MCP_SANDBOX=1` (reap tag) |
 | Config | `CLOCKIFY_CONFIG_ROOT` = the sandbox ; see [config.md](./config.md)) |
 
 <br>
@@ -164,9 +166,9 @@ From this checkout: `npm run install:cursor -- {invocation}`
 
 | Invocation | What it does |
 |------------|----------------|
-| `--sandbox` | Create or refresh the temp repo at `$TMPDIR/clockify-agent-plugin-sandbox` |
-| `--sandbox --dry-run` | Print the create plan; write nothing |
-| `--sandbox --teardown` | Delete the temp repo |
+| `--sandbox` | Tear down any existing sandbox, then create the temp repo at `$TMPDIR/clockify-agent-plugin-sandbox` |
+| `--sandbox --dry-run` | Print the create plan only; write nothing (does not tear down) |
+| `--sandbox --teardown` | Delete the temp repo, then SIGTERM tagged sandbox MCP |
 | `--sandbox --teardown --dry-run` | Print the teardown plan; write nothing |
 | `--help` | Usage for the whole install script (including sandbox) |
 
@@ -182,11 +184,12 @@ Related npm scripts (wrappers only; same flags underneath):
 
 #### What Sandbox Does
 
-1. Create `$TMPDIR/clockify-agent-plugin-sandbox` if missing
-2. `git init` in that folder if it has no `.git`
-3. Symlink each `skills/clockify-*` from this checkout into the sandbox `.cursor/skills/`
-4. Write sandbox `.cursor/mcp.json` under server id **`clockify-agent-plugin-sandbox`** (stdio `node` + this checkout’s `dist/index.js`, `CLOCKIFY_API_KEY` from checkout `.env` `CLOCKIFY_API_KEY_SANDBOX` or `""`, `CLOCKIFY_CONFIG_ROOT` = the sandbox). No `envFile`.
-5. Write a short sandbox `README.md`
+1. Tear down any existing sandbox (same steps as `--sandbox --teardown`: folder + tagged MCP). Create does not print a teardown plan.
+2. Create `$TMPDIR/clockify-agent-plugin-sandbox`
+3. `git init` in that folder
+4. Symlink each `skills/clockify-*` from this checkout into the sandbox `.cursor/skills/`
+5. Write sandbox `.cursor/mcp.json` under server id **`clockify-agent-plugin-sandbox`** (stdio `node` + this checkout’s `dist/index.js`, `CLOCKIFY_API_KEY` from checkout `.env` `CLOCKIFY_API_KEY_SANDBOX` or `""`, `CLOCKIFY_CONFIG_ROOT` = the sandbox, `CLOCKIFY_MCP_SANDBOX=1`). No `envFile`.
+6. Write a short sandbox `README.md`
 
 > `--sandbox` does **not** change `~/.cursor/mcp.json`, `~/.cursor/skills/`, or this repo’s `.mcp.json`. 
 > 
