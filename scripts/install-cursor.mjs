@@ -123,7 +123,16 @@ function failUsage(message) {
 
 function readJson(path, fallback = null) {
   if (!existsSync(path)) return fallback;
-  return JSON.parse(readFileSync(path, "utf8"));
+  const raw = readFileSync(path, "utf8");
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    const detail = err instanceof SyntaxError ? err.message : String(err);
+    console.error(
+      `Invalid JSON in ${path}\n  ${detail}\nFix or remove that file and retry.`,
+    );
+    process.exit(1);
+  }
 }
 
 function writeJson(path, data) {
