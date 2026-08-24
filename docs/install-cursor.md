@@ -39,7 +39,7 @@ From a plugin checkout: `npm run install:cursor`
 
 ### Maintainer sandbox
 
-Play against this checkout’s `dist/` in a disposable temp repo. Does **not** rewrite `~/.cursor/mcp.json`.
+Play against this checkout’s `dist/` in a disposable temp repo. Does **not** rewrite `~/.cursor/mcp.json`. **One sandbox at a time** — `--sandbox` tears down any existing sandbox (folder + tagged MCP), then creates ([develop.md](./develop.md#sandbox)).
 
 From this plugin checkout, prefer **Run and Debug → Sandbox** (see [develop.md](./develop.md#sandbox)). CLI equivalent:
 

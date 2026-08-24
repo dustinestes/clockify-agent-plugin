@@ -34,6 +34,7 @@ const sandboxApiKeyEnv = "CLOCKIFY_API_KEY_SANDBOX";
 const userSkillsDir = join(homedir(), ".cursor", "skills");
 const userMcpPath = join(homedir(), ".cursor", "mcp.json");
 const sandboxRoot = join(tmpdir(), "clockify-agent-plugin-sandbox");
+const sandboxMcpEnvFlag = "CLOCKIFY_MCP_SANDBOX";
 const binName = "clockify-install-cursor";
 const deprecatedBinName = "clockify-cursor-install";
 
@@ -47,8 +48,8 @@ Options:
   --dry-run           Print planned changes without writing files
   --uninstall         Remove installed skills and MCP entry
   --api-key <key>     Clockify API key (else CLOCKIFY_API_KEY env or prompt)
-  --sandbox           Create a temp repo that runs this checkout's dist/
-  --teardown          With --sandbox: remove that temp repo
+  --sandbox           Tear down any existing sandbox, then create a temp repo → dist/
+  --teardown          With --sandbox: remove temp repo and kill tagged sandbox MCP
 
 Installs (user-global):
   • Skills  → ~/.cursor/skills/clockify-*
@@ -58,6 +59,7 @@ Sandbox (maintainer; does not touch ~/.cursor/mcp.json):
   • Repo    → $TMPDIR/clockify-agent-plugin-sandbox
   • Skills  → sandbox .cursor/skills/ (symlinks into this checkout)
   • MCP     → sandbox .cursor/mcp.json → ${sandboxServerId} → dist/index.js
+  • Tag     → ${sandboxMcpEnvFlag}=1 (one sandbox at a time; --sandbox tears down first; not consumer MCP)
   • API key → bake from checkout .env ${sandboxApiKeyEnv} (or empty for hand-fill)
 
 After install: reload Cursor, enable MCP under Customize → MCP, then
@@ -156,6 +158,134 @@ function whichNode() {
     }).trim();
   } catch {
     return "node";
+  }
+}
+
+function distEntryPath() {
+  return join(root, "dist", "index.js");
+}
+
+function sleepMs(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function pidAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function environHasFlag(environUtf8) {
+  return environUtf8.split("\0").includes(`${sandboxMcpEnvFlag}=1`);
+}
+
+function findSandboxMcpPidsLinux(distEntry) {
+  const pids = [];
+  let names;
+  try {
+    names = readdirSync("/proc");
+  } catch {
+    return pids;
+  }
+  for (const name of names) {
+    if (!/^\d+$/.test(name)) continue;
+    const pid = Number(name);
+    if (pid === process.pid) continue;
+    try {
+      const cmdline = readFileSync(join("/proc", name, "cmdline"));
+      if (!cmdline.toString("utf8").includes(distEntry)) continue;
+      const environ = readFileSync(join("/proc", name, "environ"));
+      if (!environHasFlag(environ.toString("utf8"))) continue;
+      pids.push(pid);
+    } catch {
+      // process exited or not readable
+    }
+  }
+  return pids;
+}
+
+function findSandboxMcpPidsDarwin(distEntry) {
+  const pids = [];
+  let out;
+  try {
+    out = execFileSync("ps", ["eww", "-A", "-o", "pid=,command="], {
+      encoding: "utf8",
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  } catch {
+    return pids;
+  }
+  const needle = `${sandboxMcpEnvFlag}=1`;
+  for (const line of out.split("\n")) {
+    const match = line.trim().match(/^(\d+)\s+(.*)$/);
+    if (!match) continue;
+    const pid = Number(match[1]);
+    if (pid === process.pid) continue;
+    const rest = match[2];
+    if (!rest.includes(distEntry) || !rest.includes(needle)) continue;
+    pids.push(pid);
+  }
+  return pids;
+}
+
+/** Cursor-owned sandbox MCP children tagged CLOCKIFY_MCP_SANDBOX=1 for this checkout. */
+function findSandboxMcpPids() {
+  const distEntry = distEntryPath();
+  if (process.platform === "linux") return findSandboxMcpPidsLinux(distEntry);
+  if (process.platform === "darwin") return findSandboxMcpPidsDarwin(distEntry);
+  return null;
+}
+
+/**
+ * Remove leftover sandbox MCP Node. Teardown deletes the temp folder first
+ * (so Cursor cannot respawn from mcp.json), then calls this.
+ */
+function reapSandboxMcp({ dryRun, label, quiet = false }) {
+  const pids = findSandboxMcpPids();
+  const say = (line) => {
+    if (!quiet) console.log(line);
+  };
+  if (pids === null) {
+    say(
+      `  [mcp] skip reap on ${process.platform} — kill leftover node ${distEntryPath()} with ${sandboxMcpEnvFlag}=1 manually`,
+    );
+    return;
+  }
+  if (pids.length === 0) {
+    say(`  [mcp] no leftover sandbox MCP (${label})`);
+    return;
+  }
+  for (const pid of pids) {
+    say(
+      dryRun
+        ? `  [mcp] would SIGTERM pid ${pid} (${label})`
+        : `  [mcp] SIGTERM pid ${pid} (${label})`,
+    );
+    if (!dryRun) {
+      try {
+        process.kill(pid, "SIGTERM");
+      } catch {
+        // already gone
+      }
+    }
+  }
+  if (dryRun) return;
+  const deadline = Date.now() + 2000;
+  let still = pids.filter(pidAlive);
+  while (still.length > 0 && Date.now() < deadline) {
+    sleepMs(100);
+    still = still.filter(pidAlive);
+  }
+  for (const pid of still) {
+    say(`  [mcp] SIGKILL pid ${pid} (${label})`);
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch {
+      // already gone
+    }
   }
 }
 
@@ -364,7 +494,7 @@ function createSandbox(dryRun) {
     process.exit(1);
   }
 
-  const distEntry = join(root, "dist", "index.js");
+  const distEntry = distEntryPath();
   const checkoutEnv = join(root, ".env");
   const seededKey =
     readDotEnvValue(checkoutEnv, sandboxApiKeyEnv)?.trim() || "";
@@ -398,6 +528,8 @@ function createSandbox(dryRun) {
     return;
   }
 
+  teardownSandbox(false, { quiet: true });
+
   mkdirSync(join(sandboxRoot, ".cursor", "skills"), { recursive: true });
 
   if (!existsSync(join(sandboxRoot, ".git"))) {
@@ -420,6 +552,7 @@ function createSandbox(dryRun) {
           CLOCKIFY_API_KEY: seededKey,
           CLOCKIFY_CONFIG_ROOT: sandboxRoot,
           CLOCKIFY_MCP_LOG: "debug",
+          [sandboxMcpEnvFlag]: "1",
         },
       },
     },
@@ -435,11 +568,12 @@ Disposable workspace for playing with Clockify Agent Plugin changes from:
 
 - Skills: symlinked from that checkout (should appear under \`/\`)
 - MCP: **${sandboxServerId}** → \`dist/index.js\` (distinct from consumer \`${serverId}\`)
-- Logs: \`CLOCKIFY_MCP_LOG=debug\` (stderr JSON; Cursor **Output → MCP Logs**). See plugin checkout \`docs/logging.md\`.
+- Logs: \`CLOCKIFY_MCP_LOG=debug\` (stderr JSON; Cursor **Output** channel for this server). See plugin checkout \`docs/logging.md\`.
+- Tag: \`${sandboxMcpEnvFlag}=1\` so teardown can reap leftover Node without touching user npx MCP
 - API key: baked from checkout \`.env\` \`${sandboxApiKeyEnv}\`, or edit \`env.CLOCKIFY_API_KEY\` in \`.cursor/mcp.json\` if empty
 - No \`.clockify/config.yml\` until \`/clockify-init\`
 
-This is not a consumer install. Global Cursor MCP stays npx / \`${binName}\`.
+This is not a consumer install. Global Cursor MCP stays npx / \`${binName}\`. Only one sandbox at a time: re-running \`--sandbox\` tears down the previous sandbox (folder + tagged Node), then creates.
 
 ## Enable MCP (required once)
 
@@ -467,29 +601,45 @@ Rebuild the plugin checkout after \`src/\` changes (\`npm run build\`), then rel
   }
 }
 
-function teardownSandbox(dryRun) {
-  console.log("Planned sandbox teardown:\n");
-  if (existsSync(sandboxRoot)) {
-    console.log(`  [remove] ${sandboxRoot}`);
-  } else {
-    console.log(`  [skip] ${sandboxRoot} (not present)`);
+function teardownSandbox(dryRun, { quiet = false } = {}) {
+  if (!quiet) {
+    console.log("Planned sandbox teardown:\n");
+    if (existsSync(sandboxRoot)) {
+      console.log(`  [remove] ${sandboxRoot}`);
+    } else {
+      console.log(`  [skip] ${sandboxRoot} (not present)`);
+    }
+    const previewPids = findSandboxMcpPids();
+    if (previewPids === null) {
+      console.log(
+        `  [mcp] skip reap on ${process.platform} — kill leftover node ${distEntryPath()} with ${sandboxMcpEnvFlag}=1 manually`,
+      );
+    } else if (previewPids.length === 0) {
+      console.log("  [mcp] no leftover sandbox MCP");
+    } else {
+      console.log(`  [mcp] reap pids ${previewPids.join(", ")}`);
+    }
+    console.log("");
   }
-  console.log("");
 
   if (dryRun) {
-    console.log("Dry run — no files changed.");
+    if (!quiet) console.log("Dry run — no files changed.");
     return;
   }
 
-  if (!existsSync(sandboxRoot)) {
+  // Remove mcp.json first so Cursor cannot respawn, then SIGTERM tagged Node.
+  if (existsSync(sandboxRoot)) {
+    rmSync(sandboxRoot, { recursive: true, force: true });
+    if (!quiet) console.log(`Removed sandbox: ${sandboxRoot}`);
+  } else if (!quiet) {
     console.log(`Nothing to remove: ${sandboxRoot}`);
-    return;
   }
-  rmSync(sandboxRoot, { recursive: true, force: true });
-  console.log(`Removed sandbox: ${sandboxRoot}`);
-  console.log(
-    "Close any Cursor window that had that folder open, or reload so project MCP/skills disappear.",
-  );
+  reapSandboxMcp({ dryRun: false, label: "after remove", quiet });
+  if (!quiet) {
+    console.log(
+      "Close any Cursor window that had that folder open, or reload so project MCP/skills disappear.",
+    );
+  }
 }
 
 async function main() {
