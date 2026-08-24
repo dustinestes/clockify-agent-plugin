@@ -27,6 +27,7 @@ import {
   resolveProjectName,
   resolveRepoName,
   type LoadedConfig,
+  type EntryMethod,
   type TimerEntryMethod,
 } from "./config.js";
 import { formatLogError, installProcessLogHandlers, log } from "./log.js";
@@ -59,9 +60,16 @@ function client(configRoot?: string): ClockifyClient {
   const loaded = loadConfig(configRoot);
   return new ClockifyClient(
     requireApiKey(),
-    resolveConfiguredWorkspaceId(loaded.config),
+    resolveConfiguredWorkspaceId(loaded.config, loaded.found),
   );
 }
+
+const workspaceIdField = z
+  .string()
+  .optional()
+  .describe(
+    "Workspace ID. Defaults to scope.workspace_id from config.yml (required pin). Never the Clockify UI active workspace.",
+  );
 
 function configMissPayload(loaded: LoadedConfig, configRoot?: string) {
   return {
@@ -177,7 +185,9 @@ function resolveDescription(
 ): string | undefined {
   const loaded = loadConfig(configRoot);
   const repo = resolveRepoName(loaded.root) ?? undefined;
-  return resolveEntryDescription(loaded.config[method].description, {
+  return resolveEntryDescription(
+    loaded.config.entry_methods[method].description,
+    {
     ...input,
     repo,
   });
@@ -298,7 +308,8 @@ registerClockifyTool(
         root: loaded.root,
         projectName: resolveProjectName(loaded.config, loaded.root),
         repoName: resolveRepoName(loaded.root),
-        workspaceId: resolveConfiguredWorkspaceId(loaded.config) ?? null,
+        workspaceId:
+          resolveConfiguredWorkspaceId(loaded.config, loaded.found) ?? null,
         config: loaded.config,
         tried: loaded.found ? undefined : describeConfigDiscovery(config_root),
         hint: loaded.found
@@ -360,12 +371,7 @@ registerClockifyTool(
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
-      workspace_id: z
-        .string()
-        .optional()
-        .describe(
-          "Workspace ID. Defaults to config.yml workspace_id, else the active workspace.",
-        ),
+      workspace_id: workspaceIdField,
       name: z.string().optional().describe("Optional project name filter."),
       archived: z
         .boolean()
@@ -377,6 +383,51 @@ registerClockifyTool(
     try {
       return textResult(
         await client(config_root).listProjects(workspace_id, { name, archived }),
+      );
+    } catch (error) {
+      return errorResult(error);
+    }
+  },
+);
+
+registerClockifyTool(
+  "clockify_list_clients",
+  {
+    title: "List Clockify clients",
+    description:
+      "Lists active (unarchived) clients in a workspace." +
+      CONFIG_ROOT_TOOL_HINT,
+    inputSchema: {
+      config_root: configRootField,
+      workspace_id: workspaceIdField,
+    },
+  },
+  async ({ config_root, workspace_id }) => {
+    try {
+      return textResult(await client(config_root).listClients(workspace_id));
+    } catch (error) {
+      return errorResult(error);
+    }
+  },
+);
+
+registerClockifyTool(
+  "clockify_create_client",
+  {
+    title: "Create Clockify client",
+    description:
+      "Creates a client in a workspace (init AskQuestion Other path)." +
+      CONFIG_ROOT_TOOL_HINT,
+    inputSchema: {
+      config_root: configRootField,
+      name: z.string().describe("Client name."),
+      workspace_id: workspaceIdField,
+    },
+  },
+  async ({ config_root, name, workspace_id }) => {
+    try {
+      return textResult(
+        await client(config_root).createClient(name.trim(), workspace_id),
       );
     } catch (error) {
       return errorResult(error);
@@ -397,10 +448,22 @@ registerClockifyTool(
         .string()
         .optional()
         .describe("Project name. Defaults from .clockify/config.yml / repo folder."),
-      workspace_id: z.string().optional().describe("Workspace ID override."),
+      workspace_id: workspaceIdField,
+      client_id: z
+        .string()
+        .optional()
+        .describe(
+          "Clockify client id. Applied on create. On an existing project, ignored unless set_client is true.",
+        ),
+      set_client: z
+        .boolean()
+        .optional()
+        .describe(
+          "If true and the project already exists, PUT client_id onto that project. Default false (no surprise edits).",
+        ),
     },
   },
-  async ({ config_root, name, workspace_id }) => {
+  async ({ config_root, name, workspace_id, client_id, set_client }) => {
     try {
       const loaded = loadConfig(config_root);
       const resolved =
@@ -414,7 +477,10 @@ registerClockifyTool(
         );
       }
       return textResult(
-        await client(config_root).ensureProject(resolved, workspace_id),
+        await client(config_root).ensureProject(resolved, workspace_id, {
+          clientId: client_id,
+          setClient: set_client,
+        }),
       );
     } catch (error) {
       return errorResult(error);
@@ -430,7 +496,7 @@ registerClockifyTool(
       "Lists tags available in a workspace." + CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
-      workspace_id: z.string().optional().describe("Workspace ID override."),
+      workspace_id: workspaceIdField,
     },
   },
   async ({ config_root, workspace_id }) => {
@@ -452,7 +518,7 @@ registerClockifyTool(
     inputSchema: {
       config_root: configRootField,
       project_id: z.string().describe("Clockify project ID."),
-      workspace_id: z.string().optional().describe("Workspace ID override."),
+      workspace_id: workspaceIdField,
     },
   },
   async ({ config_root, project_id, workspace_id }) => {
@@ -477,7 +543,7 @@ registerClockifyTool(
       config_root: configRootField,
       project_id: z.string().describe("Clockify project ID."),
       name: z.string().describe("Task name (e.g. GitHub label name)."),
-      workspace_id: z.string().optional().describe("Workspace ID override."),
+      workspace_id: workspaceIdField,
     },
   },
   async ({ config_root, project_id, name, workspace_id }) => {
@@ -500,7 +566,7 @@ registerClockifyTool(
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
-      workspace_id: z.string().optional().describe("Workspace ID override."),
+      workspace_id: workspaceIdField,
     },
   },
   async ({ config_root, workspace_id }) => {
@@ -508,7 +574,7 @@ registerClockifyTool(
       const running = await client(config_root).getRunningTimer(workspace_id);
       if (!running) return textResult({ running: false });
       const loaded = loadConfig(config_root);
-      const inactivity = loaded.config.automated.inactivity;
+      const inactivity = loaded.config.entry_methods.automated.inactivity;
       const pastInactivity = isTimerPastInactivity(
         running.timeInterval.start,
         inactivity,
@@ -539,7 +605,7 @@ registerClockifyTool(
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
-      workspace_id: z.string().optional().describe("Workspace ID override."),
+      workspace_id: workspaceIdField,
       start: z
         .string()
         .optional()
@@ -595,7 +661,7 @@ registerClockifyTool(
         return configMissResult(loaded, config_root);
       }
       const method: TimerEntryMethod = entry_method ?? "timer";
-      const block = loaded.config[method];
+      const block = loaded.config.entry_methods[method];
       const resolvedDescription = resolveDescription(
         method,
         {
@@ -668,7 +734,7 @@ registerClockifyTool(
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
-      workspace_id: z.string().optional().describe("Workspace ID override."),
+      workspace_id: workspaceIdField,
       entry_method: z
         .enum(["timer", "automated"])
         .optional()
@@ -706,7 +772,7 @@ registerClockifyTool(
       }
 
       const method: TimerEntryMethod = entry_method ?? "timer";
-      const block = loaded.config[method];
+      const block = loaded.config.entry_methods[method];
       const rounding = {
         ...block.rounding,
         enabled: apply_rounding ?? block.rounding.enabled,
@@ -771,7 +837,7 @@ registerClockifyTool(
       config_root: configRootField,
       start: z.string().describe("Start time in ISO-8601 / yyyy-MM-ddThh:mm:ssZ."),
       end: z.string().describe("End time in ISO-8601 / yyyy-MM-ddThh:mm:ssZ."),
-      workspace_id: z.string().optional().describe("Workspace ID override."),
+      workspace_id: workspaceIdField,
       entry_method: z
         .enum(["manual", "automated"])
         .optional()
@@ -811,8 +877,8 @@ registerClockifyTool(
       if (!loaded.found) {
         return configMissResult(loaded, config_root);
       }
-      const method = (entry_method ?? "manual") as TimerEntryMethod;
-      const onConflict = loaded.config[method].overlap.on_conflict;
+      const method = (entry_method ?? "manual") as EntryMethod;
+      const onConflict = loaded.config.entry_methods[method].overlap.on_conflict;
       const resolvedDescription = resolveDescription(
         method,
         {
@@ -860,7 +926,7 @@ registerClockifyTool(
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
-      workspace_id: z.string().optional().describe("Workspace ID override."),
+      workspace_id: workspaceIdField,
       start: z.string().optional().describe("Filter start (ISO-8601)."),
       end: z.string().optional().describe("Filter end (ISO-8601)."),
       page_size: z.number().int().min(1).max(200).optional(),
@@ -891,7 +957,7 @@ registerClockifyTool(
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
-      workspace_id: z.string().optional().describe("Workspace ID override."),
+      workspace_id: workspaceIdField,
     },
   },
   async ({ config_root, workspace_id }) => {

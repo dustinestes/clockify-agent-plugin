@@ -75,63 +75,100 @@ const inactivitySchema = z
   })
   .default({});
 
+const projectSchema = z
+  .object({
+    from: z.enum(["repo", "fixed"]).default("repo"),
+    name: z.string().optional(),
+  })
+  .default({});
+
+const clientSchema = z
+  .object({
+    from: z.enum(["none", "fixed"]).default("none"),
+    id: z.string().optional(),
+    name: z.string().optional(),
+  })
+  .default({})
+  .superRefine((client, ctx) => {
+    if (client.from !== "fixed") return;
+    if (!client.id?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "client.id is required when client.from is fixed",
+        path: ["id"],
+      });
+    }
+  });
+
+const timerMethodSchema = z
+  .object({
+    include_seconds: z.boolean().default(false),
+    description: descriptionSchema("prompt"),
+    task: interactiveTaskSchema,
+    rounding: roundingSchema,
+    overlap: overlapSchema,
+  })
+  .default({});
+
+const manualMethodSchema = z
+  .object({
+    description: manualDescriptionSchema,
+    task: interactiveTaskSchema,
+    overlap: overlapSchema,
+  })
+  .default({});
+
+const automatedMethodSchema = z
+  .object({
+    include_seconds: z.boolean().default(false),
+    description: descriptionSchema("template"),
+    task: automatedTaskSchema,
+    rounding: roundingSchema,
+    overlap: overlapSchema,
+    triggers: z
+      .array(
+        z.object({
+          event: automationEventSchema,
+          action: automationActionSchema,
+        }),
+      )
+      .default([]),
+    inactivity: inactivitySchema,
+  })
+  .default({});
+
 export const clockifyConfigSchema = z.object({
-  version: z.literal(1).default(1),
-  workspace_id: z
-    .string()
-    .optional()
-    .transform((value) => {
-      const trimmed = value?.trim();
-      return trimmed ? trimmed : undefined;
-    }),
-  project: z
+  plugin_internal: z
     .object({
-      from: z.enum(["repo", "fixed"]).default("repo"),
-      name: z.string().optional(),
+      version: z.literal(2).default(2),
     })
     .default({}),
-  timer: z
+  scope: z
     .object({
-      include_seconds: z.boolean().default(false),
-      description: descriptionSchema("prompt"),
-      task: interactiveTaskSchema,
-      rounding: roundingSchema,
-      overlap: overlapSchema,
+      workspace_id: z
+        .string()
+        .trim()
+        .min(1, "scope.workspace_id is required. Re-run /clockify-init."),
+      project: projectSchema,
+      client: clientSchema,
     })
-    .default({}),
-  manual: z
+    .default({ workspace_id: "unconfigured" }),
+  entry_methods: z
     .object({
-      description: manualDescriptionSchema,
-      task: interactiveTaskSchema,
-      overlap: overlapSchema,
-    })
-    .default({}),
-  automated: z
-    .object({
-      include_seconds: z.boolean().default(false),
-      description: descriptionSchema("template"),
-      task: automatedTaskSchema,
-      rounding: roundingSchema,
-      overlap: overlapSchema,
-      triggers: z
-        .array(
-          z.object({
-            event: automationEventSchema,
-            action: automationActionSchema,
-          }),
-        )
-        .default([]),
-      inactivity: inactivitySchema,
+      timer: timerMethodSchema,
+      manual: manualMethodSchema,
+      automated: automatedMethodSchema,
     })
     .default({}),
 });
 
 export type ClockifyConfig = z.infer<typeof clockifyConfigSchema>;
-export type RoundingConfig = ClockifyConfig["timer"]["rounding"];
-export type InactivityConfig = ClockifyConfig["automated"]["inactivity"];
+export type RoundingConfig = ClockifyConfig["entry_methods"]["timer"]["rounding"];
+export type InactivityConfig =
+  ClockifyConfig["entry_methods"]["automated"]["inactivity"];
 export type DescriptionConfig =
-  | ClockifyConfig["timer"]["description"]
-  | ClockifyConfig["manual"]["description"];
+  | ClockifyConfig["entry_methods"]["timer"]["description"]
+  | ClockifyConfig["entry_methods"]["manual"]["description"];
 
 export type LoadedConfig = {
   found: boolean;
@@ -296,6 +333,16 @@ export function parseClockifyConfig(
   raw: unknown,
   source = "config",
 ): ClockifyConfig {
+  if (
+    raw &&
+    typeof raw === "object" &&
+    "version" in raw &&
+    !("plugin_internal" in raw)
+  ) {
+    throw new Error(
+      `Invalid Clockify config (${source}): old root shape (version at file root). Re-run /clockify-init or replace .clockify/config.yml.`,
+    );
+  }
   const result = clockifyConfigSchema.safeParse(raw ?? {});
   if (!result.success) {
     throw new Error(
@@ -310,22 +357,28 @@ function parseConfigFile(path: string): ClockifyConfig {
   return parseClockifyConfig(raw, path);
 }
 
-/** Repo yaml `workspace_id`, else unset (Clockify active/default workspace). */
+const UNCONFIGURED_WORKSPACE = "unconfigured";
+
+/** Pinned `scope.workspace_id` when config was found; never Clockify “active”. */
 export function resolveConfiguredWorkspaceId(
   config: ClockifyConfig,
+  found = true,
 ): string | undefined {
-  return config.workspace_id;
+  if (!found) return undefined;
+  const id = config.scope.workspace_id.trim();
+  if (!id || id === UNCONFIGURED_WORKSPACE) return undefined;
+  return id;
 }
 
 export function resolveProjectName(
   config: ClockifyConfig,
   root: string | null,
 ): string | null {
-  if (config.project.from === "fixed") {
-    return config.project.name?.trim() || null;
+  if (config.scope.project.from === "fixed") {
+    return config.scope.project.name?.trim() || null;
   }
-  if (config.project.name?.trim()) {
-    return config.project.name.trim();
+  if (config.scope.project.name?.trim()) {
+    return config.scope.project.name.trim();
   }
   if (!root) return null;
   return basename(root);

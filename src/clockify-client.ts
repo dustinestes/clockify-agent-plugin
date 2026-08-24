@@ -18,7 +18,14 @@ export type ClockifyWorkspace = {
 export type ClockifyProject = {
   id: string;
   name: string;
+  clientId?: string;
   clientName?: string;
+  archived?: boolean;
+};
+
+export type ClockifyClientRecord = {
+  id: string;
+  name: string;
   archived?: boolean;
 };
 
@@ -144,15 +151,10 @@ export class ClockifyClient {
   }
 
   async resolveWorkspaceId(explicit?: string): Promise<string> {
-    let candidate = explicit || this.defaultWorkspaceId;
-    if (!candidate) {
-      const user = await this.getUser();
-      candidate = user.activeWorkspace || user.defaultWorkspace;
-    }
-
+    const candidate = explicit?.trim() || this.defaultWorkspaceId?.trim();
     if (!candidate) {
       throw new ClockifyError(
-        "No Clockify workspace available. Set workspace_id in .clockify/config.yml (via /clockify-init) or create a workspace.",
+        "No Clockify workspace pin. Set scope.workspace_id in .clockify/config.yml via /clockify-init, or pass workspace_id. This plugin does not follow the Clockify UI active workspace.",
         400,
         "",
       );
@@ -196,6 +198,54 @@ export class ClockifyClient {
   async listTags(workspaceId?: string): Promise<ClockifyTag[]> {
     const ws = await this.resolveWorkspaceId(workspaceId);
     return this.request<ClockifyTag[]>(`/workspaces/${ws}/tags`);
+  }
+
+  async listClients(
+    workspaceId?: string,
+  ): Promise<ClockifyClientRecord[]> {
+    const ws = await this.resolveWorkspaceId(workspaceId);
+    return this.request<ClockifyClientRecord[]>(
+      `/workspaces/${ws}/clients?archived=false&page-size=200`,
+    );
+  }
+
+  async createClient(
+    name: string,
+    workspaceId?: string,
+  ): Promise<ClockifyClientRecord> {
+    const ws = await this.resolveWorkspaceId(workspaceId);
+    return this.request<ClockifyClientRecord>(`/workspaces/${ws}/clients`, {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  async setProjectClient(
+    projectId: string,
+    clientId: string | null,
+    workspaceId?: string,
+  ): Promise<ClockifyProject> {
+    const ws = await this.resolveWorkspaceId(workspaceId);
+    await this.assertProjectInWorkspace(ws, projectId);
+    const projects = await this.listProjects(ws);
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) {
+      throw new ClockifyError(
+        `Project ID "${projectId}" was not found in this workspace.`,
+        404,
+        "",
+      );
+    }
+    return this.request<ClockifyProject>(
+      `/workspaces/${ws}/projects/${projectId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          name: project.name,
+          clientId: clientId ?? "",
+        }),
+      },
+    );
   }
 
   async getRunningTimer(
@@ -310,24 +360,42 @@ export class ClockifyClient {
   async createProject(
     name: string,
     workspaceId?: string,
+    clientId?: string,
   ): Promise<ClockifyProject> {
     const ws = await this.resolveWorkspaceId(workspaceId);
+    const body: Record<string, unknown> = { name };
+    if (clientId) body.clientId = clientId;
     return this.request<ClockifyProject>(`/workspaces/${ws}/projects`, {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(body),
     });
   }
 
   async ensureProject(
     name: string,
     workspaceId?: string,
+    options: { clientId?: string; setClient?: boolean } = {},
   ): Promise<{ project: ClockifyProject; created: boolean }> {
     const existing = await this.listProjects(workspaceId, { name });
     const match = existing.find(
       (p) => p.name.toLowerCase() === name.toLowerCase(),
     );
-    if (match) return { project: match, created: false };
-    const project = await this.createProject(name, workspaceId);
+    if (match) {
+      if (options.setClient && options.clientId) {
+        const project = await this.setProjectClient(
+          match.id,
+          options.clientId,
+          workspaceId,
+        );
+        return { project, created: false };
+      }
+      return { project: match, created: false };
+    }
+    const project = await this.createProject(
+      name,
+      workspaceId,
+      options.clientId,
+    );
     return { project, created: true };
   }
 

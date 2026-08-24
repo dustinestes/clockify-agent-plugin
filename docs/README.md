@@ -26,6 +26,7 @@ Index for the unofficial Clockify Agent Plugin (MCP tools and skills).
 | [Logging](./logging.md) | MCP stderr JSON logs: where, levels, expected lines | Anyone |
 | [MCP](./mcp.md) | Tool names, `config_root`, allowlist / handshake | Anyone |
 | [Config](./config.md) | Init, shapes (none / repo as project / repo as task), gitignore, `config_root`, Cursor layouts | Anyone |
+| [Flows](./flows.md) | Init AskQuestion map, client skip vs ask, tools in/out | Anyone |
 | [config.yml](./schema/config.yml.md) | Field contract for `.clockify/config.yml` | Anyone |
 | [Develop](./develop.md) | Build, Validation, `--sandbox` | Maintainers |
 | [Publish](./publish.md) | GitHub Release → npm, cursor.directory | Maintainers |

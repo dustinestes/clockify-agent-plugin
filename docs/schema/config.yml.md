@@ -24,32 +24,35 @@ Field contract for `.clockify/config.yml`: project identity plus per-method desc
 
 ## Schema
 
-Root keys: `version`, `workspace_id`, `project`, `timer`, `manual`, `automated`. Method blocks hold description, task, and overlap. Rounding and `include_seconds` apply to timer and automated only. Manual times are explicit.
+Root keys: `plugin_internal`, `scope`, `entry_methods`. `scope` is where every entry and ensure_* goes (workspace, project, client). `entry_methods.timer` / `manual` / `automated` are how time is entered. Rounding and `include_seconds` apply to timer and automated only. Manual times are explicit. Init decision map: [flows.md](../flows.md).
 
 | Key | Purpose |
 |-----|---------|
-| `workspace_id` | Optional Clockify workspace pin (set during `/clockify-init`). Never put the API key here. |
-| `project.from` | `repo` (folder name) or `fixed` with `project.name` — set by `/clockify-init` shape 1 or 2; see [shapes](../config.md#shape) |
-| `timer` / `automated` `description.from` | `prompt` (caller supplies the string) or `template` |
-| `timer` / `automated` `description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
-| `manual.description.from` | `prompt` only (enter-time is not issue-driven; richer sources in [#74](https://github.com/dustinestes/clockify-agent-plugin/issues/74)). Leftover `template` keys are ignored |
-| `*.task.from` | `prompt`, `github_label`, `repo` (git toplevel folder name), or `none`. Automated allows `github_label`, `repo`, or `none` only — see [repo as task](../config.md#repo-as-task) |
-| `*.task.if_missing` | When the Clockify task does not exist: `prompt`, `create` (`ensure_task`), or `none`. Automated: `create` or `none` |
-| `timer.rounding` / `automated.rounding` | `enabled`, `increment_minutes`, `mode` (`nearest` \| `up` \| `down`), optional `start_mode` / `stop_mode` / `minimum_minutes` |
-| `*.overlap.on_conflict` | `prompt` or `override` when a completed interval overlaps another entry |
-| `automated.triggers` | Local AI/hook contract: `issue_start`, `issue_finish`, `issue_switch`, `pr_ship`, `pr_closed` |
-| `automated.inactivity` | Stop guidance when a timer exceeds `stop_after_minutes` (positive int; default 45) |
+| `plugin_internal.version` | Schema version (`2`). Plugin-owned; not for day-to-day edits. |
+| `scope.workspace_id` | **Required** Clockify workspace pin (set during `/clockify-init`). Never follow the UI active workspace. Never put the API key here. |
+| `scope.project.from` | `repo` (folder name) or `fixed` with `scope.project.name` — set by `/clockify-init` shape 1 or 2; see [shapes](../config.md#shape) |
+| `scope.client.from` | `none` or `fixed` with `id` (and `name` for display). Optional Clockify client pin. |
+| `entry_methods.timer` / `automated` `description.from` | `prompt` (caller supplies the string) or `template` |
+| `entry_methods.timer` / `automated` `description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
+| `entry_methods.manual.description.from` | `prompt` only (enter-time is not issue-driven; richer sources in [#74](https://github.com/dustinestes/clockify-agent-plugin/issues/74)). Leftover `template` keys are ignored |
+| `entry_methods.*.task.from` | `prompt`, `github_label`, `repo` (git toplevel folder name), or `none`. Automated allows `github_label`, `repo`, or `none` only — see [repo as task](../config.md#repo-as-task) |
+| `entry_methods.*.task.if_missing` | When the Clockify task does not exist: `prompt`, `create` (`ensure_task`), or `none`. Automated: `create` or `none` |
+| `entry_methods.timer.rounding` / `automated.rounding` | `enabled`, `increment_minutes`, `mode` (`nearest` \| `up` \| `down`), optional `start_mode` / `stop_mode` / `minimum_minutes` |
+| `entry_methods.*.overlap.on_conflict` | `prompt` or `override` when a completed interval overlaps another entry |
+| `entry_methods.automated.triggers` | Local AI/hook contract: `issue_start`, `issue_finish`, `issue_switch`, `pr_ship`, `pr_closed` |
+| `entry_methods.automated.inactivity` | Stop guidance when a timer exceeds `stop_after_minutes` (positive int; default 45) |
 
 ### Description placeholders
 
 ```yaml
-timer:
-  description:
-    from: template
-    template: "{issue_number} - {issue_title}"
+entry_methods:
+  timer:
+    description:
+      from: template
+      template: "{issue_number} - {issue_title}"
 ```
 
-With `issue_number: 1` and `issue_title: Wire Clockify MCP` that becomes `#1 - Wire Clockify MCP`. When `from: prompt`, an omitted description is left blank rather than filled from the template. Manual enter-time does not use templates — only `manual.description.from: prompt`.
+With `issue_number: 1` and `issue_title: Wire Clockify MCP` that becomes `#1 - Wire Clockify MCP`. When `from: prompt`, an omitted description is left blank rather than filled from the template. Manual enter-time does not use templates — only `entry_methods.manual.description.from: prompt`.
 
 ### Rounding
 
@@ -84,20 +87,21 @@ Invalid events fail validation with the field path and the allowed list (`issue_
 
 ### Inactivity
 
-Best-effort on agent/session boundaries (`clockify_get_running_timer` returns `inactivity.pastThreshold` from `automated.inactivity`). No background daemon while Cursor is closed.
+Best-effort on agent/session boundaries (`clockify_get_running_timer` returns `inactivity.pastThreshold` from `entry_methods.automated.inactivity`). No background daemon while Cursor is closed.
 
 `stop_after_minutes` is a positive integer (YAML `15` or `"15"`). Default is 45.
 
 ```yaml
-timer:
-  rounding:
-    enabled: true
-    increment_minutes: 15
-    mode: down
-automated:
-  inactivity:
-    enabled: true
-    stop_after_minutes: 15
+entry_methods:
+  timer:
+    rounding:
+      enabled: true
+      increment_minutes: 15
+      mode: down
+  automated:
+    inactivity:
+      enabled: true
+      stop_after_minutes: 15
 ```
 
 ---
@@ -112,8 +116,8 @@ Full catalog: [mcp.md](../mcp.md). Tools that read `.clockify/config.yml`:
 - `clockify_start_timer` - optional `start`, `entry_method`, `timer`/`automated` include_seconds + start rounding + gap-fit + overlap
 - `clockify_stop_timer` - `entry_method` end rounding, include_seconds, overlap
 - `clockify_create_time_entry` - `manual`/`automated` description + overlap (no rounding)
-- `clockify_get_running_timer` - `automated.inactivity`
-- `clockify_ensure_project` / `clockify_ensure_task` - taxonomy bootstrap
+- `clockify_get_running_timer` - `entry_methods.automated.inactivity`
+- `clockify_ensure_project` / `clockify_ensure_task` - taxonomy bootstrap (`client_id` / `set_client` on ensure_project)
 
 ---
 

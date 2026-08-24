@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 # Clockify init
 
-Set up the repo contract so timer and enter-time tools share one yaml. Config is **personal by default** (gitignored) so product repos stay clean.
+Set up the repo contract so timer and enter-time tools share one yaml. Config is **personal by default** (gitignored) so product repos stay clean. Decision map: [flows.md](../../docs/flows.md).
 
 Optional next mode: [`clockify-automate`](../clockify-automate/SKILL.md) wires Cursor rules/hooks. Do not write those here.
 
@@ -36,7 +36,7 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 2. Detect repo name from that git toplevel (folder name). Do not use Cursor’s workspace folder when it is a multi-root `.code-workspace` parent.
 3. If `.clockify/config.yml` exists (or `clockify_get_config` with `config_root` returns `found: true` at that path):
    - **Do not** rewrite config, `.managed-by-init`, or `.clockify/.gitignore` unless the user explicitly asks to reset/overwrite.
-   - **Do not** re-prompt for `workspace_id` or **shape** when config already exists unless the user asks to change them.
+   - **Do not** re-prompt for `scope.workspace_id` or **shape** when config already exists unless the user asks to change them.
    - Only fill **missing** ignore pieces (step 11), then jump to verify + conditional ensure (steps 13–17).
 4. Otherwise continue with first-time bootstrap below.
 
@@ -44,18 +44,15 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 
 ## First-time bootstrap
 
-5. `clockify_list_workspaces` with `config_root` — build a numbered menu and ask the user to choose (use **AskQuestion** when available):
+5. `clockify_list_workspaces` with `config_root` — numbered menu, **AskQuestion**. There is **no** “use active workspace” option. The user must pick a listed workspace. Write that id to `scope.workspace_id`.
 
    ```text
    Choose the Clockify workspace for this repo:
-   0 - None (use active workspace)
    1 - Workspace A Name (abc123...)
    2 - Workspace B Name (def456...)
    ```
 
-   Write the chosen id into `workspace_id` in the yaml (omit the key for option 0).
-
-6. Ask how this repo maps into Clockify (**AskQuestion** when available) **before** writing final yaml or calling ensure:
+6. Ask how this repo maps into Clockify (**AskQuestion**) **before** writing final yaml or calling ensure:
 
    ```text
    Choose how this repo maps into Clockify:
@@ -66,7 +63,7 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 
 7. If shape **2**: ask for the shared Clockify **project name**. Prefer **AskQuestion** with **only concrete names** (existing Clockify projects in the chosen workspace, and/or a clearly labeled folder-name guess). **Do not add an “Other” option** — AskQuestion already injects one; a second Other is duplicate UX. If they pick the built-in Other, wait for the name in chat (or the “Add more optional details” field). That value is `project.name`. Do not invent a name.
 
-8. Write `.clockify/config.yml`: start from the plugin’s `.clockify/config.yml.example` (rounding, triggers, inactivity) unless the user specifies different values, then overlay the shape (see [Shape overlays](#shape-overlays)). Apply `workspace_id` from step 5.
+8. Write `.clockify/config.yml`: start from the plugin’s `.clockify/config.yml.example` unless the user specifies different values, then overlay the shape (see [Shape overlays](#shape-overlays)). Always set `scope.workspace_id` from step 5. Default `scope.client.from: none` until the client step.
 
 9. Write `.clockify/.managed-by-init` (empty marker).
 10. Write `.clockify/.gitignore` with a single line: `*` (directory self-ignore so even `git add .` skips personal files).
@@ -87,28 +84,45 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 
     | Shape | Detect from existing yaml | Mutations |
     |-------|---------------------------|-----------|
-    | **1** Repo as project | `project.from: repo` **and** any method `task.from: github_label` | `clockify_ensure_project`, then label → task sync |
-    | **2** Repo as task | `project.from: fixed` **and** any method `task.from: repo` | `clockify_ensure_project`, then one repo-named task |
-    | **0** Local only | otherwise (example: `project.from: repo` with interactive `task.from: prompt` and `automated.task.from: none`) | **Skip** ensure_project and all task ensure |
+    | **1** Repo as project | `scope.project.from: repo` **and** any method `entry_methods.*.task.from: github_label` | client step, `clockify_ensure_project`, then label → task sync |
+    | **2** Repo as task | `scope.project.from: fixed` **and** any method `entry_methods.*.task.from: repo` | client step, `clockify_ensure_project`, then one repo-named task |
+    | **0** Local only | otherwise (example: `scope.project.from: repo` with interactive `task.from: prompt` and `entry_methods.automated.task.from: none`) | **Skip** client picker, ensure_project, and all task ensure |
 
     First-time shape **0**, and re-runs of that yaml, must **not** create a Clockify project or tasks. Do not call `clockify_ensure_project` “just in case.”
 
-15. When shape **1** (or yaml matches that row): `clockify_ensure_project` with `config_root` (`project.from: repo` → folder name / `projectName`). Then sync GitHub labels → Clockify tasks:
+14b. **Client pin (shape 1 or 2 only).** Decision map: [docs/flows.md](../../docs/flows.md). After the shape-2 project **name** is known, `clockify_list_projects` (name filter) in the **pinned** workspace — do not create yet.
+
+    - Existing project **and** Clockify `clientId` already set **and** yaml unset or already that client: **skip AskQuestion**. Persist Clockify’s client into `scope.client` (`from: fixed`, `id`, `name`). Chat: `Client: <name> (existing)`.
+    - No project, or project has no client, or yaml pin disagrees: **AskQuestion**:
+
+      ```text
+      Choose a Clockify client for this project:
+      0 - None
+      1 - Client A (id...)
+      2 - Client B (id...)
+      ```
+
+      Unarchived clients only (`clockify_list_clients`). Do **not** add a custom Other — Cursor’s Other is create. Empty list: still `0 - None`.
+    - **0 / none:** do not create or associate; `scope.client.from: none`.
+    - **Listed client:** new project → `clockify_ensure_project` with `client_id`. Existing project → `clockify_ensure_project` with `client_id` **and** `set_client: true` (explicit pick only).
+    - **Other:** `clockify_create_client` then associate as above.
+    - List-clients **error:** still show `0 - None` + Other; chat `Client: failed to retrieve clients`; continue ensure. They can set Client in Clockify UI.
+    - Do **not** PATCH an existing project’s client unless they just picked one.
+
+15. When shape **1** (or yaml matches that row): `clockify_ensure_project` with `config_root` (and `client_id` / `set_client` from 14b). Then sync GitHub labels → Clockify tasks:
     - `gh label list --json name` (or GitHub API)
     - For each label: `clockify_ensure_task` with `config_root`, `project_id` + label `name`
     - If there are no remotes or labels, skip task create and say so — still keep the project if ensure ran.
-16. When shape **2** (or yaml matches that row): `clockify_ensure_project` with `config_root` (`fixed` → `project.name`). Then `clockify_ensure_task` once with `config_root`, `project_id`, and `repoName` from get_config.
-17. Summarize: first-time vs already present, **shape chosen** (or detected), config path, **ignored by default**, how to opt in (delete the managed gitignore stanza and commit on purpose). If shape 0: local files only, no Clockify project/tasks; they can re-run after editing yaml toward shape 1 or 2, or ask to reset config. If shape 1/2: project id, tasks created vs existing. Mention `clockify-automate` if they want agent-mediated start/stop.
-
-Optional client picker (when implemented): only after shape 1 or 2, and only when ensuring a new project — never on shape 0.
+16. When shape **2** (or yaml matches that row): `clockify_ensure_project` with `config_root` (`fixed` → `scope.project.name`, plus client args from 14b). Then `clockify_ensure_task` once with `config_root`, `project_id`, and `repoName` from get_config.
+17. Summarize: first-time vs already present, **shape chosen** (or detected), config path, **ignored by default**, how to opt in. If shape 0: local files only, no Clockify project/tasks. If shape 1/2: project id, tasks created vs existing, **client** (existing name, newly created, none, or retrieve-failed). Mention `clockify-automate` if they want agent-mediated start/stop.
 
 ## Shape overlays
 
 Copy `.clockify/config.yml.example`, then set:
 
-**0 — None (local only)** — leave the example as-is: `project.from: repo`; timer/manual `task.from: prompt`; **`automated.task.from: none`**. Do not call ensure.
+**0 — None (local only)** — leave the example as-is: `scope.project.from: repo`; `scope.client.from: none`; timer/manual `task.from: prompt`; **`entry_methods.automated.task.from: none`**. Do not call ensure.
 
-**1 — Repo as project** — `project.from: repo`. For **timer, manual, and automated**:
+**1 — Repo as project** — `scope.project.from: repo`. For **timer, manual, and automated**:
 
 ```yaml
 task:
@@ -116,9 +130,9 @@ task:
   if_missing: create
 ```
 
-Timer and automated `description.from: template` with `template: "{issue_number} - {issue_title}"` (manual stays `prompt`). Then ensure project + label sync.
+Timer and automated `description.from: template` with `template: "{issue_number} - {issue_title}"` (manual stays `prompt`). Then client step + ensure project + label sync.
 
-**2 — Repo as task** — `project.from: fixed` and `project.name` from step 7. For **timer, manual, and automated**:
+**2 — Repo as task** — `scope.project.from: fixed` and `scope.project.name` from step 7. For **timer, manual, and automated**:
 
 ```yaml
 task:
@@ -126,7 +140,7 @@ task:
   if_missing: create
 ```
 
-Same description overlay as shape 1. Then ensure fixed project + repo-named task.
+Same description overlay as shape 1. Then client step + ensure fixed project + repo-named task.
 
 ## Do not
 
@@ -140,4 +154,4 @@ Same description overlay as shape 1. Then ensure fixed project + repo-named task
 
 ## Default yaml (unless user overrides)
 
-Copy the plugin `.clockify/config.yml.example` as the **local-only (shape 0)** scaffold, then overlay shape 1 or 2 as above. That file has `timer` / `manual` / `automated` blocks: project from repo name, prompt vs template descriptions, nearest-15 rounding on timer and automated, overlap `prompt`, automated triggers (issue_start → start; issue_finish / pr_ship / pr_closed → stop; issue_switch → stop_then_start), inactivity 45 minutes (`stop_after_minutes` is a positive int you can set to 15 or any other value), **`automated.task.from: none`** so copying it does not imply label→task create.
+Copy the plugin `.clockify/config.yml.example` as the **local-only (shape 0)** scaffold, then overlay shape 1 or 2 as above. That file has `plugin_internal`, `scope`, and `entry_methods` (`timer` / `manual` / `automated`): required workspace pin, client none, project from repo name, prompt vs template descriptions, nearest-15 rounding on timer and automated, overlap `prompt`, automated triggers, inactivity 45 minutes, **`entry_methods.automated.task.from: none`** so copying it does not imply label→task create.
