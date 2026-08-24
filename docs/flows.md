@@ -82,8 +82,8 @@ Clockify’s “active” workspace follows whatever the user last opened in the
 ### AskQuestion: client
 
 - Purpose: optional client on the Clockify project + `scope.client`.
-- Options: `0 - None`, then unarchived clients `1…N`. Cursor **Other** creates a client (`clockify_create_client`). Empty list: still `0 - None`.
-- List error: same menu; chat `Client: failed to retrieve clients`; continue without a pin.
+- Authored options: **only** `0 - None`, then unarchived clients `1…N`. Cursor **Other** creates (`clockify_create_client`). Do not add another skip/none (that shows up as B).
+- Empty list or list error: skip AskQuestion (it requires two options and a dummy B duplicates none). Chat: none, or type a name to create. On list error also say `Client: failed to retrieve clients`.
 
 ### Data in / out
 

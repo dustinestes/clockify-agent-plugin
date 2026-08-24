@@ -93,20 +93,19 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 14b. **Client pin (shape 1 or 2 only).** Decision map: [docs/flows.md](../../docs/flows.md). After the shape-2 project **name** is known, `clockify_list_projects` (name filter) in the **pinned** workspace — do not create yet.
 
     - Existing project **and** Clockify `clientId` already set **and** yaml unset or already that client: **skip AskQuestion**. Persist Clockify’s client into `scope.client` (`from: fixed`, `id`, `name`). Chat: `Client: <name> (existing)`.
-    - No project, or project has no client, or yaml pin disagrees: **AskQuestion**:
+    - No project, or project has no client, or yaml pin disagrees: **AskQuestion**. Authored options are **only**:
 
       ```text
-      Choose a Clockify client for this project:
       0 - None
       1 - Client A (id...)
       2 - Client B (id...)
       ```
 
-      Unarchived clients only (`clockify_list_clients`). Do **not** add a custom Other — Cursor’s Other is create. Empty list: still `0 - None`.
+      That is: `0 - None`, then each unarchived client from `clockify_list_clients` (`1…N`). **Do not** add a second skip/none/no-client/don’t-associate choice (AskQuestion letters that as B and duplicates `0`). **Do not** add Other — the UI already injects it (create). Empty list or list error: **do not** AskQuestion with a dummy second option. In chat: they can take none, or type a name to create.
     - **0 / none:** do not create or associate; `scope.client.from: none`.
     - **Listed client:** new project → `clockify_ensure_project` with `client_id`. Existing project → `clockify_ensure_project` with `client_id` **and** `set_client: true` (explicit pick only).
     - **Other:** `clockify_create_client` then associate as above.
-    - List-clients **error:** still show `0 - None` + Other; chat `Client: failed to retrieve clients`; continue ensure. They can set Client in Clockify UI.
+    - List-clients **error:** same as empty list (chat, not a two-none AskQuestion); `Client: failed to retrieve clients`; continue ensure. They can set Client in Clockify UI.
     - Do **not** PATCH an existing project’s client unless they just picked one.
 
 15. When shape **1** (or yaml matches that row): `clockify_ensure_project` with `config_root` (and `client_id` / `set_client` from 14b). Then sync GitHub labels → Clockify tasks:
@@ -151,6 +150,7 @@ Same description overlay as shape 1. Then client step + ensure fixed project + r
 - Enable automated Cursor rules here — that is `clockify-automate`
 - Ensure project or tasks before the user answers the shape question
 - Add a custom “Other” AskQuestion choice (the UI already provides one)
+- Add a second “no client” / skip option on the client picker (`0 - None` is the only skip; Other is create)
 
 ## Default yaml (unless user overrides)
 
