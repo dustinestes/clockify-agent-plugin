@@ -82,24 +82,6 @@ const projectSchema = z
   })
   .default({});
 
-const clientSchema = z
-  .object({
-    from: z.enum(["none", "fixed"]).default("none"),
-    id: z.string().optional(),
-    name: z.string().optional(),
-  })
-  .default({})
-  .superRefine((client, ctx) => {
-    if (client.from !== "fixed") return;
-    if (!client.id?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "client.id is required when client.from is fixed",
-        path: ["id"],
-      });
-    }
-  });
-
 const timerMethodSchema = z
   .object({
     include_seconds: z.boolean().default(false),
@@ -150,7 +132,6 @@ export const clockifyConfigSchema = z.object({
         .trim()
         .min(1, "scope.workspace_id is required. Re-run /clockify-init."),
       project: projectSchema,
-      client: clientSchema,
     })
     .default({ workspace_id: "unconfigured" }),
   entry_methods: z

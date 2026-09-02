@@ -153,8 +153,6 @@ scope:
   project:
     from: fixed
     name: FixtureRepo
-  client:
-    from: none
 entry_methods:
   timer:
     rounding:

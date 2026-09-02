@@ -15,8 +15,8 @@ Decision maps for skills. Agent procedures stay in each `SKILL.md`; field lists 
   - [AskQuestion: workspace](#askquestion-workspace)
   - [AskQuestion: shape](#askquestion-shape)
   - [AskQuestion: project name (shape 2)](#askquestion-project-name-shape-2)
-  - [Client skip vs ask](#client-skip-vs-ask)
-  - [AskQuestion: client](#askquestion-client)
+  - [Project client (Clockify only)](#project-client-clockify-only)
+  - [AskQuestion: assign client](#askquestion-assign-client)
   - [Data in / out](#data-in--out)
 
 ---
@@ -31,26 +31,22 @@ Decision maps for skills. Agent procedures stay in each `SKILL.md`; field lists 
 flowchart TD
   skip0[Shape 0: skip client entirely]
   lookup[List project by name]
-  hasProj{Project exists?}
-  hasClient{Clockify client already set?}
-  yamlMatch{Yaml client id matches Clockify?}
-  ask[AskQuestion clients]
+  hasClient{Project exists with client?}
+  report[Report client in chat]
+  ask[AskQuestion assign client]
   create[Create project with optional clientId]
-  patch[PATCH project client only after an explicit pick]
-  write[Write client block into config.yml]
+  patch[clockify_set_project_client PUT]
+  tasks[ensure tasks per shape]
 
-  skip0 --> write
-  lookup --> hasProj
-  hasProj -->|no| ask
-  ask --> create
-  create --> write
-  hasProj -->|yes| hasClient
-  hasClient -->|yes| yamlMatch
-  yamlMatch -->|yes| write
-  yamlMatch -->|no| ask
+  skip0 --> tasks
+  lookup --> hasClient
+  hasClient -->|yes| report
   hasClient -->|no| ask
-  ask --> patch
-  patch --> write
+  ask -->|new project| create
+  ask -->|existing no client| patch
+  report --> tasks
+  create --> tasks
+  patch --> tasks
 ```
 
 ### Why workspace is required
@@ -73,28 +69,30 @@ Clockify’s “active” workspace follows whatever the user last opened in the
 - Purpose: `scope.project.name` when `from: fixed`.
 - Options: existing project names in the pinned workspace (plus a labeled folder guess if useful). Do not add a custom Other.
 
-### Client skip vs ask
+### Project client (Clockify only)
 
-- Shape 0: skip. `scope.client.from: none`.
-- **Skip AskQuestion** only when yaml `scope.client` already matches the Clockify project’s client (same id). Re-run idempotency.
-- **Always ask** when yaml is `from: none` or disagrees — even if Clockify already has a client on the project. Never auto-copy that client into yaml.
-- Never silently PATCH an existing project’s client; only after an explicit pick.
+- Shape 0: skip entirely.
+- Clients live on the Clockify **project**, not in `config.yml`. Time entries target projects/tasks; Clockify reports group by client.
+- **Skip AskQuestion** when the project already has a `clientId` — report the name in chat. Init does **not** change it.
+- **Ask** only when the project is missing or exists **without** a client.
 
-### AskQuestion: client
+### AskQuestion: assign client
 
-- Purpose: optional client on the Clockify project + `scope.client`.
+- **Prerequisite:** `clockify_list_clients` in the pinned workspace — build options from the response; do not open AskQuestion until this returns (or fails).
+- Purpose: optionally assign a client on a **new** project or an existing project that has none.
 - No `N -` prefixes (AskQuestion letters options A, B, C…). Follow-up: drop numeric prefixes on workspace/shape prompts too.
-- Authored options: `None`, then each unarchived client name (if any), then `Create Client`. Empty list or list error: **only** `None` and `Create Client`.
-- **Create Client** → ask the name in **chat** (not AskQuestion); then `clockify_create_client`. Do not offer existing clients or project name as choices for the new name.
+- Authored options: `None`, then **each** unarchived client name from `list_clients`, then `Create Client`. Empty list or list error: **only** `None` and `Create Client`.
+- **Create Client** → ask the name in **chat** (not AskQuestion); then `clockify_create_client`. Do not offer existing clients or project name as choices **for the new name** — they still belong in the main picker.
 - List error: still use `None` + `Create Client`; chat `Client: failed to retrieve clients`.
+- Never PATCH a project that already has a client.
 
 ### Data in / out
 
 | Direction | What |
 |-----------|------|
 | In | `clockify_list_workspaces`, `clockify_list_projects`, `clockify_list_clients` (active only), git toplevel folder name, optional GitHub labels (shape 1) |
-| Out (yaml `scope`) | `workspace_id` (required), `project` (`from` + optional `name`), `client` (`from: none` or `fixed` + `id` / `name`) |
-| Out (Clockify) | `clockify_create_client` on Create Client; `clockify_ensure_project` with `client_id` on create; `set_client: true` only after an explicit pick on an existing project; `clockify_ensure_task` per shape |
+| Out (yaml `scope`) | `workspace_id` (required), `project` (`from` + optional `name`) |
+| Out (Clockify) | `clockify_create_client` on Create Client; `clockify_ensure_project` with `client_id` on **new** project create; `clockify_set_project_client` on existing project without client; `clockify_ensure_task` per shape |
 
 ---
 

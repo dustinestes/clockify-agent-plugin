@@ -24,14 +24,13 @@ Field contract for `.clockify/config.yml`: project identity plus per-method desc
 
 ## Schema
 
-Root keys: `plugin_internal`, `scope`, `entry_methods`. `scope` is where every entry and ensure_* goes (workspace, project, client). `entry_methods.timer` / `manual` / `automated` are how time is entered. Rounding and `include_seconds` apply to timer and automated only. Manual times are explicit. Init decision map: [flows.md](../flows.md).
+Root keys: `plugin_internal`, `scope`, `entry_methods`. `scope` is where every entry and ensure_* goes (workspace and project). `entry_methods.timer` / `manual` / `automated` are how time is entered. Rounding and `include_seconds` apply to timer and automated only. Manual times are explicit. Init decision map: [flows.md](../flows.md).
 
 | Key | Purpose |
 |-----|---------|
 | `plugin_internal.version` | Schema version (`2`). Plugin-owned; not for day-to-day edits. |
 | `scope.workspace_id` | **Required** Clockify workspace pin (set during `/clockify-init`). Never follow the UI active workspace. Never put the API key here. |
 | `scope.project.from` | `repo` (folder name) or `fixed` with `scope.project.name` — set by `/clockify-init` shape 1 or 2; see [shapes](../config.md#shape) |
-| `scope.client.from` | `none` or `fixed` with `id` (and `name` for display). Optional Clockify client pin. |
 | `entry_methods.timer` / `automated` `description.from` | `prompt` (caller supplies the string) or `template` |
 | `entry_methods.timer` / `automated` `description.template` | `{issue_number}` `{issue_title}` `{github_label}` `{repo}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
 | `entry_methods.manual.description.from` | `prompt` only (enter-time is not issue-driven; richer sources in [#74](https://github.com/dustinestes/clockify-agent-plugin/issues/74)). Leftover `template` keys are ignored |
@@ -117,7 +116,7 @@ Full catalog: [mcp.md](../mcp.md). Tools that read `.clockify/config.yml`:
 - `clockify_stop_timer` - `entry_method` end rounding, include_seconds, overlap
 - `clockify_create_time_entry` - `manual`/`automated` description + overlap (no rounding)
 - `clockify_get_running_timer` - `entry_methods.automated.inactivity`
-- `clockify_ensure_project` / `clockify_ensure_task` - taxonomy bootstrap (`client_id` / `set_client` on ensure_project)
+- `clockify_ensure_project` / `clockify_ensure_task` - taxonomy bootstrap (`client_id` on create; `clockify_set_project_client` to assign on existing)
 
 ---
 

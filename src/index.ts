@@ -395,7 +395,7 @@ registerClockifyTool(
   {
     title: "List Clockify clients",
     description:
-      "Lists active (unarchived) clients in a workspace." +
+      "Lists active (unarchived) clients in a workspace. Call before the init client AskQuestion; each returned name becomes a picker option between None and Create Client." +
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
@@ -436,6 +436,43 @@ registerClockifyTool(
 );
 
 registerClockifyTool(
+  "clockify_set_project_client",
+  {
+    title: "Set Clockify project client",
+    description:
+      "Assigns a client to an existing project (PUT with full project body). Use when init finds a project without a client. Fails if the project already has a client." +
+      CONFIG_ROOT_TOOL_HINT,
+    inputSchema: {
+      config_root: configRootField,
+      project_id: z
+        .string()
+        .trim()
+        .min(1)
+        .describe("Clockify project id from clockify_list_projects."),
+      client_id: z
+        .string()
+        .trim()
+        .min(1)
+        .describe("Clockify client id from clockify_list_clients or clockify_create_client."),
+      workspace_id: workspaceIdField,
+    },
+  },
+  async ({ config_root, project_id, client_id, workspace_id }) => {
+    try {
+      return textResult(
+        await client(config_root).setProjectClient(
+          project_id,
+          client_id,
+          workspace_id,
+        ),
+      );
+    } catch (error) {
+      return errorResult(error);
+    }
+  },
+);
+
+registerClockifyTool(
   "clockify_ensure_project",
   {
     title: "Ensure Clockify project",
@@ -453,13 +490,13 @@ registerClockifyTool(
         .string()
         .optional()
         .describe(
-          "Clockify client id. Applied on create. On an existing project, ignored unless set_client is true.",
+          "Clockify client id. Applied on create. On an existing project, prefer clockify_set_project_client instead of set_client.",
         ),
       set_client: z
         .boolean()
         .optional()
         .describe(
-          "If true and the project already exists, PUT client_id onto that project. Default false (no surprise edits).",
+          "Deprecated for init: use clockify_set_project_client on existing projects. If true, PUT client_id via full project update when the project exists without a client.",
         ),
     },
   },

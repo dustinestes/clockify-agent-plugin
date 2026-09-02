@@ -36,7 +36,7 @@ How `.clockify/config.yml` gets on disk, how git treats it, and how the server f
 
 The API key lives in **user** MCP (`~/.cursor/mcp.json`). Each git repo keeps its own `.clockify/config.yml` (workspace, project, rounding, templates, triggers). Do not put API keys in the yaml.
 
-Preferred: `/clockify-init` in the repo (required workspace picker, **shape** picker, optional client, ignore defaults; Clockify project/tasks only for shapes 1 and 2). Decision map: [flows.md](./flows.md). Or copy by hand:
+Preferred: `/clockify-init` in the repo (required workspace picker, **shape** picker, ignore defaults; Clockify project/tasks only for shapes 1 and 2). Decision map: [flows.md](./flows.md). Or copy by hand:
 
 ```bash
 mkdir -p .clockify
@@ -61,7 +61,7 @@ These shapes are how you line up git/GitHub with Clockify’s tree (workspace �
 
 **Workspace:** required pin (`scope.workspace_id`) chosen at `/clockify-init`. The plugin does **not** follow Clockify’s UI active workspace.
 
-**Clients:** optional. Init can pin a client on **new** associate (or after an explicit AskQuestion on an existing project with no client / a mismatched pin). Yaml `scope.client` is the repo pin. Changing an existing Clockify client without that pick is the Clockify UI (or a later re-ask).
+**Clients:** optional Clockify project metadata, not stored in yaml. During init, if the target project already has a client, init uses it and does not offer to change it. If the project is new or has no client, init may ask whether to assign or create one on the project. Changing a client on an existing project is done in the Clockify UI (or a separate process).
 
 ### None (local only)
 
@@ -85,8 +85,6 @@ scope:
   workspace_id: "..."   # required pin
   project:
     from: repo
-  client:
-    from: none          # or fixed + id / name after init
 
 entry_methods:
   timer:
@@ -136,8 +134,6 @@ scope:
   project:
     from: fixed
     name: Application modernization
-  client:
-    from: none
 
 entry_methods:
   timer:

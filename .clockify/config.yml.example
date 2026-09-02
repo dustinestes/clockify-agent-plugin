@@ -5,8 +5,6 @@ scope:
   workspace_id: SET_BY_INIT
   project:
     from: repo
-  client:
-    from: none
 
 entry_methods:
   timer:
