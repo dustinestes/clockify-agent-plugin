@@ -92,17 +92,15 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 
 14b. **Client pin (shape 1 or 2 only).** Decision map: [docs/flows.md](../../docs/flows.md). After the shape-2 project **name** is known, `clockify_list_projects` (name filter) in the **pinned** workspace — do not create yet.
 
-    - Existing project **and** Clockify `clientId` already set **and** yaml unset or already that client: **skip AskQuestion**. Persist Clockify’s client into `scope.client` (`from: fixed`, `id`, `name`). Chat: `Client: <name> (existing)`.
-    - No project, or project has no client, or yaml pin disagrees: **AskQuestion**. Do **not** prefix options with `0 -`, `1 -`, etc. — AskQuestion already letters them A, B, C…
-
-      Authored options (in order):
+    - **Only skip AskQuestion** when `scope.client` in yaml **already** matches the Clockify project’s client (`from: fixed` and same `id`). Re-run idempotency only — chat `Client: <name> (unchanged)`.
+    - **Always AskQuestion** when yaml is `from: none`, client unset, or the pin disagrees with Clockify — **even if** the existing project already has a client in Clockify. Do **not** copy Clockify’s client into yaml without an explicit pick. Do **not** prefix options with `0 -`, `1 -`, etc. — AskQuestion already letters them A, B, C…
 
       ```text
       None
       Create Client
       ```
 
-      When `clockify_list_clients` returns names, insert each unarchived client **between** `None` and `Create Client` (label = client name only). When the list is empty or the call fails, use **only** `None` and `Create Client` — no second skip, no custom Other.
+      When `clockify_list_clients` returns names, insert each unarchived client **between** `None` and `Create Client` (label = client name only). If the project already has a `clientId` / `clientName` not in that list, include that client in the menu too. When the list is empty or the call fails, use **only** `None` and `Create Client` — no second skip, no custom Other.
 
       - **None:** do not create or associate; `scope.client.from: none`.
       - **Listed client name:** new project → `clockify_ensure_project` with `client_id`. Existing project → `clockify_ensure_project` with `client_id` **and** `set_client: true` (explicit pick only).
@@ -146,7 +144,7 @@ Same description overlay as shape 1. Then client step + ensure fixed project + r
 ## Do not
 
 - Put API keys in `.clockify/config.yml` (or anywhere under `.clockify/`)
-- Invent Clockify ids
+- Invent Clockify ids or copy a project’s existing client into yaml without AskQuestion
 - Force-add `.clockify/` to git
 - Overwrite an existing `.clockify/config.yml` without an explicit user request
 - Enable automated Cursor rules here — that is `clockify-automate`

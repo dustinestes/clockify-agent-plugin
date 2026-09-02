@@ -33,7 +33,7 @@ flowchart TD
   lookup[List project by name]
   hasProj{Project exists?}
   hasClient{Clockify client already set?}
-  yamlMatch{Yaml client already matches Clockify?}
+  yamlMatch{Yaml client id matches Clockify?}
   ask[AskQuestion clients]
   create[Create project with optional clientId]
   patch[PATCH project client only after an explicit pick]
@@ -46,8 +46,8 @@ flowchart TD
   create --> write
   hasProj -->|yes| hasClient
   hasClient -->|yes| yamlMatch
-  yamlMatch -->|yes or yaml empty| write
-  yamlMatch -->|yaml pin differs| ask
+  yamlMatch -->|yes| write
+  yamlMatch -->|no| ask
   hasClient -->|no| ask
   ask --> patch
   patch --> write
@@ -76,8 +76,9 @@ Clockify’s “active” workspace follows whatever the user last opened in the
 ### Client skip vs ask
 
 - Shape 0: skip. `scope.client.from: none`.
-- Existing Clockify project already has a client **and** yaml is unset or already that client: skip picker; copy Clockify’s client into yaml. Chat: `Client: Northwind (existing)`.
-- No project, project has no client, or yaml pin disagrees: ask. Never silently PATCH an existing project’s client.
+- **Skip AskQuestion** only when yaml `scope.client` already matches the Clockify project’s client (same id). Re-run idempotency.
+- **Always ask** when yaml is `from: none` or disagrees — even if Clockify already has a client on the project. Never auto-copy that client into yaml.
+- Never silently PATCH an existing project’s client; only after an explicit pick.
 
 ### AskQuestion: client
 
