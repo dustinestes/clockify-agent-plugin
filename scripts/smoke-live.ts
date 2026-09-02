@@ -65,7 +65,6 @@ async function main(): Promise<void> {
   }
 
   const workspaceId = smokeWorkspaceId();
-  const client = new ClockifyClient(apiKey, workspaceId);
   const log = (step: string, detail?: unknown) => {
     console.log(`✓ ${step}`);
     if (detail !== undefined) {
@@ -75,11 +74,8 @@ async function main(): Promise<void> {
     }
   };
 
-  console.log(
-    `Smoke against workspace: ${workspaceId ?? "(active workspace)"}\n`,
-  );
-
-  const user = await client.getUser();
+  const probe = new ClockifyClient(apiKey);
+  const user = await probe.getUser();
   assert(user.id, "getUser: missing id");
   log("clockify_get_user", {
     id: user.id,
@@ -88,13 +84,15 @@ async function main(): Promise<void> {
     defaultWorkspace: user.defaultWorkspace,
   });
 
-  const workspaces = await client.listWorkspaces();
+  const workspaces = await probe.listWorkspaces();
   assert(workspaces.length > 0, "listWorkspaces: empty");
   log(
     "clockify_list_workspaces",
     workspaces.map((w) => ({ id: w.id, name: w.name })),
   );
 
+  const pin = workspaceId ?? workspaces[0]?.id;
+  assert(pin, "no workspace id (pass --workspace= or have at least one workspace)");
   if (workspaceId) {
     assert(
       workspaces.some((w) => w.id === workspaceId),
@@ -102,8 +100,15 @@ async function main(): Promise<void> {
     );
   }
 
+  const client = new ClockifyClient(apiKey, pin);
+  console.log(`Smoke against workspace: ${pin}\n`);
   const ws = await client.resolveWorkspaceId();
   log("resolveWorkspaceId", ws);
+  const clients = await client.listClients();
+  log(
+    "clockify_list_clients",
+    clients.map((c) => ({ id: c.id, name: c.name })),
+  );
 
   const projects = await client.listProjects();
   log(

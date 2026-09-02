@@ -2,7 +2,7 @@
 name: clockify-automate
 description: >-
   Turn on agent-mediated Clockify tracking: if .clockify/config.yml is missing,
-  run clockify-init first, then write Cursor rules/hooks from automated.triggers
+  run clockify-init first, then write Cursor rules/hooks from entry_methods.automated.triggers
   (issue_start, issue_finish, issue_switch, pr_ship, pr_closed). Use when the user wants
   the agent to start/stop timers in the issue/PR workflow. Safe to re-run.
 disable-model-invocation: true
@@ -24,7 +24,7 @@ If config already exists, do not overwrite it. Continue with After init.
 
 ## After init
 
-1. `clockify_get_config` with `config_root` — read `automated.triggers`, `automated.inactivity`, `automated.task`, `automated.overlap`. If `automated.triggers` is empty, stop and point at `.clockify/config.yml.example`.
+1. `clockify_get_config` with `config_root` — read `entry_methods.automated.triggers`, `entry_methods.automated.inactivity`, `entry_methods.automated.task`, `entry_methods.automated.overlap`. If `entry_methods.automated.triggers` is empty, stop and point at `.clockify/config.yml.example`.
 2. Add or update `.cursor/rules/clockify.mdc` so the agent:
    - Passes `config_root` on Clockify MCP calls: reuse the known git toplevel this session; re-resolve only if the folder or focused root changed (cwd first, not the open file)
    - Passes `entry_method: automated` on `clockify_start_timer` / `clockify_stop_timer`
@@ -55,7 +55,7 @@ root. Do not pass the .code-workspace parent.
 
 When the user starts work or planning on a GitHub issue, start a Clockify timer
 with entry_method: automated (issue_number + issue_title; project/task from
-automated.task — github_label or repo folder name via repoName). If another
+entry_methods.automated.task — github_label or repo folder name via repoName). If another
 timer is running, warn and confirm before stopping it.
 
 When they finish the issue, switch issues (after confirm), ship the PR, or close

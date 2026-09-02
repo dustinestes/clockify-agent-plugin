@@ -13,7 +13,7 @@ Interactive **Timer** method (`entry_method: timer`).
 ## Config-aware behavior
 
 1. If `config_root` is already known this session and still this repo, reuse it. Otherwise resolve once with `git rev-parse --show-toplevel` from the working directory (open tabs are not required; multi-root: focused path only as a tie-breaker). Re-resolve when the folder or focused root changes. Pass that string on Clockify MCP calls — do not run git before every tool.
-2. `clockify_get_config` with `config_root`. Honor `timer.rounding`, `timer.include_seconds`, and `timer.overlap`.
+2. `clockify_get_config` with `config_root`. Honor `entry_methods.timer.rounding`, `entry_methods.timer.include_seconds`, and `entry_methods.timer.overlap`.
 3. Never invent ids.
 
 ## Workflow

@@ -73,7 +73,7 @@ The Clockify MCP toggle is red, never turns green, or goes red after a short tim
 | MCP Output `[error]` on every line, JSON says `"level":"info"` / `"status":"success"` | Cursor labels all stderr as error — [logging.md](./logging.md#cursor-error-on-every-line) |
 | `CLOCKIFY_API_KEY is required` | Missing plugin / MCP `env` |
 | `clockify_get_config` `found: false` but yaml exists | User MCP cwd is not the repo; missing `config_root` or leftover PATH/ROOT env — [config not found](#clockifyconfigyml-not-found) |
-| Workspace ID not found | Typo in `.clockify/config.yml` `workspace_id`; re-run `/clockify-init` to pick a workspace |
+| Workspace ID not found | Typo in `.clockify/config.yml` `scope.workspace_id`; re-run `/clockify-init` to pick a workspace |
 | `npx -y @dustinestes/clockify-agent-plugin` fails | Node/npx not on PATH, or registry/network |
 | Agent sits idle after the first Clockify tool call | Waiting on MCP tool approval; [pre-enable tools](./use.md#pre-enable-clockify-tools) |
 

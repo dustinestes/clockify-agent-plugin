@@ -36,7 +36,7 @@ How `.clockify/config.yml` gets on disk, how git treats it, and how the server f
 
 The API key lives in **user** MCP (`~/.cursor/mcp.json`). Each git repo keeps its own `.clockify/config.yml` (workspace, project, rounding, templates, triggers). Do not put API keys in the yaml.
 
-Preferred: `/clockify-init` in the repo (workspace picker, **shape** picker, ignore defaults; Clockify project/tasks only for shapes 1 and 2). Or copy by hand:
+Preferred: `/clockify-init` in the repo (required workspace picker, **shape** picker, ignore defaults; Clockify project/tasks only for shapes 1 and 2). Decision map: [flows.md](./flows.md). Or copy by hand:
 
 ```bash
 mkdir -p .clockify
@@ -59,13 +59,13 @@ These shapes are how you line up git/GitHub with Clockify’s tree (workspace �
 2 - Repo as task (fixed Clockify project; task = repo folder)
 ```
 
-**Workspace:** this plugin does not define a workspace by shape. You choose this when running `/clockify-init` (personal, team, client space).
+**Workspace:** required pin (`scope.workspace_id`) chosen at `/clockify-init`. The plugin does **not** follow Clockify’s UI active workspace.
 
-**Clients:** this plugin does not set Clockify clients (they are optional on a project). Assign one in Clockify: **Projects** → **Select Project** → **Settings** → **Client** dropdown.
+**Clients:** optional Clockify project metadata, not stored in yaml. During init, if the target project already has a client, init uses it and does not offer to change it. If the project is new or has no client, init may ask whether to assign or create one on the project. Changing a client on an existing project is done in the Clockify UI (or a separate process).
 
 ### None (local only)
 
-Writes `.clockify/config.yml` from [`.clockify/config.yml.example`](../.clockify/config.yml.example) (gitignore and markers too) and **does not** create a Clockify project or tasks. Timer/manual tasks stay `prompt`; `automated.task.from` is `none` so a later `/clockify-init` re-run still skips ensure. Edit the yaml toward shape 1 or 2 (or ask to reset config) when you are ready to map into Clockify.
+Writes `.clockify/config.yml` from [`.clockify/config.yml.example`](../.clockify/config.yml.example) (gitignore and markers too) and **does not** create a Clockify project or tasks. Timer/manual tasks stay `prompt`; `entry_methods.automated.task.from` is `none` so a later `/clockify-init` re-run still skips ensure. `scope.workspace_id` is still required. Edit the yaml toward shape 1 or 2 (or ask to reset config) when you are ready to map into Clockify.
 
 ### Repo as project
 
@@ -81,31 +81,32 @@ Example: workspace *Acme Labs*, client *Northwind*, project = repo name, task = 
 #### Configuration
 
 ```yaml
-project:
-  from: repo
+scope:
+  workspace_id: "..."   # required pin
+  project:
+    from: repo
 
-timer:
-  description:
-    from: template
-    template: "{issue_number} - {issue_title}"
-  task:
-    from: github_label
-    if_missing: create
-
-manual:
-  description:
-    from: prompt
-  task:
-    from: github_label
-    if_missing: create
-
-automated:
-  description:
-    from: template
-    template: "{issue_number} - {issue_title}"
-  task:
-    from: github_label
-    if_missing: create
+entry_methods:
+  timer:
+    description:
+      from: template
+      template: "{issue_number} - {issue_title}"
+    task:
+      from: github_label
+      if_missing: create
+  manual:
+    description:
+      from: prompt
+    task:
+      from: github_label
+      if_missing: create
+  automated:
+    description:
+      from: template
+      template: "{issue_number} - {issue_title}"
+    task:
+      from: github_label
+      if_missing: create
 ```
 
 #### How to use
@@ -121,45 +122,46 @@ Compact. For when you do not need label-level granularity. Many sibling repos re
 Example: workspace *Acme Labs*, client *Northwind*, project *Application modernization*, tasks = repo name (i.e. `webapp`, `mobileapp`, `database`, `website`).
 
 - Workspace → user defined
-- Project → fixed name (`project.from: fixed`)
+- Project → fixed name (`scope.project.from: fixed`)
 - Task → repo name
 - Description → issue fields on timer / automated; add `{repo}` only if you still want the name in the text. Manual is always `prompt`.
 
 #### Configuration
 
 ```yaml
-project:
-  from: fixed
-  name: Application modernization
+scope:
+  workspace_id: "..."
+  project:
+    from: fixed
+    name: Application modernization
 
-timer:
-  description:
-    from: template
-    template: "{issue_number} - {issue_title}"
-  task:
-    from: repo
-    if_missing: create
-
-manual:
-  description:
-    from: prompt
-  task:
-    from: repo
-    if_missing: create
-
-automated:
-  description:
-    from: template
-    template: "{issue_number} - {issue_title}"
-  task:
-    from: repo
-    if_missing: create
+entry_methods:
+  timer:
+    description:
+      from: template
+      template: "{issue_number} - {issue_title}"
+    task:
+      from: repo
+      if_missing: create
+  manual:
+    description:
+      from: prompt
+    task:
+      from: repo
+      if_missing: create
+  automated:
+    description:
+      from: template
+      template: "{issue_number} - {issue_title}"
+    task:
+      from: repo
+      if_missing: create
 ```
 
 #### How to use
 
 1. Run `/clockify-init`; pick a Clockify workspace; choose shape **2**.
-2. When asked, give the shared Clockify **project name** (`project.from: fixed` + `project.name`).
+2. When asked, give the shared Clockify **project name** (`scope.project.from: fixed` + `scope.project.name`).
 3. Init creates/finds that project and ensures a task named like the git toplevel folder (`repoName`). Timer/enter-time skills use the same mapping.
 
 ---

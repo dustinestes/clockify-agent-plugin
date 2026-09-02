@@ -1,68 +1,67 @@
-# Example / local-only (shape 0) scaffold for the Clockify Agent Plugin.
-# /clockify-init copies this, then overlays shape 1 (repo as project) or 2 (repo as task)
-# after AskQuestion. Shape 0 leaves this file as-is and does not create Clockify entities.
-# Personal by default — see docs/config.md (git hygiene). Fields: docs/schema/config.yml.md. Never put API keys here.
-version: 1
-# Optional Clockify workspace pin (not the git project). Set during /clockify-init.
-# workspace_id: 64abc...
-project:
-  from: repo
+# Clockify Agent Plugin (@dustinestes/clockify-agent-plugin) — https://github.com/dustinestes/clockify-agent-plugin — docs/config.md
+plugin_internal:
+  version: 2
+scope:
+  workspace_id: SET_BY_INIT
+  project:
+    from: repo
 
-timer:
-  include_seconds: false
-  description:
-    from: prompt
-    template: "{issue_number} - {issue_title}"
-  task:
-    from: prompt
-    if_missing: prompt
-  rounding:
-    enabled: true
-    increment_minutes: 15
-    mode: nearest
-    start_mode: nearest
-    stop_mode: nearest
-    minimum_minutes: 15
-  overlap:
-    on_conflict: prompt
+entry_methods:
+  timer:
+    include_seconds: false
+    description:
+      from: prompt
+      template: "{issue_number} - {issue_title}"
+    task:
+      from: prompt
+      if_missing: prompt
+    rounding:
+      enabled: true
+      increment_minutes: 15
+      mode: nearest
+      start_mode: nearest
+      stop_mode: nearest
+      minimum_minutes: 15
+    overlap:
+      on_conflict: prompt
 
-manual:
-  description:
-    from: prompt
-  task:
-    from: prompt
-    if_missing: prompt
-  overlap:
-    on_conflict: prompt
+  manual:
+    description:
+      from: prompt
+    task:
+      from: prompt
+      if_missing: prompt
+    overlap:
+      on_conflict: prompt
 
-automated:
-  include_seconds: false
-  description:
-    from: template
-    template: "{issue_number} - {issue_title}"
-  task:
-    from: none
-    if_missing: none
-  rounding:
-    enabled: true
-    increment_minutes: 15
-    mode: nearest
-    start_mode: nearest
-    stop_mode: nearest
-    minimum_minutes: 15
-  overlap:
-    on_conflict: prompt
-  triggers:
-    - event: issue_start
-      action: start_timer
-    - event: issue_finish
-      action: stop_timer
-    - event: issue_switch
-      action: stop_then_start
-    - event: pr_ship
-      action: stop_timer
-    - event: pr_closed
-      action: stop_timer
-  inactivity:
-    enabled: true
-    stop_after_minutes: 45
+  automated:
+    include_seconds: false
+    description:
+      from: template
+      template: "{issue_number} - {issue_title}"
+    task:
+      from: none
+      if_missing: none
+    rounding:
+      enabled: true
+      increment_minutes: 15
+      mode: nearest
+      start_mode: nearest
+      stop_mode: nearest
+      minimum_minutes: 15
+    overlap:
+      on_conflict: prompt
+    triggers:
+      - event: issue_start
+        action: start_timer
+      - event: issue_finish
+        action: stop_timer
+      - event: issue_switch
+        action: stop_then_start
+      - event: pr_ship
+        action: stop_timer
+      - event: pr_closed
+        action: stop_timer
+    inactivity:
+      enabled: true
+      stop_after_minutes: 45

@@ -34,31 +34,33 @@ import {
 } from "../src/config.js";
 
 const cfg = clockifyConfigSchema.parse({
-  version: 1,
-  timer: {
-    rounding: { enabled: true, increment_minutes: 15, mode: "nearest" },
-  },
-  automated: {
-    triggers: [{ event: "issue_start", action: "start_timer" }],
-    inactivity: { enabled: true, stop_after_minutes: 45 },
+  scope: { workspace_id: "ws_test" },
+  entry_methods: {
+    timer: {
+      rounding: { enabled: true, increment_minutes: 15, mode: "nearest" },
+    },
+    automated: {
+      triggers: [{ event: "issue_start", action: "start_timer" }],
+      inactivity: { enabled: true, stop_after_minutes: 45 },
+    },
   },
 });
-assert.equal(cfg.timer.rounding.increment_minutes, 15);
+assert.equal(cfg.entry_methods.timer.rounding.increment_minutes, 15);
 assert.equal(
-  cfg.timer.description.template,
+  cfg.entry_methods.timer.description.template,
   "{issue_number} - {issue_title}",
 );
-assert.equal(cfg.timer.description.from, "prompt");
-assert.equal(cfg.automated.description.from, "template");
-assert.equal(cfg.timer.task.if_missing, "prompt");
-assert.equal(cfg.automated.task.if_missing, "create");
-assert.equal(cfg.timer.overlap.on_conflict, "prompt");
-assert.equal(cfg.project.from, "repo");
-assert.equal(defaultConfig().project.from, "repo");
-assert.equal(defaultConfig().workspace_id, undefined);
+assert.equal(cfg.entry_methods.timer.description.from, "prompt");
+assert.equal(cfg.entry_methods.automated.description.from, "template");
+assert.equal(cfg.entry_methods.timer.task.if_missing, "prompt");
+assert.equal(cfg.entry_methods.automated.task.if_missing, "create");
+assert.equal(cfg.entry_methods.timer.overlap.on_conflict, "prompt");
+assert.equal(cfg.scope.project.from, "repo");
+assert.equal(defaultConfig().scope.project.from, "repo");
+assert.equal(defaultConfig().scope.workspace_id, "unconfigured");
 
 assert.equal(
-  applyDescriptionTemplate(cfg.timer.description.template, {
+  applyDescriptionTemplate(cfg.entry_methods.timer.description.template, {
     issue_number: 42,
     issue_title: "Login bug",
   }),
@@ -66,21 +68,21 @@ assert.equal(
 );
 
 assert.equal(
-  resolveEntryDescription(cfg.timer.description, {
+  resolveEntryDescription(cfg.entry_methods.timer.description, {
     issue_number: 42,
     issue_title: "Login bug",
   }),
   undefined,
 );
 assert.equal(
-  resolveEntryDescription(cfg.automated.description, {
+  resolveEntryDescription(cfg.entry_methods.automated.description, {
     issue_number: 42,
     issue_title: "Login bug",
   }),
   "#42 - Login bug",
 );
 assert.equal(
-  resolveEntryDescription(cfg.timer.description, {
+  resolveEntryDescription(cfg.entry_methods.timer.description, {
     description: "  Custom  ",
   }),
   "Custom",
@@ -101,7 +103,7 @@ assert.equal(nearest.toISOString(), "2026-08-09T19:00:00.000Z");
 const rounded = applyRoundingToInterval(
   "2026-08-09T18:02:00.000Z",
   "2026-08-09T19:07:00.000Z",
-  cfg.timer.rounding,
+  cfg.entry_methods.timer.rounding,
 );
 assert.equal(rounded.applied, true);
 assert.equal(rounded.start, "2026-08-09T18:00:00.000Z");
@@ -111,7 +113,7 @@ const splitModes = applyRoundingToInterval(
   "2026-08-09T18:02:00.000Z",
   "2026-08-09T19:07:00.000Z",
   {
-    ...cfg.timer.rounding,
+    ...cfg.entry_methods.timer.rounding,
     start_mode: "down",
     stop_mode: "up",
   },
@@ -122,7 +124,7 @@ assert.equal(splitModes.end, "2026-08-09T19:15:00.000Z");
 const collapsed = applyRoundingToInterval(
   "2026-08-09T18:07:00.000Z",
   "2026-08-09T18:08:00.000Z",
-  cfg.timer.rounding,
+  cfg.entry_methods.timer.rounding,
 );
 assert.equal(collapsed.start, "2026-08-09T18:00:00.000Z");
 assert.equal(collapsed.end, "2026-08-09T18:15:00.000Z");
@@ -131,7 +133,7 @@ const billingFloor = applyRoundingToInterval(
   "2026-08-09T18:02:00.000Z",
   "2026-08-09T18:20:00.000Z",
   {
-    ...cfg.timer.rounding,
+    ...cfg.entry_methods.timer.rounding,
     minimum_minutes: 60,
   },
 );
@@ -140,20 +142,23 @@ assert.equal(billingFloor.end, "2026-08-09T19:00:00.000Z");
 
 const started = new Date(Date.now() - 50 * 60 * 1000).toISOString();
 assert.equal(
-  isTimerPastInactivity(started, cfg.automated.inactivity),
+  isTimerPastInactivity(started, cfg.entry_methods.automated.inactivity),
   true,
 );
 
-const sampleYaml = `version: 1
-workspace_id: ws_from_yaml
-project:
-  from: fixed
-  name: FixtureRepo
-timer:
-  rounding:
-    enabled: true
-    increment_minutes: 15
-    mode: nearest
+const sampleYaml = `plugin_internal:
+  version: 2
+scope:
+  workspace_id: ws_from_yaml
+  project:
+    from: fixed
+    name: FixtureRepo
+entry_methods:
+  timer:
+    rounding:
+      enabled: true
+      increment_minutes: 15
+      mode: nearest
 `;
 
 function withFixture(run: (dir: string) => void): void {
@@ -183,58 +188,80 @@ withFixture((dir) => {
   assert.equal(resolveProjectName(loaded.config, loaded.root), "FixtureRepo");
   assert.equal(resolveRepoName(loaded.root), basename(dir));
   assert.notEqual(resolveRepoName(loaded.root), "FixtureRepo");
-  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+  assert.equal(loaded.config.scope.workspace_id, "ws_from_yaml");
   assert.equal(
     resolveConfiguredWorkspaceId(loaded.config),
     "ws_from_yaml",
   );
   assert.equal(
-    loaded.config.timer.description.template,
+    loaded.config.entry_methods.timer.description.template,
     "{issue_number} - {issue_title}",
   );
-  assert.equal(loaded.config.timer.rounding.enabled, true);
+  assert.equal(loaded.config.entry_methods.timer.rounding.enabled, true);
   assert.equal(resolveConfigPathInRoot(dir), loaded.path);
 });
 
 const leftoverNameFrom = parseClockifyConfig({
-  project: { name_from: "fixed", name: "IgnoredKey" },
+  scope: { workspace_id: "ws_x", project: { name_from: "fixed", name: "IgnoredKey" } },
 });
-assert.equal(leftoverNameFrom.project.from, "repo");
-assert.equal(parseClockifyConfig({ workspace_id: "  " }).workspace_id, undefined);
+assert.equal(leftoverNameFrom.scope.project.from, "repo");
+assert.throws(
+  () => parseClockifyConfig({ scope: { workspace_id: "  " } }),
+  /workspace_id/,
+);
+
+assert.throws(
+  () => parseClockifyConfig({ version: 1, workspace_id: "ws" }),
+  /old root shape/,
+);
 
 const repoTaskCfg = parseClockifyConfig({
-  project: { from: "fixed", name: "Application modernization" },
-  timer: { task: { from: "repo", if_missing: "create" } },
-  manual: { task: { from: "repo", if_missing: "create" } },
-  automated: { task: { from: "repo", if_missing: "create" } },
+  scope: { workspace_id: "ws_x", project: { from: "fixed", name: "Application modernization" } },
+  entry_methods: {
+    timer: { task: { from: "repo", if_missing: "create" } },
+    manual: { task: { from: "repo", if_missing: "create" } },
+    automated: { task: { from: "repo", if_missing: "create" } },
+  },
 });
 assert.equal(resolveRepoName(null), null);
-assert.equal(repoTaskCfg.timer.task.from, "repo");
-assert.equal(repoTaskCfg.manual.task.from, "repo");
-assert.equal(repoTaskCfg.automated.task.from, "repo");
+assert.equal(repoTaskCfg.entry_methods.timer.task.from, "repo");
+assert.equal(repoTaskCfg.entry_methods.manual.task.from, "repo");
+assert.equal(repoTaskCfg.entry_methods.automated.task.from, "repo");
 assert.throws(
-  () => parseClockifyConfig({ timer: { task: { from: "unknown" } } }),
+  () =>
+    parseClockifyConfig({
+      scope: { workspace_id: "ws_x" },
+      entry_methods: { timer: { task: { from: "unknown" } } },
+    }),
   /Invalid Clockify config/,
 );
 assert.throws(
-  () => parseClockifyConfig({ automated: { task: { from: "prompt" } } }),
+  () =>
+    parseClockifyConfig({
+      scope: { workspace_id: "ws_x" },
+      entry_methods: { automated: { task: { from: "prompt" } } },
+    }),
   /Invalid Clockify config/,
 );
 
 const manualPromptOnly = parseClockifyConfig({
-  manual: {
-    description: { from: "prompt", template: "ignored leftover" },
+  scope: { workspace_id: "ws_x" },
+  entry_methods: {
+    manual: {
+      description: { from: "prompt", template: "ignored leftover" },
+    },
   },
 });
-assert.equal(manualPromptOnly.manual.description.from, "prompt");
+assert.equal(manualPromptOnly.entry_methods.manual.description.from, "prompt");
 assert.equal(
-  "template" in manualPromptOnly.manual.description,
+  "template" in manualPromptOnly.entry_methods.manual.description,
   false,
 );
 assert.throws(
   () =>
     parseClockifyConfig({
-      manual: { description: { from: "template" } },
+      scope: { workspace_id: "ws_x" },
+      entry_methods: { manual: { description: { from: "template" } } },
     }),
   /Invalid Clockify config/,
 );
@@ -273,7 +300,7 @@ withFixture((dir) => {
   const loaded = loadClockifyConfig("/tmp", { configRoot: dir });
   assert.equal(loaded.found, true);
   assert.equal(loaded.root, dir);
-  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+  assert.equal(loaded.config.scope.workspace_id, "ws_from_yaml");
 });
 
 withFixture((dir) => {
@@ -283,13 +310,13 @@ withFixture((dir) => {
   mkdirSync(join(rootDir, ".clockify"), { recursive: true });
   writeFileSync(
     join(cwdDir, ".clockify", "config.yml"),
-    `version: 1\nworkspace_id: ws_from_cwd\n`,
+    `plugin_internal:\n  version: 2\nscope:\n  workspace_id: ws_from_cwd\n`,
   );
   writeFileSync(join(rootDir, ".clockify", "config.yml"), sampleYaml);
   const loaded = loadClockifyConfig(cwdDir, { configRoot: rootDir });
   assert.equal(loaded.found, true);
   assert.equal(loaded.root, rootDir);
-  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+  assert.equal(loaded.config.scope.workspace_id, "ws_from_yaml");
 });
 
 withFixture((dir) => {
@@ -299,18 +326,18 @@ withFixture((dir) => {
   mkdirSync(join(argDir, ".clockify"), { recursive: true });
   writeFileSync(
     join(envDir, ".clockify", "config.yml"),
-    `version: 1\nworkspace_id: ws_from_env\n`,
+    `plugin_internal:\n  version: 2\nscope:\n  workspace_id: ws_from_env\n`,
   );
   writeFileSync(join(argDir, ".clockify", "config.yml"), sampleYaml);
   process.env.CLOCKIFY_CONFIG_ROOT = envDir;
   const loaded = loadClockifyConfig("/tmp", { configRoot: argDir });
   assert.equal(loaded.found, true);
   assert.equal(loaded.root, argDir);
-  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+  assert.equal(loaded.config.scope.workspace_id, "ws_from_yaml");
   const fromEnv = loadClockifyConfig("/tmp");
   assert.equal(fromEnv.found, true);
   assert.equal(fromEnv.root, envDir);
-  assert.equal(fromEnv.config.workspace_id, "ws_from_env");
+  assert.equal(fromEnv.config.scope.workspace_id, "ws_from_env");
 });
 
 withFixture((dir) => {
@@ -322,13 +349,13 @@ withFixture((dir) => {
   writeFileSync(configPath, sampleYaml);
   writeFileSync(
     join(argDir, ".clockify", "config.yml"),
-    `version: 1\nworkspace_id: ws_ignored_arg\n`,
+    `plugin_internal:\n  version: 2\nscope:\n  workspace_id: ws_ignored_arg\n`,
   );
   process.env.CLOCKIFY_CONFIG_PATH = configPath;
   const loaded = loadClockifyConfig("/tmp", { configRoot: argDir });
   assert.equal(loaded.found, true);
   assert.equal(loaded.root, pathDir);
-  assert.equal(loaded.config.workspace_id, "ws_from_yaml");
+  assert.equal(loaded.config.scope.workspace_id, "ws_from_yaml");
 });
 
 withFixture((dir) => {
@@ -338,18 +365,18 @@ withFixture((dir) => {
   mkdirSync(join(repoB, ".clockify"), { recursive: true });
   writeFileSync(
     join(repoA, ".clockify", "config.yml"),
-    `version: 1\nworkspace_id: ws_repo_a\n`,
+    `plugin_internal:\n  version: 2\nscope:\n  workspace_id: ws_repo_a\n`,
   );
   writeFileSync(
     join(repoB, ".clockify", "config.yml"),
-    `version: 1\nworkspace_id: ws_repo_b\n`,
+    `plugin_internal:\n  version: 2\nscope:\n  workspace_id: ws_repo_b\n`,
   );
   const loadedA = loadClockifyConfig("/tmp", { configRoot: repoA });
   const loadedB = loadClockifyConfig("/tmp", { configRoot: repoB });
   assert.equal(loadedA.found, true);
   assert.equal(loadedB.found, true);
-  assert.equal(loadedA.config.workspace_id, "ws_repo_a");
-  assert.equal(loadedB.config.workspace_id, "ws_repo_b");
+  assert.equal(loadedA.config.scope.workspace_id, "ws_repo_a");
+  assert.equal(loadedB.config.scope.workspace_id, "ws_repo_b");
 });
 
 const examplePath = join(
@@ -361,9 +388,9 @@ const examplePath = join(
 const exampleCfg = clockifyConfigSchema.parse(
   parseYaml(readFileSync(examplePath, "utf8")),
 );
-assert.equal(exampleCfg.project.from, "repo");
-assert.equal(exampleCfg.timer.task.from, "prompt");
-assert.equal(exampleCfg.automated.task.from, "none");
+assert.equal(exampleCfg.scope.project.from, "repo");
+assert.equal(exampleCfg.entry_methods.timer.task.from, "prompt");
+assert.equal(exampleCfg.entry_methods.automated.task.from, "none");
 
 assert.equal(
   floorToMinute("2026-08-15T21:07:32.500Z"),
@@ -444,7 +471,7 @@ assert.equal(overlapShouldProceed("prompt", 0, false), true);
 const prepared = prepareStartInstant(
   "2026-08-09T13:07:32.000Z",
   false,
-  cfg.timer.rounding,
+  cfg.entry_methods.timer.rounding,
 );
 assert.equal(prepared.secondsFloored, true);
 assert.equal(prepared.roundingApplied, true);
@@ -453,46 +480,53 @@ assert.equal(prepared.start, "2026-08-09T13:00:00.000Z");
 const stopped = applyStopRounding(
   "2026-08-09T13:00:00.000Z",
   "2026-08-09T13:17:48.000Z",
-  cfg.timer.rounding,
+  cfg.entry_methods.timer.rounding,
 );
 assert.equal(stopped.applied, true);
 assert.equal(stopped.end, "2026-08-09T13:15:00.000Z");
 
 const customMinutes = parseClockifyConfig(
   parseYaml(`
-version: 1
-timer:
-  rounding:
-    enabled: true
-    increment_minutes: 15
-    mode: down
-automated:
-  inactivity:
-    enabled: true
-    stop_after_minutes: 15
-  triggers:
-    - event: pr_closed
-      action: stop_timer
+plugin_internal:
+  version: 2
+scope:
+  workspace_id: ws_x
+entry_methods:
+  timer:
+    rounding:
+      enabled: true
+      increment_minutes: 15
+      mode: down
+  automated:
+    inactivity:
+      enabled: true
+      stop_after_minutes: 15
+    triggers:
+      - event: pr_closed
+        action: stop_timer
 `),
 );
-assert.equal(customMinutes.timer.rounding.mode, "down");
-assert.equal(customMinutes.automated.inactivity.stop_after_minutes, 15);
-assert.equal(customMinutes.automated.triggers[0]?.event, "pr_closed");
+assert.equal(customMinutes.entry_methods.timer.rounding.mode, "down");
+assert.equal(customMinutes.entry_methods.automated.inactivity.stop_after_minutes, 15);
+assert.equal(customMinutes.entry_methods.automated.triggers[0]?.event, "pr_closed");
 
 const quotedMinutes = parseClockifyConfig(
   parseYaml(`
-timer:
-  rounding:
-    increment_minutes: "30"
-    minimum_minutes: "20"
-automated:
-  inactivity:
-    stop_after_minutes: "15"
+scope:
+  workspace_id: ws_x
+entry_methods:
+  timer:
+    rounding:
+      increment_minutes: "30"
+      minimum_minutes: "20"
+  automated:
+    inactivity:
+      stop_after_minutes: "15"
 `),
 );
-assert.equal(quotedMinutes.timer.rounding.increment_minutes, 30);
-assert.equal(quotedMinutes.timer.rounding.minimum_minutes, 20);
-assert.equal(quotedMinutes.automated.inactivity.stop_after_minutes, 15);
+assert.equal(quotedMinutes.entry_methods.timer.rounding.increment_minutes, 30);
+assert.equal(quotedMinutes.entry_methods.timer.rounding.minimum_minutes, 20);
+assert.equal(quotedMinutes.entry_methods.automated.inactivity.stop_after_minutes, 15);
 
 const shortInactivity = {
   enabled: true,
@@ -534,27 +568,36 @@ const prMergedUnsupported =
   "pr_merged is not supported: GitHub merge is an unwatched action.";
 assertInvalidConfig(
   {
-    automated: {
-      triggers: [{ event: "pr_merged", action: "stop_timer" }],
+    scope: { workspace_id: "ws_x" },
+    entry_methods: {
+      automated: {
+        triggers: [{ event: "pr_merged", action: "stop_timer" }],
+      },
     },
   },
-  "automated.triggers.0.event",
+  "entry_methods.automated.triggers.0.event",
   allowedEvents,
   prMergedUnsupported,
 );
 assertInvalidConfig(
   {
-    automated: {
-      triggers: [{ event: "nope", action: "stop_timer" }],
+    scope: { workspace_id: "ws_x" },
+    entry_methods: {
+      automated: {
+        triggers: [{ event: "nope", action: "stop_timer" }],
+      },
     },
   },
-  "automated.triggers.0.event",
+  "entry_methods.automated.triggers.0.event",
   allowedEvents,
 );
 try {
   parseClockifyConfig({
-    automated: {
-      triggers: [{ event: "nope", action: "stop_timer" }],
+    scope: { workspace_id: "ws_x" },
+    entry_methods: {
+      automated: {
+        triggers: [{ event: "nope", action: "stop_timer" }],
+      },
     },
   });
   assert.fail("expected parseClockifyConfig to throw");
@@ -567,14 +610,14 @@ withFixture((dir) => {
   mkdirSync(join(dir, ".clockify"), { recursive: true });
   writeFileSync(
     join(dir, ".clockify", "config.yml"),
-    `automated:\n  triggers:\n    - event: pr_merged\n      action: stop_timer\n`,
+    `plugin_internal:\n  version: 2\nscope:\n  workspace_id: ws_x\nentry_methods:\n  automated:\n    triggers:\n      - event: pr_merged\n        action: stop_timer\n`,
   );
   try {
     loadClockifyConfig(dir);
     assert.fail("expected loadClockifyConfig to throw");
   } catch (error) {
     assert.ok(error instanceof Error);
-    assert.ok(error.message.includes("automated.triggers.0.event"));
+    assert.ok(error.message.includes("entry_methods.automated.triggers.0.event"));
     assert.ok(error.message.includes(allowedEvents));
     assert.ok(error.message.includes(prMergedUnsupported));
     assert.ok(error.message.includes(join(dir, ".clockify", "config.yml")));

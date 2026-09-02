@@ -15,10 +15,32 @@ export type ClockifyWorkspace = {
   name: string;
 };
 
+export type ClockifyRate = {
+  amount?: number;
+  currency?: string;
+  since?: string;
+};
+
 export type ClockifyProject = {
   id: string;
   name: string;
+  clientId?: string;
   clientName?: string;
+  archived?: boolean;
+  billable?: boolean;
+  color?: string;
+  note?: string;
+  /** GET responses use `public`; PUT requests use `isPublic`. */
+  public?: boolean;
+  isPublic?: boolean;
+  hourlyRate?: ClockifyRate | null;
+  costRate?: ClockifyRate | null;
+  workspaceId?: string;
+};
+
+export type ClockifyClientRecord = {
+  id: string;
+  name: string;
   archived?: boolean;
 };
 
@@ -69,13 +91,49 @@ function formatApiError(status: number, body: string): string {
   const detail = body.trim();
   switch (status) {
     case 401:
+      return `Clockify authentication failed (401). Check CLOCKIFY_API_KEY - see docs/use.md → Credentials.${detail ? ` Details: ${detail}` : ""}`;
     case 403:
-      return `Clockify authentication failed (${status}). Check CLOCKIFY_API_KEY - see docs/use.md → Credentials.${detail ? ` Details: ${detail}` : ""}`;
+      if (/permission/i.test(detail)) {
+        return `Clockify permission denied (403).${detail ? ` Details: ${detail}` : ""}`;
+      }
+      return `Clockify authentication failed (403). Check CLOCKIFY_API_KEY - see docs/use.md → Credentials.${detail ? ` Details: ${detail}` : ""}`;
     case 429:
       return `Clockify rate limit exceeded (429). Wait a moment and retry.${detail ? ` Details: ${detail}` : ""}`;
     default:
       return `Clockify API ${status}: ${detail || "request failed"}`;
   }
+}
+
+function buildProjectUpdateBody(
+  project: ClockifyProject,
+  overrides: { clientId?: string } = {},
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    name: project.name,
+    archived: project.archived ?? false,
+    billable: project.billable ?? false,
+    clientId:
+      overrides.clientId !== undefined
+        ? overrides.clientId
+        : (project.clientId ?? ""),
+    color: project.color || "#000000",
+    isPublic: project.public ?? project.isPublic ?? true,
+    note: project.note ?? "",
+  };
+
+  const hourly = project.hourlyRate;
+  if (hourly && typeof hourly === "object" && hourly.since) {
+    body.hourlyRate = { amount: hourly.amount ?? 0, since: hourly.since };
+    body.hourlyRateSet = true;
+  }
+
+  const cost = project.costRate;
+  if (cost && typeof cost === "object" && cost.since) {
+    body.costRate = { amount: cost.amount ?? 0, since: cost.since };
+    body.costRateSet = true;
+  }
+
+  return body;
 }
 
 export class ClockifyClient {
@@ -144,15 +202,10 @@ export class ClockifyClient {
   }
 
   async resolveWorkspaceId(explicit?: string): Promise<string> {
-    let candidate = explicit || this.defaultWorkspaceId;
-    if (!candidate) {
-      const user = await this.getUser();
-      candidate = user.activeWorkspace || user.defaultWorkspace;
-    }
-
+    const candidate = explicit?.trim() || this.defaultWorkspaceId?.trim();
     if (!candidate) {
       throw new ClockifyError(
-        "No Clockify workspace available. Set workspace_id in .clockify/config.yml (via /clockify-init) or create a workspace.",
+        "No Clockify workspace pin. Set scope.workspace_id in .clockify/config.yml via /clockify-init, or pass workspace_id. This plugin does not follow the Clockify UI active workspace.",
         400,
         "",
       );
@@ -196,6 +249,73 @@ export class ClockifyClient {
   async listTags(workspaceId?: string): Promise<ClockifyTag[]> {
     const ws = await this.resolveWorkspaceId(workspaceId);
     return this.request<ClockifyTag[]>(`/workspaces/${ws}/tags`);
+  }
+
+  async listClients(
+    workspaceId?: string,
+  ): Promise<ClockifyClientRecord[]> {
+    const ws = await this.resolveWorkspaceId(workspaceId);
+    return this.request<ClockifyClientRecord[]>(
+      `/workspaces/${ws}/clients?archived=false&page-size=200`,
+    );
+  }
+
+  async createClient(
+    name: string,
+    workspaceId?: string,
+  ): Promise<ClockifyClientRecord> {
+    const ws = await this.resolveWorkspaceId(workspaceId);
+    return this.request<ClockifyClientRecord>(`/workspaces/${ws}/clients`, {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  async getProject(
+    projectId: string,
+    workspaceId?: string,
+  ): Promise<ClockifyProject> {
+    const ws = await this.resolveWorkspaceId(workspaceId);
+    await this.assertProjectInWorkspace(ws, projectId);
+    return this.request<ClockifyProject>(
+      `/workspaces/${ws}/projects/${projectId}`,
+    );
+  }
+
+  async updateProject(
+    projectId: string,
+    body: Record<string, unknown>,
+    workspaceId?: string,
+  ): Promise<ClockifyProject> {
+    const ws = await this.resolveWorkspaceId(workspaceId);
+    return this.request<ClockifyProject>(
+      `/workspaces/${ws}/projects/${projectId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(body),
+      },
+    );
+  }
+
+  async setProjectClient(
+    projectId: string,
+    clientId: string,
+    workspaceId?: string,
+  ): Promise<ClockifyProject> {
+    const ws = await this.resolveWorkspaceId(workspaceId);
+    const project = await this.getProject(projectId, ws);
+    if (project.clientId) {
+      throw new ClockifyError(
+        `Project "${project.name}" already has client "${project.clientName ?? project.clientId}". Change it in the Clockify UI.`,
+        409,
+        "",
+      );
+    }
+    return this.updateProject(
+      projectId,
+      buildProjectUpdateBody(project, { clientId }),
+      ws,
+    );
   }
 
   async getRunningTimer(
@@ -310,24 +430,48 @@ export class ClockifyClient {
   async createProject(
     name: string,
     workspaceId?: string,
+    clientId?: string,
   ): Promise<ClockifyProject> {
     const ws = await this.resolveWorkspaceId(workspaceId);
+    const body: Record<string, unknown> = {
+      name,
+      billable: false,
+      color: "#000000",
+      isPublic: true,
+      note: "",
+    };
+    if (clientId) body.clientId = clientId;
     return this.request<ClockifyProject>(`/workspaces/${ws}/projects`, {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(body),
     });
   }
 
   async ensureProject(
     name: string,
     workspaceId?: string,
+    options: { clientId?: string; setClient?: boolean } = {},
   ): Promise<{ project: ClockifyProject; created: boolean }> {
     const existing = await this.listProjects(workspaceId, { name });
     const match = existing.find(
       (p) => p.name.toLowerCase() === name.toLowerCase(),
     );
-    if (match) return { project: match, created: false };
-    const project = await this.createProject(name, workspaceId);
+    if (match) {
+      if (options.setClient && options.clientId) {
+        const project = await this.setProjectClient(
+          match.id,
+          options.clientId,
+          workspaceId,
+        );
+        return { project, created: false };
+      }
+      return { project: match, created: false };
+    }
+    const project = await this.createProject(
+      name,
+      workspaceId,
+      options.clientId,
+    );
     return { project, created: true };
   }
 
