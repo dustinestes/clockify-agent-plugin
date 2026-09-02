@@ -416,7 +416,7 @@ registerClockifyTool(
   {
     title: "Create Clockify client",
     description:
-      "Creates a client in a workspace (init AskQuestion Other path)." +
+      "Creates a client in a workspace (init Create Client path — name comes from chat, not AskQuestion)." +
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,

@@ -85,7 +85,7 @@ Clockify’s “active” workspace follows whatever the user last opened in the
 - Purpose: optional client on the Clockify project + `scope.client`.
 - No `N -` prefixes (AskQuestion letters options A, B, C…). Follow-up: drop numeric prefixes on workspace/shape prompts too.
 - Authored options: `None`, then each unarchived client name (if any), then `Create Client`. Empty list or list error: **only** `None` and `Create Client`.
-- **Create Client** → ask name → `clockify_create_client`. Do not add a custom Other.
+- **Create Client** → ask the name in **chat** (not AskQuestion); then `clockify_create_client`. Do not offer existing clients or project name as choices for the new name.
 - List error: still use `None` + `Create Client`; chat `Client: failed to retrieve clients`.
 
 ### Data in / out

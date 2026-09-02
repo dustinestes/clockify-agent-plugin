@@ -26,7 +26,7 @@ Clockify Agent Plugin MCP tools and other configuration information.
 | `clockify_list_workspaces` | List workspaces |
 | `clockify_list_projects` | List / filter projects |
 | `clockify_list_clients` | List active clients in a workspace |
-| `clockify_create_client` | Create a client (init Other path) |
+| `clockify_create_client` | Create a client (init Create Client path; name from chat) |
 | `clockify_ensure_project` | Find or create project by name (optional `client_id`, `set_client`) |
 | `clockify_list_tags` | List tags |
 | `clockify_list_tasks` | List tasks on a project |

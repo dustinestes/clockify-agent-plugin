@@ -104,7 +104,7 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 
       - **None:** do not create or associate; `scope.client.from: none`.
       - **Listed client name:** new project → `clockify_ensure_project` with `client_id`. Existing project → `clockify_ensure_project` with `client_id` **and** `set_client: true` (explicit pick only).
-      - **Create Client:** ask for the name (chat or AskQuestion “Add more optional details”), then `clockify_create_client` and associate. Same as picking the UI’s built-in Other — do **not** add a third authored “create” choice.
+      - **Create Client:** **do not** open another AskQuestion. Ask in **chat** only, e.g. “What should the new Clockify client be named?” Wait for their typed reply (composer message). Do **not** offer existing clients, the repo/project name, or multiple-choice for the name. Then `clockify_create_client` with that trimmed string and associate.
       - List-clients **error:** still AskQuestion with `None` + `Create Client`; chat `Client: failed to retrieve clients`; continue ensure.
       - Do **not** PATCH an existing project’s client unless they just picked one.
 
@@ -151,6 +151,7 @@ Same description overlay as shape 1. Then client step + ensure fixed project + r
 - Ensure project or tasks before the user answers the shape question
 - Add a custom “Other” AskQuestion choice (the UI already provides one)
 - Prefix client-picker options with numbers (`None` and `Create Client` are enough; AskQuestion adds A/B/C)
+- Use AskQuestion for the **new client name** after **Create Client** — chat only; no second picker
 
 ## Default yaml (unless user overrides)
 
