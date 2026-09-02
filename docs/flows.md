@@ -82,8 +82,10 @@ Clockify’s “active” workspace follows whatever the user last opened in the
 ### AskQuestion: client
 
 - Purpose: optional client on the Clockify project + `scope.client`.
-- Authored options: **only** `0 - None`, then unarchived clients `1…N`. Cursor **Other** creates (`clockify_create_client`). Do not add another skip/none (that shows up as B).
-- Empty list or list error: skip AskQuestion (it requires two options and a dummy B duplicates none). Chat: none, or type a name to create. On list error also say `Client: failed to retrieve clients`.
+- No `N -` prefixes (AskQuestion letters options A, B, C…). Follow-up: drop numeric prefixes on workspace/shape prompts too.
+- Authored options: `None`, then each unarchived client name (if any), then `Create Client`. Empty list or list error: **only** `None` and `Create Client`.
+- **Create Client** → ask name → `clockify_create_client`. Do not add a custom Other.
+- List error: still use `None` + `Create Client`; chat `Client: failed to retrieve clients`.
 
 ### Data in / out
 
@@ -91,7 +93,7 @@ Clockify’s “active” workspace follows whatever the user last opened in the
 |-----------|------|
 | In | `clockify_list_workspaces`, `clockify_list_projects`, `clockify_list_clients` (active only), git toplevel folder name, optional GitHub labels (shape 1) |
 | Out (yaml `scope`) | `workspace_id` (required), `project` (`from` + optional `name`), `client` (`from: none` or `fixed` + `id` / `name`) |
-| Out (Clockify) | `clockify_create_client` on Other; `clockify_ensure_project` with `client_id` on create; `set_client: true` only after an explicit pick on an existing project; `clockify_ensure_task` per shape |
+| Out (Clockify) | `clockify_create_client` on Create Client; `clockify_ensure_project` with `client_id` on create; `set_client: true` only after an explicit pick on an existing project; `clockify_ensure_task` per shape |
 
 ---
 
