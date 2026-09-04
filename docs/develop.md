@@ -87,9 +87,10 @@ Builds, creates the temp sandbox, opens it in a new Cursor/VS Code window when `
 4. Open Cursor: `cursor -n /tmp/clockify-agent-plugin-sandbox/`.
 5. Enable MCP server: `Customize → MCPs → clockify-agent-plugin-sandbox` (leave user `clockify-agent-plugin` off in this window). If the key was not seeded, hand-fill `env.CLOCKIFY_API_KEY` in sandbox `.cursor/mcp.json`. Logs: [logging.md](./logging.md) (**Output → MCP Logs**).
 6. Initialize plugin: `/clockify-init`
-   - Choose a clockify workspace ID when prompted, then a shape (`0`/`1`/`2`)
-7. Validate build: `use test prompts or custom validation`​
-8. Tear down the [sandbox](#sandbox): `npm run install:cursor -- --sandbox --teardown`
+   - Choose a Clockify workspace when prompted (base yaml only; no project ensure)
+7. Optional: `/clockify-automate` for forge + Cursor platforms
+8. Validate build: `use test prompts or custom validation`
+9. Tear down the [sandbox](#sandbox): `npm run install:cursor -- --sandbox --teardown`
 
 ### Manual
 
@@ -116,9 +117,10 @@ Use this only if you will not run the scripted validation setup. Pointing **user
 6. Open Cursor: `cursor /tmp/clockify-agent-plugin-validation`.
 7. Initialize git repo: `git init`
 8. Initialize clockify-agent-plugin: `/clockify-init`
-   - Choose a clockify workspace ID when prompted, then a shape (`0`/`1`/`2`)
-9. Copy skills into that repo or rely on user-global skills if you already have them. User MCP does not install this checkout’s `skills/` for you.
-10. Validate: `use test prompts or custom validation`
+   - Choose a Clockify workspace when prompted (base yaml only; no project ensure)
+9. Optional: `/clockify-automate` for forge + Cursor platforms
+10. Copy skills into that repo or rely on user-global skills if you already have them. User MCP does not install this checkout’s `skills/` for you.
+11. Validate: `use test prompts or custom validation`
 12. Delete `/tmp/clockify-agent-plugin-validation`
 13. Revert user-scope `~/.cursor/mcp.json` to the published npx entry, or remove `clockify-agent-plugin` entirely
 

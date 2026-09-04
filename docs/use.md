@@ -11,6 +11,7 @@ Install and use the unofficial Clockify Agent Plugin.
 
 - [Contents](#contents)
 - [Credentials](#credentials)
+- [Per-repo setup](#per-repo-setup)
 - [Logging](#logging)
 - [Pre-enable Clockify tools](#pre-enable-clockify-tools)
 - [Other MCP hosts](#other-mcp-hosts)
@@ -26,7 +27,18 @@ Install and use the unofficial Clockify Agent Plugin.
 
 **`CLOCKIFY_API_KEY` (required)** — Clockify → Preferences → Advanced → Manage API Keys ([Clockify API](https://docs.clockify.me)). Set it as a Cursor plugin / MCP env variable when you install. Do not put it in `.clockify/config.yml`. Do not add a Clockify `.env` to the repo you are tracking time in.
 
-**Workspace (required)** — pin `scope.workspace_id` in `.clockify/config.yml` per repo (`/clockify-init` workspace AskQuestion). The plugin does not follow Clockify’s active workspace. Taxonomy shape is the next AskQuestion. File on disk and how the server finds it (including `config_root` / Cursor layouts): [config.md](./config.md). Fields: [config.yml](./schema/config.yml.md). Init map: [flows.md](./flows.md).
+**Workspace (required)** — pin `scope.workspace_id` in `.clockify/config.yml` per repo (`/clockify-init` workspace AskQuestion). The plugin does not follow Clockify’s active workspace. Init writes the v3 base contract (timer/manual ready); `/clockify-automate` is optional for forge + Cursor automation. File on disk and how the server finds it (including `config_root` / Cursor layouts): [config.md](./config.md). Fields: [config.yml](./schema/config.yml.md). Decision maps: [flows.md](./flows.md).
+
+---
+
+<br>
+
+## Per-repo setup
+
+1. `/clockify-init` — choose a Clockify workspace; writes v3 `.clockify/config.yml` and ignore defaults. Timer, stop, enter-time, and summarize work after this.
+2. Optional: `/clockify-automate` — forge wizard (GitHub), Cursor Plan/Debug platforms, ensure project/tasks, write Cursor rules.
+
+Ladder and outcomes: [config.md — Init vs Automate](./config.md#init-vs-automate).
 
 ---
 

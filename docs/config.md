@@ -3,9 +3,10 @@
 <h1>Config</h1>
 <br clear="both">
 
-How `.clockify/config.yml` gets on disk, how git treats it, and how the server finds it. 
+How `.clockify/config.yml` gets on disk, how git treats it, and how the server finds it.
 
 - Field contract: [schema/config.yml.md](./schema/config.yml.md)
+- Init vs automate decision maps: [flows.md](./flows.md)
 - Config missing while the file exists: [troubleshoot.md](./troubleshoot.md#clockifyconfigyml-not-found).
 
 <br>
@@ -14,14 +15,10 @@ How `.clockify/config.yml` gets on disk, how git treats it, and how the server f
 
 - [Contents](#contents)
 - [Setup](#setup)
-- [Shape](#shape)
-  - [None (local only)](#none-local-only)
-  - [Repo as project](#repo-as-project)
-    - [Configuration](#configuration)
-    - [How to use](#how-to-use)
-  - [Repo as task](#repo-as-task)
-    - [Configuration](#configuration-1)
-    - [How to use](#how-to-use-1)
+- [Init vs Automate](#init-vs-automate)
+  - [Base (`/clockify-init`)](#base-clockify-init)
+  - [Automated (`/clockify-automate`)](#automated-clockify-automate)
+  - [Common automate outcomes](#common-automate-outcomes)
 - [Git hygiene](#git-hygiene)
 - [Discovery](#discovery)
 - [Which repo (`config_root`)](#which-repo-config_root)
@@ -36,7 +33,7 @@ How `.clockify/config.yml` gets on disk, how git treats it, and how the server f
 
 The API key lives in **user** MCP (`~/.cursor/mcp.json`). Each git repo keeps its own `.clockify/config.yml` (workspace, project, rounding, templates, triggers). Do not put API keys in the yaml.
 
-Preferred: `/clockify-init` in the repo (required workspace picker, **shape** picker, ignore defaults; Clockify project/tasks only for shapes 1 and 2). Decision map: [flows.md](./flows.md). Or copy by hand:
+Root keys are `plugin` (version **3**), `scope`, and `entry` (`timer` / `manual` / `automated`). Preferred: `/clockify-init` in the repo (workspace picker + ignore defaults). Decision map: [flows.md](./flows.md). Or copy by hand:
 
 ```bash
 mkdir -p .clockify
@@ -49,84 +46,68 @@ Skills pass `config_root` on Clockify tool calls so a user-scoped MCP process ca
 
 <br>
 
-## Shape
+## Init vs Automate
 
-These shapes are how you line up git/GitHub with Clockify’s tree (workspace → project → task → description) taxonomy. `/clockify-init` uses the AskQuestions tool for workspace, then shape, **before** creating Clockify projects or tasks:
+Two stages. Init writes a usable base yaml for timer and enter-time. Automate turns on agent-mediated forge + Cursor Plan/Debug tracking.
 
-```text
-0 - None (local config only; no project/tasks yet)
-1 - Repo as project (project = repo folder; GitHub labels → tasks)
-2 - Repo as task (fixed Clockify project; task = repo folder)
-```
+| Stage | Skill | What you get |
+|-------|-------|----------------|
+| Base | `/clockify-init` | Workspace pin, prompt timer/manual, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off |
+| Automated | `/clockify-automate` | Forge wizard (GitHub), Cursor Plan/Debug platforms, ensure project/tasks, Cursor rules |
 
 **Workspace:** required pin (`scope.workspace_id`) chosen at `/clockify-init`. The plugin does **not** follow Clockify’s UI active workspace.
 
-**Clients:** optional Clockify project metadata, not stored in yaml. During init, if the target project already has a client, init uses it and does not offer to change it. If the project is new or has no client, init may ask whether to assign or create one on the project. Changing a client on an existing project is done in the Clockify UI (or a separate process).
+**Clients:** optional Clockify project metadata, not stored in yaml. Assigned during `/clockify-automate` when ensuring a project (never written to `config.yml`).
 
-### None (local only)
+### Base (`/clockify-init`)
 
-Writes `.clockify/config.yml` from [`.clockify/config.yml.example`](../.clockify/config.yml.example) (gitignore and markers too) and **does not** create a Clockify project or tasks. Timer/manual tasks stay `prompt`; `entry_methods.automated.task.from` is `none` so a later `/clockify-init` re-run still skips ensure. `scope.workspace_id` is still required. Edit the yaml toward shape 1 or 2 (or ask to reset config) when you are ready to map into Clockify.
+Pins the workspace and writes v3 yaml from [`.clockify/config.yml.example`](../.clockify/config.yml.example):
 
-### Repo as project
+- `plugin.version: 3`
+- `scope.project.from: local_folder`
+- `entry.timer` / `entry.manual` — description and task `from: prompt`
+- `entry.automated.enabled: false`, `forge: none`, empty `triggers`, inactivity 45 minutes, `platforms.cursor` off
 
-Granular 1:1. The Clockify project name **is** the git repo name. GitHub labels become tasks so you can report time on work labeled as features, bugs, docs, and so on inside that repo. Init shape **1**. The README default story when you pick this shape.
+Does **not** create Clockify projects or tasks. Timer and enter-time work after init; run `/clockify-automate` when you want agent automation.
 
-Example: workspace *Acme Labs*, client *Northwind*, project = repo name, task = GitHub label.
+### Automated (`/clockify-automate`)
 
-- Workspace → user defined
-- Project → repo name
-- Task → GitHub label
-- Description → `{issue_number} - {issue_title}` (timer / automated). Manual enter-time is always `prompt`.
+If config is missing, runs init first. Then:
 
-#### Configuration
+1. **Forge wizard** — GitHub (`entry.automated.forge: github`), how `scope.project` resolves, `on_start` description/task (and `when_multiple_labels` when `{label}` is used), optional client on ensure
+2. **Cursor platforms wizard** — Plan/Debug mode timers (`platforms.cursor.modes.plan` / `debug`)
+3. Patches `entry.automated` (enabled, forge triggers, platforms), ensures project/tasks, writes `.cursor/rules/clockify.mdc`
+
+Plan/Debug detection is **rule-first** (the Cursor rule tells the agent when to start/stop). Hook-based mode detection is a follow-up: [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85).
+
+### Common automate outcomes
+
+These are what you get after automate — not separate init pickers.
+
+**Folder as project, label as task** — project name = git toplevel / folder name; forge labels become Clockify tasks via `on_start.task` template `{label}`:
 
 ```yaml
 scope:
-  workspace_id: "..."   # required pin
+  workspace_id: "..."
   project:
-    from: repo
+    from: local_folder
 
-entry_methods:
-  timer:
-    description:
-      from: template
-      template: "{issue_number} - {issue_title}"
-    task:
-      from: github_label
-      if_missing: create
-  manual:
-    description:
-      from: prompt
-    task:
-      from: github_label
-      if_missing: create
+entry:
   automated:
-    description:
-      from: template
-      template: "{issue_number} - {issue_title}"
-    task:
-      from: github_label
-      if_missing: create
+    enabled: true
+    forge: github
+    on_start:
+      when_multiple_labels: first
+      description:
+        from: template
+        template: "{issue_number} - {issue_title}"
+      task:
+        from: template
+        template: "{label}"
+        if_missing: create
 ```
 
-#### How to use
-
-1. In the repo, run `/clockify-init`; pick a Clockify workspace; choose shape **1**.
-2. Init writes the yaml above and creates/finds a Clockify project named like the repo folder, then syncs GitHub labels → tasks.
-3. Start/stop timers or automate as usual; descriptions and tasks follow the yaml.
-
-### Repo as task
-
-Compact. For when you do not need label-level granularity. Many sibling repos report under one fixed Clockify project (a milestone or initiative). Each repo is a **task** under that project.
-
-Example: workspace *Acme Labs*, client *Northwind*, project *Application modernization*, tasks = repo name (i.e. `webapp`, `mobileapp`, `database`, `website`).
-
-- Workspace → user defined
-- Project → fixed name (`scope.project.from: fixed`)
-- Task → repo name
-- Description → issue fields on timer / automated; add `{repo}` only if you still want the name in the text. Manual is always `prompt`.
-
-#### Configuration
+**Fixed project, folder as task** — many sibling repos under one Clockify project; each repo is a task:
 
 ```yaml
 scope:
@@ -135,34 +116,21 @@ scope:
     from: fixed
     name: Application modernization
 
-entry_methods:
-  timer:
-    description:
-      from: template
-      template: "{issue_number} - {issue_title}"
-    task:
-      from: repo
-      if_missing: create
-  manual:
-    description:
-      from: prompt
-    task:
-      from: repo
-      if_missing: create
+entry:
   automated:
-    description:
-      from: template
-      template: "{issue_number} - {issue_title}"
-    task:
-      from: repo
-      if_missing: create
+    enabled: true
+    forge: github
+    on_start:
+      when_multiple_labels: first
+      description:
+        from: template
+        template: "{issue_number} - {issue_title}"
+      task:
+        from: local_folder
+        if_missing: create
 ```
 
-#### How to use
-
-1. Run `/clockify-init`; pick a Clockify workspace; choose shape **2**.
-2. When asked, give the shared Clockify **project name** (`scope.project.from: fixed` + `scope.project.name`).
-3. Init creates/finds that project and ensures a task named like the git toplevel folder (`repoName`). Timer/enter-time skills use the same mapping.
+Full field list: [schema/config.yml.md](./schema/config.yml.md). Wizard maps: [flows.md](./flows.md).
 
 ---
 
@@ -172,7 +140,7 @@ entry_methods:
 
 - **Default:** do not commit `.clockify/`. Init writes a directory self-ignore and a managed stanza in the repo `.gitignore`.
 - **Team opt-in:** delete the managed ignore block and commit `.clockify/` on purpose if the team wants shared standards. Still never commit API keys.
-- **Cursor glue:** `.cursor/rules/clockify.mdc` is also listed in the managed stanza when automated init is used. Other `.cursor/` files stay team-owned; do not ignore all of `.cursor/`.
+- **Cursor glue:** `.cursor/rules/clockify.mdc` is also listed in the managed stanza when automate writes rules. Other `.cursor/` files stay team-owned; do not ignore all of `.cursor/`.
 - **Cleanup:** run `clockify-unautomate` to drop Cursor glue and keep config, or `clockify-uninit` for full local teardown. Uninit removes the managed gitignore stanza; if `.gitignore` is then empty (or whitespace-only), it deletes the file. A non-empty `.gitignore` is never deleted.
 - A global `core.excludesfile` can ignore Clockify files in every repo; it is an extra option, not a substitute for init’s repo-local default.
 
