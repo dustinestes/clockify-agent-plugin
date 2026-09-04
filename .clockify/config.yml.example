@@ -13,8 +13,8 @@ entry:
       from: prompt
       template: "{issue_number} - {issue_title}"
     task:
-      from: prompt
-      if_missing: prompt
+      from: none
+      if_missing: none
     rounding:
       enabled: true
       increment_minutes: 15

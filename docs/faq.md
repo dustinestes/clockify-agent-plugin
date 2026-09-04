@@ -23,14 +23,14 @@ A collection of answers to popular questions about this plugin.
   <summary>Does init always create a Clockify project?</summary>
 
   <br>
-  No. `/clockify-init` only pins `scope.workspace_id` and writes the v3 base yaml (prompt timer/manual, `entry.automated` off). It does **not** create Clockify projects or tasks. Run `/clockify-automate` when you want ensure + forge/Cursor automation.
+  No. `/clockify-init` only pins `scope.workspace_id` and writes the v3 base yaml (prompt descriptions, timer task none, `entry.automated` off). It does **not** create Clockify projects or tasks. Run `/clockify-automate` when you want ensure + forge/Cursor automation.
 </details>
 
 <details>
   <summary>What does init write by default?</summary>
 
   <br>
-  A copy of [`.clockify/config.yml.example`](../.clockify/config.yml.example) with your workspace id: `plugin.version: 3`, `scope.project.from: local_folder`, prompt descriptions/tasks for timer and manual, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off. Plus ignore markers under `.clockify/` and a managed stanza in the repo `.gitignore`.
+  A copy of [`.clockify/config.yml.example`](../.clockify/config.yml.example) with your workspace id: `plugin.version: 3`, `scope.project.from: local_folder`, timer description prompt / task none, manual prompt defaults, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off. Plus ignore markers under `.clockify/` and a managed stanza in the repo `.gitignore`.
 </details>
 
 ---

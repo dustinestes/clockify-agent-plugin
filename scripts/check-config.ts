@@ -66,12 +66,14 @@ assert.equal(
 );
 assert.equal(cfg.entry.timer.description.from, "prompt");
 assert.equal(cfg.entry.automated.on_start.description.from, "template");
-assert.equal(cfg.entry.timer.task.if_missing, "prompt");
+assert.equal(cfg.entry.timer.task.if_missing, "none");
+assert.equal(cfg.entry.timer.task.from, "none");
 assert.equal(cfg.entry.automated.on_start.task.if_missing, "none");
 assert.equal(cfg.entry.timer.overlap.on_conflict, "prompt");
 assert.equal(cfg.scope.project.from, "local_folder");
 assert.equal(defaultConfig().scope.project.from, "local_folder");
 assert.equal(defaultConfig().scope.workspace_id, "unconfigured");
+assert.equal(defaultConfig().entry.timer.task.from, "none");
 assert.equal(defaultConfig().entry.automated.enabled, false);
 assert.equal(defaultConfig().entry.automated.forge, "none");
 assert.deepEqual(defaultConfig().entry.automated.triggers, []);
@@ -553,7 +555,7 @@ const exampleCfg = clockifyConfigSchema.parse(
 );
 assert.equal(exampleCfg.plugin.version, 3);
 assert.equal(exampleCfg.scope.project.from, "local_folder");
-assert.equal(exampleCfg.entry.timer.task.from, "prompt");
+assert.equal(exampleCfg.entry.timer.task.from, "none");
 assert.equal(exampleCfg.entry.automated.forge, "none");
 assert.equal("task" in exampleCfg.entry.automated, false);
 assert.equal(exampleCfg.entry.automated.on_start.task.from, "none");

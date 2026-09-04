@@ -52,7 +52,7 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
    2 - Workspace B Name (def456...)
    ```
 
-2. Write `.clockify/config.yml`: copy the plugin’s `.clockify/config.yml.example` as the base scaffold, then set `scope.workspace_id` from step 1. Leave everything else as in the example (`plugin.version: 3`, `scope.project.from: local_folder`, `entry.timer` / `entry.manual` prompt defaults, `entry.automated.enabled: false`, `forge: none`, empty `triggers`, Cursor platforms off). Do **not** store a client in yaml — clients live on the Clockify project only (set later by automate when ensuring).
+2. Write `.clockify/config.yml`: copy the plugin’s `.clockify/config.yml.example` as the base scaffold, then set `scope.workspace_id` from step 1. Leave everything else as in the example (`plugin.version: 3`, `scope.project.from: local_folder`, `entry.timer` description prompt / task none, `entry.manual` prompt defaults, `entry.automated.enabled: false`, `forge: none`, empty `triggers`, Cursor platforms off). Do **not** store a client in yaml — clients live on the Clockify project only (set later by automate when ensuring).
 
 3. Write `.clockify/.managed-by-init` (empty marker).
 4. Write `.clockify/.gitignore` with a single line: `*` (directory self-ignore so even `git add .` skips personal files).
@@ -84,4 +84,4 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 
 ## Default yaml (unless user overrides)
 
-Copy the plugin `.clockify/config.yml.example` as the base scaffold. Roots are `plugin`, `scope`, and `entry` (`timer` / `manual` / `automated`): required workspace pin, project from `local_folder`, prompt descriptions/tasks for timer and manual, `entry.automated.enabled: false` with `forge: none`, empty triggers, inactivity 45 minutes, Cursor platforms off.
+Copy the plugin `.clockify/config.yml.example` as the base scaffold. Roots are `plugin`, `scope`, and `entry` (`timer` / `manual` / `automated`): required workspace pin, project from `local_folder`, timer description prompt with task none (do not block starts on a task name), manual prompt defaults, `entry.automated.enabled: false` with `forge: none`, empty triggers, inactivity 45 minutes, Cursor platforms off.

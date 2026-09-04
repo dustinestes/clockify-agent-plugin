@@ -46,7 +46,7 @@ flowchart TD
 
 | Stage | Skill | User gets |
 |-------|-------|-----------|
-| Base | `/clockify-init` | Workspace pin, prompt timer/manual, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off |
+| Base | `/clockify-init` | Workspace pin, prompt descriptions, timer task none, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off |
 | Automated | `/clockify-automate` | Forge wizard (GitHub), Cursor Plan/Debug, ensure project/tasks, Cursor rules |
 
 ---

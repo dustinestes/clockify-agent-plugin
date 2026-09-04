@@ -40,7 +40,7 @@ Root keys: `plugin`, `scope`, `entry`. `scope` is where every entry and ensure_*
 | `entry.timer.description.from` | `prompt` (caller supplies the string) or `template` |
 | `entry.timer.description.template` | Tokens: `{issue_number}` `{issue_title}` `{label}` `{local_folder}`. Default `{issue_number} - {issue_title}` renders `#N - title` |
 | `entry.manual.description.from` | `prompt` only (enter-time is not issue-driven; richer sources in [#74](https://github.com/dustinestes/clockify-agent-plugin/issues/74)). Leftover `template` keys are ignored |
-| `entry.timer` / `manual` `task.from` | `prompt`, `template`, `fixed`, `local_folder`, or `none` |
+| `entry.timer` / `manual` `task.from` | `prompt`, `template`, `fixed`, `local_folder`, or `none`. Timer default is `none` so `/clockify-start-timer` does not wait on a task name |
 | `entry.*.task.template` / `name` | When `from: template`, expand `template`; when `from: fixed`, use literal `name` |
 | `entry.*.task.if_missing` | When the Clockify task does not exist: `prompt`, `create` (`ensure_task`), or `none` |
 | `entry.timer.rounding` / `automated.rounding` | `enabled`, `increment_minutes`, `mode` (`nearest` \| `up` \| `down`), optional `start_mode` / `stop_mode` / `minimum_minutes` |

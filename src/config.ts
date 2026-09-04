@@ -61,6 +61,18 @@ const interactiveTaskSchema = z
   })
   .default({});
 
+/** Timer defaults to no task so starts are not blocked waiting on a name. */
+const timerTaskSchema = z
+  .object({
+    from: z
+      .enum(["prompt", "template", "fixed", "local_folder", "none"])
+      .default("none"),
+    template: z.string().optional(),
+    name: z.string().optional(),
+    if_missing: z.enum(["prompt", "create", "none"]).default("none"),
+  })
+  .default({});
+
 const onStartTaskSchema = z
   .object({
     from: z
@@ -96,7 +108,7 @@ const timerMethodSchema = z
   .object({
     include_seconds: z.boolean().default(false),
     description: descriptionStrategySchema("prompt"),
-    task: interactiveTaskSchema,
+    task: timerTaskSchema,
     rounding: roundingSchema,
     overlap: overlapSchema,
   })

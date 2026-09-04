@@ -88,7 +88,7 @@ Credentials, allowlists, and non-Cursor hosts: [docs/use.md](docs/use.md).
 
 ### Add Clockify to a repo (each repo)
 
-1. In that repo, run `/clockify-init` — choose a Clockify workspace. Writes v3 `.clockify/config.yml` (prompt timer/manual; automation off). After this you can enter time with skills (start/stop timer, enter-time, summarize).
+1. In that repo, run `/clockify-init` — choose a Clockify workspace. Writes v3 `.clockify/config.yml` (prompt descriptions, timer starts without requiring a task; automation off). After this you can enter time with skills (start/stop timer, enter-time, summarize).
 2. Optional: run `/clockify-automate` for forge (GitHub) + Cursor Plan/Debug platforms, project/task ensure, and Cursor rules from `entry.automated`.
 
 To undo a repo without uninstalling the plugin: [docs/use.md](docs/use.md#remove-clockify-from-a-repo).

@@ -52,7 +52,7 @@ Two stages. Init writes a usable base yaml for timer and enter-time. Automate tu
 
 | Stage | Skill | What you get |
 |-------|-------|----------------|
-| Base | `/clockify-init` | Workspace pin, prompt timer/manual, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off |
+| Base | `/clockify-init` | Workspace pin, prompt descriptions, timer task none, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off |
 | Automated | `/clockify-automate` | Forge wizard (GitHub), Cursor Plan/Debug platforms, ensure project/tasks, Cursor rules |
 
 **Workspace:** required pin (`scope.workspace_id`) chosen at `/clockify-init`. The plugin does **not** follow Clockify’s UI active workspace.
@@ -65,7 +65,8 @@ Pins the workspace and writes v3 yaml from [`.clockify/config.yml.example`](../.
 
 - `plugin.version: 3`
 - `scope.project.from: local_folder`
-- `entry.timer` / `entry.manual` — description and task `from: prompt`
+- `entry.timer` — description `from: prompt`; task `from: none` (start without blocking on a task name)
+- `entry.manual` — description and task `from: prompt`
 - `entry.automated.enabled: false`, `forge: none`, empty `triggers`, inactivity 45 minutes, `platforms.cursor` off
 
 Does **not** create Clockify projects or tasks. Timer and enter-time work after init; run `/clockify-automate` when you want agent automation.
