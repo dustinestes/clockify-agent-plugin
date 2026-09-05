@@ -1,20 +1,20 @@
 # Clockify Agent Plugin (@dustinestes/clockify-agent-plugin) — https://github.com/dustinestes/clockify-agent-plugin — docs/config.md
-plugin_internal:
-  version: 2
+plugin:
+  version: 3
 scope:
   workspace_id: SET_BY_INIT
   project:
-    from: repo
+    from: local_folder
 
-entry_methods:
+entry:
   timer:
     include_seconds: false
     description:
       from: prompt
       template: "{issue_number} - {issue_title}"
     task:
-      from: prompt
-      if_missing: prompt
+      from: none
+      if_missing: none
     rounding:
       enabled: true
       increment_minutes: 15
@@ -35,13 +35,16 @@ entry_methods:
       on_conflict: prompt
 
   automated:
+    enabled: false
+    forge: none
     include_seconds: false
-    description:
-      from: template
-      template: "{issue_number} - {issue_title}"
-    task:
-      from: none
-      if_missing: none
+    on_start:
+      when_multiple_labels: first
+      description:
+        from: prompt
+      task:
+        from: none
+        if_missing: none
     rounding:
       enabled: true
       increment_minutes: 15
@@ -51,17 +54,11 @@ entry_methods:
       minimum_minutes: 15
     overlap:
       on_conflict: prompt
-    triggers:
-      - event: issue_start
-        action: start_timer
-      - event: issue_finish
-        action: stop_timer
-      - event: issue_switch
-        action: stop_then_start
-      - event: pr_ship
-        action: stop_timer
-      - event: pr_closed
-        action: stop_timer
+    triggers: []
     inactivity:
       enabled: true
       stop_after_minutes: 45
+    platforms:
+      cursor:
+        enabled: false
+        modes: {}

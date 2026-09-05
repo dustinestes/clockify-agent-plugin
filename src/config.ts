@@ -17,6 +17,8 @@ const automationActionSchema = z.enum([
   "stop_then_start",
 ]);
 
+const modeTriggerEventSchema = z.enum(["start", "stop"]);
+
 const positiveInt = z.coerce.number().int().positive();
 
 export const roundingModeSchema = z.enum(["nearest", "up", "down"]);
@@ -33,7 +35,7 @@ const roundingSchema = z
   })
   .default({});
 
-const descriptionSchema = (fromDefault: "prompt" | "template") =>
+const descriptionStrategySchema = (fromDefault: "prompt" | "template") =>
   z
     .object({
       from: z.enum(["prompt", "template"]).default(fromDefault),
@@ -50,15 +52,35 @@ const manualDescriptionSchema = z
 
 const interactiveTaskSchema = z
   .object({
-    from: z.enum(["prompt", "github_label", "repo", "none"]).default("prompt"),
+    from: z
+      .enum(["prompt", "template", "fixed", "local_folder", "none"])
+      .default("prompt"),
+    template: z.string().optional(),
+    name: z.string().optional(),
     if_missing: z.enum(["prompt", "create", "none"]).default("prompt"),
   })
   .default({});
 
-const automatedTaskSchema = z
+/** Timer defaults to no task so starts are not blocked waiting on a name. */
+const timerTaskSchema = z
   .object({
-    from: z.enum(["github_label", "repo", "none"]).default("github_label"),
-    if_missing: z.enum(["create", "none"]).default("create"),
+    from: z
+      .enum(["prompt", "template", "fixed", "local_folder", "none"])
+      .default("none"),
+    template: z.string().optional(),
+    name: z.string().optional(),
+    if_missing: z.enum(["prompt", "create", "none"]).default("none"),
+  })
+  .default({});
+
+const onStartTaskSchema = z
+  .object({
+    from: z
+      .enum(["prompt", "template", "fixed", "local_folder", "none"])
+      .default("none"),
+    template: z.string().optional(),
+    name: z.string().optional(),
+    if_missing: z.enum(["create", "none", "prompt"]).default("none"),
   })
   .default({});
 
@@ -77,7 +99,7 @@ const inactivitySchema = z
 
 const projectSchema = z
   .object({
-    from: z.enum(["repo", "fixed"]).default("repo"),
+    from: z.enum(["local_folder", "fixed", "prompt"]).default("local_folder"),
     name: z.string().optional(),
   })
   .default({});
@@ -85,8 +107,8 @@ const projectSchema = z
 const timerMethodSchema = z
   .object({
     include_seconds: z.boolean().default(false),
-    description: descriptionSchema("prompt"),
-    task: interactiveTaskSchema,
+    description: descriptionStrategySchema("prompt"),
+    task: timerTaskSchema,
     rounding: roundingSchema,
     overlap: overlapSchema,
   })
@@ -100,11 +122,60 @@ const manualMethodSchema = z
   })
   .default({});
 
+const onStartSchema = z
+  .object({
+    when_multiple_labels: z.enum(["first", "prompt"]).default("first"),
+    description: descriptionStrategySchema("prompt"),
+    task: onStartTaskSchema,
+  })
+  .default({});
+
+const cursorModeTaskSchema = z
+  .object({
+    from: z.enum(["fixed", "none"]).default("fixed"),
+    name: z.string().optional(),
+    if_missing: z.enum(["create", "none"]).default("create"),
+  })
+  .default({});
+
+const cursorModeSchema = z.object({
+  enabled: z.boolean().default(true),
+  triggers: z
+    .array(
+      z.object({
+        event: modeTriggerEventSchema,
+        action: automationActionSchema,
+      }),
+    )
+    .default([
+      { event: "start", action: "start_timer" },
+      { event: "stop", action: "stop_timer" },
+    ]),
+  description: descriptionStrategySchema("prompt"),
+  task: cursorModeTaskSchema,
+});
+
+const cursorPlatformsSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    modes: z.record(cursorModeSchema).default({}),
+  })
+  .default({});
+
+const platformsSchema = z
+  .object({
+    cursor: cursorPlatformsSchema,
+  })
+  .default({});
+
+const forgeSchema = z.enum(["none", "github", "gitlab", "bitbucket"]);
+
 const automatedMethodSchema = z
   .object({
+    enabled: z.boolean().default(false),
+    forge: forgeSchema.default("none"),
     include_seconds: z.boolean().default(false),
-    description: descriptionSchema("template"),
-    task: automatedTaskSchema,
+    on_start: onStartSchema,
     rounding: roundingSchema,
     overlap: overlapSchema,
     triggers: z
@@ -116,40 +187,110 @@ const automatedMethodSchema = z
       )
       .default([]),
     inactivity: inactivitySchema,
+    platforms: platformsSchema,
   })
   .default({});
 
-export const clockifyConfigSchema = z.object({
-  plugin_internal: z
-    .object({
-      version: z.literal(2).default(2),
-    })
-    .default({}),
-  scope: z
-    .object({
-      workspace_id: z
-        .string()
-        .trim()
-        .min(1, "scope.workspace_id is required. Re-run /clockify-init."),
-      project: projectSchema,
-    })
-    .default({ workspace_id: "unconfigured" }),
-  entry_methods: z
-    .object({
-      timer: timerMethodSchema,
-      manual: manualMethodSchema,
-      automated: automatedMethodSchema,
-    })
-    .default({}),
-});
+export const clockifyConfigSchema = z
+  .object({
+    plugin: z
+      .object({
+        version: z.literal(3).default(3),
+      })
+      .default({}),
+    scope: z
+      .object({
+        workspace_id: z
+          .string()
+          .trim()
+          .min(1, "scope.workspace_id is required. Re-run /clockify-init."),
+        project: projectSchema,
+      })
+      .default({ workspace_id: "unconfigured" }),
+    entry: z
+      .object({
+        timer: timerMethodSchema,
+        manual: manualMethodSchema,
+        automated: automatedMethodSchema,
+      })
+      .default({}),
+  })
+  .superRefine((cfg, ctx) => {
+    const automated = cfg.entry.automated;
+    rejectLegacyTaskFrom(cfg.entry.timer.task, ["entry", "timer", "task"], ctx);
+    rejectLegacyTaskFrom(cfg.entry.manual.task, ["entry", "manual", "task"], ctx);
+    rejectLegacyTaskFrom(
+      automated.on_start.task,
+      ["entry", "automated", "on_start", "task"],
+      ctx,
+    );
+
+    if (!automated.enabled) {
+      if (automated.triggers.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["entry", "automated", "triggers"],
+          message:
+            "triggers must be empty when entry.automated.enabled is false",
+        });
+      }
+      return;
+    }
+
+    if (automated.forge === "none" && automated.triggers.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["entry", "automated", "triggers"],
+        message:
+          "forge triggers require entry.automated.forge to be github (or another forge), not none",
+      });
+    }
+
+    if (
+      automated.forge !== "github" &&
+      automated.forge !== "none" &&
+      automated.triggers.length > 0
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["entry", "automated", "forge"],
+        message: `forge ${automated.forge} triggers are not implemented yet; use github or clear triggers`,
+      });
+    }
+  });
+
+function rejectLegacyTaskFrom(
+  task: { from?: string },
+  path: (string | number)[],
+  ctx: z.RefinementCtx,
+): void {
+  if (task.from === "github_label") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...path, "from"],
+      message:
+        'github_label is removed. Use from: template with template: "{label}"',
+    });
+  }
+  if (task.from === "repo") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...path, "from"],
+      message: "repo is renamed to local_folder",
+    });
+  }
+}
 
 export type ClockifyConfig = z.infer<typeof clockifyConfigSchema>;
-export type RoundingConfig = ClockifyConfig["entry_methods"]["timer"]["rounding"];
-export type InactivityConfig =
-  ClockifyConfig["entry_methods"]["automated"]["inactivity"];
+export type RoundingConfig = ClockifyConfig["entry"]["timer"]["rounding"];
+export type InactivityConfig = ClockifyConfig["entry"]["automated"]["inactivity"];
 export type DescriptionConfig =
-  | ClockifyConfig["entry_methods"]["timer"]["description"]
-  | ClockifyConfig["entry_methods"]["manual"]["description"];
+  | ClockifyConfig["entry"]["timer"]["description"]
+  | ClockifyConfig["entry"]["manual"]["description"]
+  | ClockifyConfig["entry"]["automated"]["on_start"]["description"];
+export type OnStartConfig = ClockifyConfig["entry"]["automated"]["on_start"];
+export type CursorModeConfig = z.infer<typeof cursorModeSchema>;
+export type Forge = z.infer<typeof forgeSchema>;
 
 export type LoadedConfig = {
   found: boolean;
@@ -303,6 +444,12 @@ export function formatClockifyConfigError(error: z.ZodError): string {
         if (issue.received === "pr_merged") {
           return `${path}: ${expected}. pr_merged is not supported: GitHub merge is an unwatched action.`;
         }
+        if (issue.received === "github_label") {
+          return `${path}: ${expected}. github_label is removed; use from: template with template: "{label}"`;
+        }
+        if (issue.received === "repo") {
+          return `${path}: ${expected}. repo is renamed to local_folder`;
+        }
         return `${path}: ${expected}`;
       }
       return `${path}: ${issue.message}`;
@@ -310,19 +457,34 @@ export function formatClockifyConfigError(error: z.ZodError): string {
     .join("\n");
 }
 
+const V3_REINIT =
+  "Re-run /clockify-init (then /clockify-automate if you need forge or Cursor automation), or replace .clockify/config.yml from the plugin example.";
+
 export function parseClockifyConfig(
   raw: unknown,
   source = "config",
 ): ClockifyConfig {
-  if (
-    raw &&
-    typeof raw === "object" &&
-    "version" in raw &&
-    !("plugin_internal" in raw)
-  ) {
-    throw new Error(
-      `Invalid Clockify config (${source}): old root shape (version at file root). Re-run /clockify-init or replace .clockify/config.yml.`,
-    );
+  if (raw && typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    if ("version" in obj && !("plugin" in obj) && !("plugin_internal" in obj)) {
+      throw new Error(
+        `Invalid Clockify config (${source}): old root shape (version at file root). ${V3_REINIT}`,
+      );
+    }
+    if ("plugin_internal" in obj || "entry_methods" in obj) {
+      throw new Error(
+        `Invalid Clockify config (${source}): v2 keys (plugin_internal / entry_methods). v3 uses plugin / entry. ${V3_REINIT}`,
+      );
+    }
+    if (
+      obj.plugin &&
+      typeof obj.plugin === "object" &&
+      (obj.plugin as { version?: unknown }).version === 2
+    ) {
+      throw new Error(
+        `Invalid Clockify config (${source}): plugin.version 2 is not supported. ${V3_REINIT}`,
+      );
+    }
   }
   const result = clockifyConfigSchema.safeParse(raw ?? {});
   if (!result.success) {
@@ -355,6 +517,9 @@ export function resolveProjectName(
   config: ClockifyConfig,
   root: string | null,
 ): string | null {
+  if (config.scope.project.from === "prompt") {
+    return null;
+  }
   if (config.scope.project.from === "fixed") {
     return config.scope.project.name?.trim() || null;
   }
@@ -371,28 +536,44 @@ export function resolveRepoName(root: string | null): string | null {
   return basename(root);
 }
 
+export type TemplateFields = {
+  issue_number?: string | number;
+  issue_title?: string;
+  label?: string;
+  /** @deprecated use label */
+  github_label?: string;
+  local_folder?: string;
+  /** @deprecated use local_folder */
+  repo?: string;
+  planTitle?: string;
+  debugTitle?: string;
+};
+
 export function applyDescriptionTemplate(
   template: string,
-  fields: {
-    issue_number?: string | number;
-    issue_title?: string;
-    github_label?: string;
-    repo?: string;
-  },
+  fields: TemplateFields,
 ): string {
   const issueNumber =
     fields.issue_number === undefined || fields.issue_number === ""
       ? ""
       : String(fields.issue_number).replace(/^#/, "");
   const issueTitle = fields.issue_title?.trim() ?? "";
-  const label = fields.github_label?.trim() ?? "";
-  const repo = fields.repo?.trim() ?? "";
+  const label =
+    fields.label?.trim() || fields.github_label?.trim() || "";
+  const localFolder =
+    fields.local_folder?.trim() || fields.repo?.trim() || "";
+  const planTitle = fields.planTitle?.trim() ?? "";
+  const debugTitle = fields.debugTitle?.trim() ?? "";
 
   return template
     .replaceAll("{issue_number}", issueNumber ? `#${issueNumber}` : "")
     .replaceAll("{issue_title}", issueTitle)
+    .replaceAll("{label}", label)
     .replaceAll("{github_label}", label)
-    .replaceAll("{repo}", repo)
+    .replaceAll("{local_folder}", localFolder)
+    .replaceAll("{repo}", localFolder)
+    .replaceAll("{planTitle}", planTitle)
+    .replaceAll("{debugTitle}", debugTitle)
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -403,18 +584,78 @@ export function resolveEntryDescription(
     description?: string;
     issue_number?: string | number;
     issue_title?: string;
+    label?: string;
     github_label?: string;
+    local_folder?: string;
     repo?: string;
+    planTitle?: string;
+    debugTitle?: string;
   },
 ): string | undefined {
   if (input.description?.trim()) return input.description.trim();
   if (description.from === "prompt") return undefined;
+  const label = input.label?.trim() || input.github_label?.trim();
   const hasFields =
     input.issue_number !== undefined ||
     Boolean(input.issue_title?.trim()) ||
-    Boolean(input.github_label?.trim());
+    Boolean(label) ||
+    Boolean(input.planTitle?.trim()) ||
+    Boolean(input.debugTitle?.trim());
   if (!hasFields) return undefined;
   return applyDescriptionTemplate(description.template, input);
+}
+
+export function templateUsesLabel(template: string | undefined): boolean {
+  if (!template) return false;
+  return template.includes("{label}") || template.includes("{github_label}");
+}
+
+export function onStartUsesLabel(onStart: OnStartConfig): boolean {
+  return (
+    (onStart.description.from === "template" &&
+      templateUsesLabel(onStart.description.template)) ||
+    (onStart.task.from === "template" &&
+      templateUsesLabel(onStart.task.template))
+  );
+}
+
+export function isAutomationConfigured(config: ClockifyConfig): boolean {
+  return config.entry.automated.enabled && config.entry.automated.forge !== "none";
+}
+
+export function resolveCursorModeBlock(
+  config: ClockifyConfig,
+  mode: string,
+): CursorModeConfig | null {
+  const cursor = config.entry.automated.platforms.cursor;
+  if (!cursor.enabled) return null;
+  const block = cursor.modes[mode];
+  if (!block || !block.enabled) return null;
+  return block;
+}
+
+export function resolveCursorModeTaskName(
+  config: ClockifyConfig,
+  mode: string,
+): string | null {
+  const block = resolveCursorModeBlock(config, mode);
+  if (!block || block.task.from !== "fixed") return null;
+  return block.task.name?.trim() || null;
+}
+
+/** Fixed Cursor mode task names to ensure when platforms.cursor is enabled. */
+export function listCursorModeTasksToEnsure(config: ClockifyConfig): string[] {
+  const cursor = config.entry.automated.platforms.cursor;
+  if (!cursor.enabled) return [];
+  const names: string[] = [];
+  for (const block of Object.values(cursor.modes)) {
+    if (!block.enabled) continue;
+    if (block.task.from !== "fixed") continue;
+    if (block.task.if_missing !== "create") continue;
+    const name = block.task.name?.trim();
+    if (name) names.push(name);
+  }
+  return names;
 }
 
 export function roundDate(

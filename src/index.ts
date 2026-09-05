@@ -23,6 +23,7 @@ import {
   overlapShouldProceed,
   prepareStartInstant,
   resolveConfiguredWorkspaceId,
+  resolveCursorModeBlock,
   resolveEntryDescription,
   resolveProjectName,
   resolveRepoName,
@@ -179,18 +180,38 @@ function resolveDescription(
     description?: string;
     issue_number?: string | number;
     issue_title?: string;
+    label?: string;
     github_label?: string;
+    planTitle?: string;
+    debugTitle?: string;
   },
   configRoot?: string,
+  cursorMode?: string,
 ): string | undefined {
   const loaded = loadConfig(configRoot);
-  const repo = resolveRepoName(loaded.root) ?? undefined;
-  return resolveEntryDescription(
-    loaded.config.entry_methods[method].description,
-    {
+  const localFolder = resolveRepoName(loaded.root) ?? undefined;
+  const fields = {
     ...input,
-    repo,
-  });
+    label: input.label ?? input.github_label,
+    local_folder: localFolder,
+    repo: localFolder,
+  };
+
+  if (method === "automated" && cursorMode) {
+    const modeBlock = resolveCursorModeBlock(loaded.config, cursorMode);
+    if (modeBlock) {
+      return resolveEntryDescription(modeBlock.description, fields);
+    }
+  }
+
+  if (method === "automated") {
+    return resolveEntryDescription(
+      loaded.config.entry.automated.on_start.description,
+      fields,
+    );
+  }
+
+  return resolveEntryDescription(loaded.config.entry[method].description, fields);
 }
 
 function overlapError(
@@ -611,7 +632,7 @@ registerClockifyTool(
       const running = await client(config_root).getRunningTimer(workspace_id);
       if (!running) return textResult({ running: false });
       const loaded = loadConfig(config_root);
-      const inactivity = loaded.config.entry_methods.automated.inactivity;
+      const inactivity = loaded.config.entry.automated.inactivity;
       const pastInactivity = isTimerPastInactivity(
         running.timeInterval.start,
         inactivity,
@@ -638,7 +659,7 @@ registerClockifyTool(
   {
     title: "Start timer",
     description:
-      "Starts a new running timer. Optional start (ISO-8601) backdates the timer; omit for now. entry_method selects timer vs automated config (include_seconds, start rounding, overlap). Prefer stopping any existing timer first. When description.from is template, pass issue_number/issue_title if description is omitted." +
+      "Starts a new running timer. Optional start (ISO-8601) backdates the timer; omit for now. entry_method selects timer vs automated config (include_seconds, start rounding, overlap). Prefer stopping any existing timer first. When description.from is template, pass issue_number/issue_title/label if description is omitted. For Cursor Plan/Debug automation, pass cursor_mode so description resolves from platforms.cursor.modes.<mode>." +
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
@@ -651,6 +672,12 @@ registerClockifyTool(
         .enum(["timer", "automated"])
         .optional()
         .describe("Config block to honor. Default timer."),
+      cursor_mode: z
+        .enum(["plan", "debug"])
+        .optional()
+        .describe(
+          "When entry_method is automated, resolve description from platforms.cursor.modes.<mode> instead of on_start.",
+        ),
       confirm_overlap: z
         .boolean()
         .optional()
@@ -662,15 +689,27 @@ registerClockifyTool(
       issue_number: z
         .union([z.string(), z.number()])
         .optional()
-        .describe("GitHub issue number for description template."),
+        .describe("Forge issue number for description template."),
       issue_title: z
         .string()
         .optional()
-        .describe("GitHub issue title for description template."),
+        .describe("Forge issue title for description template."),
+      label: z
+        .string()
+        .optional()
+        .describe("Forge label for {label} in templates (after when_multiple_labels policy)."),
       github_label: z
         .string()
         .optional()
-        .describe("GitHub label name (also usable in template)."),
+        .describe("Deprecated alias for label."),
+      plan_title: z
+        .string()
+        .optional()
+        .describe("Plan title for {planTitle} when cursor_mode is plan and description.from is template."),
+      debug_title: z
+        .string()
+        .optional()
+        .describe("Debug title for {debugTitle} when cursor_mode is debug and description.from is template."),
       project_id: z.string().optional().describe("Clockify project ID."),
       task_id: z.string().optional().describe("Clockify task ID."),
       tag_ids: z.array(z.string()).optional().describe("Tag IDs to attach."),
@@ -682,11 +721,15 @@ registerClockifyTool(
     workspace_id,
     start,
     entry_method,
+    cursor_mode,
     confirm_overlap,
     description,
     issue_number,
     issue_title,
+    label,
     github_label,
+    plan_title,
+    debug_title,
     project_id,
     task_id,
     tag_ids,
@@ -698,16 +741,20 @@ registerClockifyTool(
         return configMissResult(loaded, config_root);
       }
       const method: TimerEntryMethod = entry_method ?? "timer";
-      const block = loaded.config.entry_methods[method];
+      const block = loaded.config.entry[method];
       const resolvedDescription = resolveDescription(
         method,
         {
           description,
           issue_number,
           issue_title,
+          label,
           github_label,
+          planTitle: plan_title,
+          debugTitle: debug_title,
         },
         config_root,
+        cursor_mode,
       );
       const prepared = prepareStartInstant(
         start ?? new Date().toISOString(),
@@ -755,6 +802,7 @@ registerClockifyTool(
           gapFit: fitted.fitted,
           used: startIso,
         },
+        cursor_mode: cursor_mode ?? null,
       });
     } catch (error) {
       return errorResult(error);
@@ -809,7 +857,7 @@ registerClockifyTool(
       }
 
       const method: TimerEntryMethod = entry_method ?? "timer";
-      const block = loaded.config.entry_methods[method];
+      const block = loaded.config.entry[method];
       const rounding = {
         ...block.rounding,
         enabled: apply_rounding ?? block.rounding.enabled,
@@ -886,7 +934,8 @@ registerClockifyTool(
       description: z.string().optional().describe("Entry description."),
       issue_number: z.union([z.string(), z.number()]).optional(),
       issue_title: z.string().optional(),
-      github_label: z.string().optional(),
+      label: z.string().optional().describe("Forge label for {label} in templates."),
+      github_label: z.string().optional().describe("Deprecated alias for label."),
       project_id: z.string().optional().describe("Clockify project ID."),
       task_id: z.string().optional().describe("Clockify task ID."),
       tag_ids: z.array(z.string()).optional().describe("Tag IDs to attach."),
@@ -903,6 +952,7 @@ registerClockifyTool(
     description,
     issue_number,
     issue_title,
+    label,
     github_label,
     project_id,
     task_id,
@@ -915,13 +965,14 @@ registerClockifyTool(
         return configMissResult(loaded, config_root);
       }
       const method = (entry_method ?? "manual") as EntryMethod;
-      const onConflict = loaded.config.entry_methods[method].overlap.on_conflict;
+      const onConflict = loaded.config.entry[method].overlap.on_conflict;
       const resolvedDescription = resolveDescription(
         method,
         {
           description,
           issue_number,
           issue_title,
+          label,
           github_label,
         },
         config_root,

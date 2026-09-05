@@ -11,6 +11,7 @@ Install and use the unofficial Clockify Agent Plugin.
 
 - [Contents](#contents)
 - [Credentials](#credentials)
+- [Per-repo setup](#per-repo-setup)
 - [Logging](#logging)
 - [Pre-enable Clockify tools](#pre-enable-clockify-tools)
 - [Other MCP hosts](#other-mcp-hosts)
@@ -26,7 +27,18 @@ Install and use the unofficial Clockify Agent Plugin.
 
 **`CLOCKIFY_API_KEY` (required)** — Clockify → Preferences → Advanced → Manage API Keys ([Clockify API](https://docs.clockify.me)). Set it as a Cursor plugin / MCP env variable when you install. Do not put it in `.clockify/config.yml`. Do not add a Clockify `.env` to the repo you are tracking time in.
 
-**Workspace (required)** — pin `scope.workspace_id` in `.clockify/config.yml` per repo (`/clockify-init` workspace AskQuestion). The plugin does not follow Clockify’s active workspace. Taxonomy shape is the next AskQuestion. File on disk and how the server finds it (including `config_root` / Cursor layouts): [config.md](./config.md). Fields: [config.yml](./schema/config.yml.md). Init map: [flows.md](./flows.md).
+**Workspace (required)** — pin `scope.workspace_id` in `.clockify/config.yml` per repo (`/clockify-init` workspace AskQuestion). The plugin does not follow Clockify’s active workspace. Init writes the v3 base contract (timer/manual ready); `/clockify-automate` is optional for forge + Cursor automation. File on disk and how the server finds it (including `config_root` / Cursor layouts): [config.md](./config.md). Fields: [config.yml](./schema/config.yml.md). Decision maps: [flows.md](./flows.md).
+
+---
+
+<br>
+
+## Per-repo setup
+
+1. `/clockify-init` — choose a Clockify workspace; writes v3 `.clockify/config.yml` and ignore defaults. Timer, stop, enter-time, and summarize work after this.
+2. Optional: `/clockify-automate` — forge wizard (GitHub), Cursor Plan/Debug platforms, ensure project/tasks, write Cursor rules.
+
+Ladder and outcomes: [config.md — Init vs Automate](./config.md#init-vs-automate).
 
 ---
 
@@ -118,7 +130,7 @@ The Directory / npx **plugin stays installed**. These skills only change the cur
 
 | Want | Skill | What it does |
 |------|-------|----------------|
-| Back to **manual** entry | `/clockify-unautomate` | Removes the Clockify Cursor rule and Clockify-owned hooks. Keeps `.clockify/` so start-timer, enter-time, and summarize still work. |
+| Back to **manual** entry (full automate rollback) | `/clockify-unautomate` | Removes Cursor rule/hooks and resets `entry.automated` to example defaults (`forge: none`, empty triggers, Cursor modes cleared). Keeps `plugin` / `scope` / timer / manual. Next `/clockify-automate` runs the wizards again. Temporary pause without losing settings: [#87](https://github.com/dustinestes/clockify-agent-plugin/issues/87). |
 | **All** Clockify files gone from this repo | `/clockify-uninit` | Unautomate, then deletes `.clockify/` and the managed gitignore stanza (and `.gitignore` itself if that left the file empty). Does not uninstall the plugin or clear `CLOCKIFY_API_KEY` unless you ask. |
 
 Uninstalling the plugin itself is Cursor → remove Clockify Agent Plugin (or drop the npx MCP server). That is separate from uninit.

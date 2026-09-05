@@ -3,7 +3,7 @@
 <h1>Install for Cursor</h1>
 <br clear="both">
 
-One-time machine setup: MCP tools + Agent Skills. Per-repo setup: [`/clockify-init`](use.md) (workspace and shape pickers).
+One-time machine setup: MCP tools + Agent Skills. Per-repo setup: [`/clockify-init`](use.md) (workspace pin + base yaml); optional [`/clockify-automate`](../skills/clockify-automate/SKILL.md) for forge + Cursor platforms.
 
 <br>
 
@@ -21,7 +21,7 @@ This writes **user-global** Cursor config:
 | MCP server | `~/.cursor/mcp.json` → `clockify-agent-plugin` via npx |
 | API key | Prompted, or `--api-key` / `CLOCKIFY_API_KEY` env |
 
-Workspace ID is **not** set at install time. Each repo chooses a Clockify workspace and taxonomy **shape** during `/clockify-init` (stored in `.clockify/config.yml`). User MCP does not pin `CLOCKIFY_CONFIG_ROOT`; skills pass `config_root` ([config.md](./config.md#which-repo-config_root)).
+Workspace ID is **not** set at install time. Each repo pins a Clockify workspace during `/clockify-init` (stored in `.clockify/config.yml`). User MCP does not pin `CLOCKIFY_CONFIG_ROOT`; skills pass `config_root` ([config.md](./config.md#which-repo-config_root)).
 
 ### Options
 

@@ -13,15 +13,15 @@ description: >-
 
 ## Config-aware behavior
 
-1. If `config_root` is already known this session and still this repo, reuse it. Otherwise resolve once with `git rev-parse --show-toplevel` from the working directory (open tabs are not required; multi-root: focused path only as a tie-breaker). Re-resolve when the folder or focused root changes. Pass that string on Clockify MCP calls — do not run git before every tool.
-2. `clockify_get_config` with `config_root`. Honor `entry_methods.manual.description`, `entry_methods.manual.task`, `entry_methods.manual.overlap`. Do **not** apply rounding.
+1. If `config_root` is already known this session and still this repo, reuse it. Otherwise resolve once with `git rev-parse --show-toplevel` from the working directory (open tabs are not required; multi-root: focused path only as a tie-breaker; non-git: Cursor window folder). Re-resolve when the folder or focused root changes. Pass that string on Clockify MCP calls — do not run git before every tool.
+2. `clockify_get_config` with `config_root`. Honor `entry.manual.description`, `entry.manual.task`, `entry.manual.overlap`. Do **not** apply rounding.
 3. Never invent project/task ids.
 
 ## Workflow
 
 1. `clockify_get_running_timer` with `config_root`. If a timer is already running for this same work, do not double-count — point at `clockify-stop-timer`.
-2. Resolve project (list/ensure). Resolve task from `entry_methods.manual.task.from` / `if_missing` (same rules as start-timer: prompt, github_label, repo, or none).
-3. Description: ask or use their text (`entry_methods.manual.description.from` is always `prompt`; no issue templates).
+2. Resolve project (list/ensure). Resolve task from `entry.manual.task.from` / `if_missing` (same rules as start-timer: `prompt`, `template`, `local_folder`, `fixed`, or `none`).
+3. Description: ask or use their text (`entry.manual.description.from` is always `prompt`; no issue templates).
 4. **Times given** (e.g. 09:30–09:45): convert to ISO and create. Do not round.
 5. **Times omitted** (forgot to track): infer start from cheap signals — git log / branch checkout, conversation timestamps, recent file edits. End defaults to now unless they give one. **Show the inferred window and confirm.** Never silently log hours.
 6. `clockify_create_time_entry` with `config_root` and `entry_method: manual`. If `overlap: true`, show the clash. Retry with `confirm_overlap: true` only if they agree (or `on_conflict` is `override`). Override is how parallel completed streams can stack; do not treat that as the default.
