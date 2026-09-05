@@ -125,7 +125,25 @@ Ask whether to enable Cursor Plan and Debug mode timers (defaults: **yes** for b
 Write under `entry.automated.platforms.cursor`:
 
 - `enabled: true` when either mode is on
-- Per enabled mode: `triggers` start/stop, `description.from: prompt`, `task.from: fixed` + chosen name, `if_missing: create`
+- Per enabled mode, use the **array** trigger shape (not a `start:` / `stop:` map):
+
+```yaml
+plan:
+  enabled: true
+  triggers:
+    - event: start
+      action: start_timer
+    - event: stop
+      action: stop_timer
+  description:
+    from: prompt
+  task:
+    from: fixed
+    name: agent_planning
+    if_missing: create
+```
+
+Same for `debug` with `name: agent_debug` (or renamed).
 
 If both declined: `platforms.cursor.enabled: false`, `modes: {}`.
 

@@ -140,7 +140,7 @@ Each mode:
 | Key | Purpose |
 |-----|---------|
 | `enabled` | Mode on/off |
-| `triggers` | `start` → `start_timer`, `stop` → `stop_timer` |
+| `triggers` | Array of `{ event, action }` — same shape as forge triggers. Mode events: `start` \| `stop`. Typical: `start` → `start_timer`, `stop` → `stop_timer` |
 | `description.from` | `prompt` (default) or `template` |
 | `task.from` | `fixed` (default) or `none`; fixed uses `name` (`agent_planning` / `agent_debug` by default) and `if_missing: create` |
 
