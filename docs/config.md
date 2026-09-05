@@ -142,7 +142,7 @@ Full field list: [schema/config.yml.md](./schema/config.yml.md). Wizard maps: [f
 - **Default:** do not commit `.clockify/`. Init writes a directory self-ignore and a managed stanza in the repo `.gitignore`.
 - **Team opt-in:** delete the managed ignore block and commit `.clockify/` on purpose if the team wants shared standards. Still never commit API keys.
 - **Cursor glue:** `.cursor/rules/clockify.mdc` is also listed in the managed stanza when automate writes rules. Other `.cursor/` files stay team-owned; do not ignore all of `.cursor/`.
-- **Cleanup:** run `clockify-unautomate` to drop Cursor glue and keep config, or `clockify-uninit` for full local teardown. Uninit removes the managed gitignore stanza; if `.gitignore` is then empty (or whitespace-only), it deletes the file. A non-empty `.gitignore` is never deleted.
+- **Cleanup:** run `clockify-unautomate` to drop Cursor glue and disable automation flags in yaml (forge/`on_start`/mode settings stay for a later re-automate), or `clockify-uninit` for full local teardown. Uninit removes the managed gitignore stanza; if `.gitignore` is then empty (or whitespace-only), it deletes the file. A non-empty `.gitignore` is never deleted.
 - A global `core.excludesfile` can ignore Clockify files in every repo; it is an extra option, not a substitute for init’s repo-local default.
 
 ---
