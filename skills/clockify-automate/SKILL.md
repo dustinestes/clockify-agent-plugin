@@ -25,9 +25,7 @@ If config already exists, do not overwrite the whole file — patch only the `en
 
 ## Forge wizard
 
-Skip this wizard when `entry.automated.forge` is already a real forge (`github` / `gitlab` / `bitbucket`), unless the user asks to reconfigure forge settings. That includes coming back from `/clockify-unautomate` (`enabled: false` but forge still set) — re-enable and refresh triggers/rules without re-asking.
-
-When skipping after unautomate: set `entry.automated.enabled: true`, restore the forge `triggers` list (same five GitHub events as in Patch yaml), and if `platforms.cursor.modes` still has enabled modes, set `platforms.cursor.enabled: true`. Then continue at Ensure / Write Cursor rules.
+Skip this wizard only when `entry.automated.forge` is already a real forge (`github` / `gitlab` / `bitbucket`) **and** `entry.automated.enabled` is true, unless the user asks to reconfigure forge settings. After `/clockify-unautomate`, forge is `none` and enabled is false — always run the full wizard.
 
 1. **Forge** — AskQuestion. Only **GitHub** is implemented; present it as the choice (other forges are stubs — do not offer them as working options). Set `entry.automated.forge: github`.
 
@@ -108,7 +106,7 @@ When skipping after unautomate: set `entry.automated.enabled: true`, restore the
 
 ## Cursor platforms wizard
 
-Skip when `platforms.cursor.modes` already has mode blocks (even if `platforms.cursor.enabled` is false after unautomate), unless the user asks to reconfigure. On skip after unautomate: set `platforms.cursor.enabled: true` if any mode has `enabled: true`.
+Skip only when `platforms.cursor.enabled` is true and mode blocks already exist, unless the user asks to reconfigure. After `/clockify-unautomate`, `modes` is `{}` — always ask.
 
 Otherwise ask whether to enable Cursor Plan and Debug mode timers (defaults: **yes** for both). Optionally ask to rename the fixed task names (defaults: `agent_planning`, `agent_debug`).
 
