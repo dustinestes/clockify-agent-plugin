@@ -22,9 +22,10 @@ Architecural and structural elements of the repo.
 clockify-agent-plugin/
 ├── .cursor-plugin/plugin.json   # Cursor plugin + variables (mcpServers → .mcp.json)
 ├── .mcp.json                    # Directory + Cursor plugin MCP (npx)
-├── assets/
+├── assets/                      # Branding (logo, lockups, fonts, palette)
 ├── docs/
 ├── skills/                      # Agent Skills (Directory snapshot)
+│   └── clockify-automate/hooks/ # Inactivity hook template → consumer .cursor/hooks/
 ├── src/                         # MCP server
 ├── package.json
 └── README.md

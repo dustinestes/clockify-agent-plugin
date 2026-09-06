@@ -3,15 +3,16 @@ name: clockify-automate
 description: >-
   Turn on agent-mediated Clockify tracking: if .clockify/config.yml is missing,
   run minimal clockify-init first, then forge wizard (GitHub) + Cursor Plan/Debug
-  platforms, ensure project/tasks, and write Cursor rules from entry.automated
-  (on_start, triggers, platforms.cursor). Use when the user wants the agent to
-  start/stop timers in the issue/PR workflow and Plan/Debug modes. Safe to re-run.
+  platforms + inactivity wizard, ensure project/tasks, write Cursor rules, and
+  when inactivity is enabled install Clockify-owned inactivity hooks. Use when
+  the user wants the agent to start/stop timers in the issue/PR workflow and
+  Plan/Debug modes. Safe to re-run.
 disable-model-invocation: true
 ---
 
 # Clockify automate
 
-Mode on. This is not a second init. Wizards configure forge + Cursor platforms, patch yaml, ensure Clockify resources, and write Cursor glue.
+Mode on. This is not a second init. Wizards configure forge + Cursor platforms + inactivity, patch yaml, ensure Clockify resources, write Cursor glue, and install Clockify-owned inactivity hooks when enabled.
 
 ## Config root
 
@@ -135,6 +136,22 @@ Write under `entry.automated.platforms.cursor`:
 
 If the user declines both modes, leave `platforms.cursor.enabled: false` and `modes: {}`.
 
+## Inactivity wizard
+
+Skip only when `entry.automated.enabled` is already true **and** the user did not ask to reconfigure inactivity. After `/clockify-unautomate`, always ask (example defaults restored).
+
+1. **Enable?** AskQuestion (default **yes**):
+
+   ```text
+   Stop a running timer after inactivity to prevent runaway time?
+   yes — enable inactivity automation (hooks + rule check)
+   no — leave timers running until you stop them
+   ```
+
+2. **Minutes** — only if they chose **yes**. AskQuestion with presets (include **45** as the suggested default) and allow a custom positive integer via chat/Other. Write `stop_after_minutes` as a positive int (YAML number).
+
+3. Answers feed the patch below: `entry.automated.inactivity.enabled` and, when enabled, `stop_after_minutes`. If **no**: set `enabled: false` and keep the existing `stop_after_minutes` value (so a later re-enable keeps their minutes).
+
 ## Patch yaml
 
 After wizards, patch `.clockify/config.yml` (do not wipe unrelated keys):
@@ -159,9 +176,10 @@ After wizards, patch `.clockify/config.yml` (do not wipe unrelated keys):
   ```
 
 - `entry.automated.platforms.cursor` from the Cursor wizard
+- `entry.automated.inactivity` from the inactivity wizard
 - `scope.project` from the forge project step when set
 
-Keep rounding, overlap, and inactivity from the base yaml unless the user asks to change them.
+Keep rounding and overlap from the base yaml unless the user asks to change them.
 
 ## Ensure
 
@@ -191,11 +209,22 @@ Also:
 
 1. Leftover rename: if `.cursor/rules/clockify-time.mdc` still exists, move its content into `clockify.mdc` (or delete it after writing the new file). Do **not** leave both rule files.
 2. In the managed `.gitignore` stanza, ensure `.cursor/rules/clockify.mdc` is listed and drop any `.cursor/rules/clockify-time.mdc` line.
-3. Optionally add Cursor hooks (`sessionStart` / `sessionEnd` / `stop`) for the inactivity check — fail-open so hooks never block coding if Clockify is down. Prefer entries clearly owned by Clockify so `clockify-unautomate` can remove them surgically. There is no PR-close Cursor hook; `pr_closed` is the agent rule when the user closes or abandons a PR in this session. Plan/Debug detection is **rule-first** only (no mode hooks in this skill).
+3. There is no PR-close Cursor hook; `pr_closed` is the agent rule when the user closes or abandons a PR in this session. Plan/Debug detection is **rule-first** only (no mode hooks in this skill — [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85)).
 
-Cursor glue is personal (init already gitignores the rule path). Do not commit rules/hooks unless the team opts in; do not gitignore all of `.cursor/`.
+## Inactivity hooks
 
-Safe to re-run: update the rule; do not duplicate hook entries. Re-run ensure when templates or Cursor task names changed.
+Required when `entry.automated.inactivity.enabled` is **true** (after the inactivity wizard / patch). Not optional.
+
+1. Copy the plugin template [`hooks/clockify-inactivity.sh`](./hooks/clockify-inactivity.sh) (next to this skill) to `.cursor/hooks/clockify-inactivity.sh` and `chmod +x` it. Overwrite on re-run so the script stays current.
+2. Merge into `.cursor/hooks.json` (create with `"version": 1` and empty `hooks` if missing). Under each of `sessionStart`, `sessionEnd`, and `stop`, ensure **one** entry whose `command` is `.cursor/hooks/clockify-inactivity.sh`. Do **not** set `failClosed`. Do **not** duplicate entries that already target that script path.
+3. In the managed `.gitignore` stanza, ensure `.cursor/hooks/clockify-inactivity.sh` is listed (personal glue — same intent as the rule path). Do **not** add `.cursor/hooks.json` (shared file; committing it is user/team choice). Do not ignore all of `.cursor/` or all of `.cursor/hooks/`.
+4. If `inactivity.enabled` is **false**: remove those Clockify-owned entries (command references `clockify-inactivity` / `.cursor/hooks/clockify-inactivity.sh`) and delete `.cursor/hooks/clockify-inactivity.sh` if present. If `hooks.json` has no remaining hooks, delete the file. Remove `.cursor/hooks/clockify-inactivity.sh` from the managed `.gitignore` stanza.
+
+Ownership marker for `/clockify-unautomate`: the script path `.cursor/hooks/clockify-inactivity.sh`. Leave unrelated hooks intact.
+
+Cursor glue is personal (init already gitignores the rule path; automate adds the inactivity script path when hooks are installed). Do not commit rules/hooks unless the team opts in; do not gitignore all of `.cursor/`. Do not gitignore `.cursor/hooks.json`.
+
+Safe to re-run: update the rule and inactivity script; do not duplicate hook entries. Re-run ensure when templates or Cursor task names changed.
 
 ## Rule snippet
 
@@ -236,6 +265,9 @@ Use Clockify MCP tools only; never invent project/task ids.
 - Treat `pr_merged` as valid — GitHub merge is an unwatched action and is not supported
 - Install a background daemon
 - Skip init when config or ignore defaults are missing
+- Skip the inactivity wizard on a fresh automate (or after unautomate)
+- Skip installing inactivity hooks when `inactivity.enabled` is true
+- Leave orphan Clockify inactivity hooks/script when `inactivity.enabled` is false
 - Prefix client-picker options with numbers (`None` and `Create Client` are enough; AskQuestion adds A/B/C)
 - Use AskQuestion for the **new client name** after **Create Client** — chat only
 - Write client into `config.yml`

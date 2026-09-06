@@ -37,7 +37,7 @@ Perform [`clockify-unautomate`](../clockify-unautomate/SKILL.md) first (rule + C
 
    Also match the older header `# Clockify MCP — personal time-tracking` if a repo was inited before the rename.
 
-   If the stanza still lists the rule path (unautomate not run yet), remove those lines together.
+   If the stanza still lists the rule path or `.cursor/hooks/clockify-inactivity.sh` (unautomate not run yet), remove those lines together.
 
 3. After stanza removal: if `.gitignore` is empty or whitespace-only, delete the file (same idea as deleting empty `hooks.json` in unautomate). If any other ignore rules remain, keep the file. Never delete a non-empty `.gitignore`. No need to know whether init created the file — emptiness after our stanza is gone is enough.
 

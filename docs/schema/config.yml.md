@@ -90,7 +90,7 @@ Pass forge fields on tools as `issue_number` / `issue_title` / `label` (deprecat
 | `on_start.description` | Forge start description: `from: prompt` \| `template` (+ `template` string). |
 | `on_start.task` | Forge start task: `from: prompt` \| `template` \| `fixed` \| `local_folder` \| `none`; `if_missing: create` \| `none` \| `prompt`. |
 | `triggers` | Forge event → action pairs (see [AI contract](#ai-contract-forge-triggers)). Require `enabled: true` and a real forge (not `none`). |
-| `inactivity` | Stop guidance when a timer exceeds `stop_after_minutes` (positive int; default 45). |
+| `inactivity` | Stop guidance when a timer exceeds `stop_after_minutes` (positive int; init default 45). Automate wizard sets enable + minutes; hooks required when enabled. |
 | `platforms.cursor` | Plan/Debug mode blocks; see [Cursor platforms](#cursor-platforms). |
 
 `on_start` applies to **forge starts** only. Stop triggers ignore it. When `clockify_start_timer` is called with `cursor_mode`, the matching `platforms.cursor.modes.<mode>` block overrides forge `on_start`.
@@ -148,9 +148,9 @@ Pass `cursor_mode: plan` or `cursor_mode: debug` on `clockify_start_timer` so th
 
 ### Inactivity
 
-Best-effort on agent/session boundaries (`clockify_get_running_timer` returns `inactivity.pastThreshold` from `entry.automated.inactivity`). No background daemon while Cursor is closed.
+Set by the `/clockify-automate` inactivity wizard (`enabled` + `stop_after_minutes`). When `enabled` is true, automate **must** install Clockify-owned Cursor hooks (`sessionStart` / `sessionEnd` / `stop` via `.cursor/hooks/clockify-inactivity.sh`) — fail-open, instruct via `sessionStart` `additional_context`. The Cursor rule still backs up the check on session resume. Best-effort on agent/session boundaries (`clockify_get_running_timer` returns `inactivity.pastThreshold`). No background daemon while Cursor is closed. Temporary pause ([issue #87](https://github.com/dustinestes/clockify-agent-plugin/issues/87)) must inert/restore these hooks when it lands.
 
-`stop_after_minutes` is a positive integer (YAML `15` or `"15"`). Default is 45.
+`stop_after_minutes` is a positive integer (YAML `15` or `"15"`). Init example default is 45; automate asks and may change it.
 
 ```yaml
 entry:

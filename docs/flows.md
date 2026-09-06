@@ -18,6 +18,7 @@ Decision maps for skills. Agent procedures stay in each `SKILL.md`; field lists 
 - [clockify-automate](#clockify-automate)
   - [Forge wizard](#forge-wizard)
   - [Cursor platforms wizard](#cursor-platforms-wizard)
+  - [Inactivity wizard](#inactivity-wizard)
   - [Project client (Clockify only)](#project-client-clockify-only)
   - [AskQuestion: assign client](#askquestion-assign-client)
   - [on_start resolution](#on_start-resolution)
@@ -37,17 +38,18 @@ flowchart TD
   automate["clockify-automate"]
   forgeWiz["Forge wizard\nGitHub"]
   cursorWiz["Cursor platforms\nplan + debug"]
-  patch["Patch entry.automated +\nensure +\nrules"]
+  inactivityWiz["Inactivity wizard\nenable + minutes"]
+  patch["Patch entry.automated +\nensure + rules +\ninactivity hooks"]
 
   init --> baseYaml --> manualUse
   baseYaml --> automate
-  automate --> forgeWiz --> cursorWiz --> patch
+  automate --> forgeWiz --> cursorWiz --> inactivityWiz --> patch
 ```
 
 | Stage | Skill | User gets |
 |-------|-------|-----------|
 | Base | `/clockify-init` | Workspace pin, prompt descriptions, timer task none, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off |
-| Automated | `/clockify-automate` | Forge wizard (GitHub), Cursor Plan/Debug, ensure project/tasks, Cursor rules |
+| Automated | `/clockify-automate` | Forge wizard (GitHub), Cursor Plan/Debug, inactivity enable + minutes, ensure project/tasks, Cursor rules, inactivity hooks when enabled |
 
 ---
 
@@ -89,7 +91,7 @@ Then write `.clockify/config.yml` from the plugin example (`plugin` / `scope` / 
 
 ## clockify-automate
 
-Mode on. If config is missing, run init first. Then forge + Cursor wizards, patch yaml, ensure resources, write Cursor rules. Skill: [clockify-automate](../skills/clockify-automate/SKILL.md).
+Mode on. If config is missing, run init first. Then forge + Cursor + inactivity wizards, patch yaml, ensure resources, write Cursor rules, and install Clockify-owned inactivity hooks when enabled. Skill: [clockify-automate](../skills/clockify-automate/SKILL.md).
 
 ### Forge wizard
 
@@ -148,6 +150,15 @@ Same for `debug` with `name: agent_debug` (or renamed).
 If both declined: `platforms.cursor.enabled: false`, `modes: {}`.
 
 Plan/Debug detection is **rule-first** (`.cursor/rules/clockify.mdc`). Hook-based mode detection is out of scope here — follow-up [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85).
+
+### Inactivity wizard
+
+Skip when `entry.automated.enabled` is already true unless the user asks to reconfigure inactivity. After `/clockify-unautomate`, always ask.
+
+1. **Enable?** AskQuestion (default **yes**): stop a running timer after inactivity to prevent runaway time?
+2. **Minutes** — only if yes: AskQuestion with presets (suggested default **45**) or a custom positive int.
+
+Patch `entry.automated.inactivity`. When `enabled` is true, automate **must** install `.cursor/hooks/clockify-inactivity.sh`, register it under `sessionStart` / `sessionEnd` / `stop` in `.cursor/hooks.json` (fail-open; instruct via `sessionStart`), and add the script path to the managed `.gitignore` stanza (do **not** ignore `hooks.json`). When false, remove those Clockify-owned entries, the script, and its gitignore line. `/clockify-unautomate` removes them surgically by script path.
 
 ### Project client (Clockify only)
 
@@ -217,9 +228,9 @@ When `cursor_mode` is set, the matching `platforms.cursor.modes.<mode>` block ov
 | Direction | What |
 |-----------|------|
 | In | Existing config (or init first), `clockify_list_projects`, `clockify_list_clients`, optional `gh label list`, folder name |
-| Out (yaml) | `entry.automated.enabled: true`, `forge`, `on_start`, forge `triggers`, `platforms.cursor`; may patch `scope.project` |
+| Out (yaml) | `entry.automated.enabled: true`, `forge`, `on_start`, forge `triggers`, `platforms.cursor`, `inactivity`; may patch `scope.project` |
 | Out (Clockify) | `ensure_project` / `set_project_client` / `create_client` as needed; `ensure_task` for `{label}` labels, `local_folder`/`fixed` on_start tasks, Cursor fixed task names |
-| Out (Cursor) | `.cursor/rules/clockify.mdc` from declared triggers + platforms |
+| Out (Cursor) | `.cursor/rules/clockify.mdc` from declared triggers + platforms; when inactivity enabled, `.cursor/hooks/clockify-inactivity.sh` + `hooks.json` entries |
 
 ---
 
