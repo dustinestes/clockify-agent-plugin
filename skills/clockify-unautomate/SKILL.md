@@ -30,14 +30,14 @@ To remove `.clockify/` entirely, use [`clockify-uninit`](../clockify-uninit/SKIL
 
 1. Delete `.cursor/rules/clockify.mdc` only (leave other rules alone). Also delete leftover `.cursor/rules/clockify-time.mdc` if present — do not leave either file.
 2. Edit `.cursor/hooks.json`: drop **only** Clockify-owned hook entries — those whose `command` references `clockify-inactivity` / `.cursor/hooks/clockify-inactivity.sh`, or that only invoke Clockify tools / were added by `clockify-automate`. Leave unrelated hooks intact. Delete `.cursor/hooks/clockify-inactivity.sh` if present. If the file becomes empty or `{}` with no remaining hooks, delete `hooks.json`.
-3. If the managed gitignore stanza includes `.cursor/rules/clockify.mdc` or `.cursor/rules/clockify-time.mdc`, remove those lines (the rule file is gone). Keep:
+3. If the managed gitignore stanza includes `.cursor/rules/clockify.mdc`, `.cursor/rules/clockify-time.mdc`, or `.cursor/hooks/clockify-inactivity.sh`, remove those lines (the rule/script files are gone). Keep:
 
    ```gitignore
    # Clockify Agent Plugin — personal time-tracking (delete this block to share with the team)
    .clockify/
    ```
 
-   Normal path: the `.clockify/` stanza remains, so leave `.gitignore` in place. Edge case only: if after removing rule lines the file is empty or whitespace-only, delete it (same as empty `hooks.json`). Never delete a non-empty `.gitignore`. Full stanza teardown (and deleting an emptied file) is `clockify-uninit`.
+   Normal path: the `.clockify/` stanza remains, so leave `.gitignore` in place. Edge case only: if after removing rule/hook-script lines the file is empty or whitespace-only, delete it (same as empty `hooks.json`). Never delete a non-empty `.gitignore`. Full stanza teardown (and deleting an emptied file) is `clockify-uninit`.
 
 4. **Reset `entry.automated` in `.clockify/config.yml`** to match the plugin [`.clockify/config.yml.example`](../../.clockify/config.yml.example) automated block (do not delete the file; do not rewrite `plugin`, `scope`, `entry.timer`, or `entry.manual`):
 

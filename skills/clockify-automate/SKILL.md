@@ -217,11 +217,12 @@ Required when `entry.automated.inactivity.enabled` is **true** (after the inacti
 
 1. Copy the plugin template [`hooks/clockify-inactivity.sh`](./hooks/clockify-inactivity.sh) (next to this skill) to `.cursor/hooks/clockify-inactivity.sh` and `chmod +x` it. Overwrite on re-run so the script stays current.
 2. Merge into `.cursor/hooks.json` (create with `"version": 1` and empty `hooks` if missing). Under each of `sessionStart`, `sessionEnd`, and `stop`, ensure **one** entry whose `command` is `.cursor/hooks/clockify-inactivity.sh`. Do **not** set `failClosed`. Do **not** duplicate entries that already target that script path.
-3. If `inactivity.enabled` is **false**: remove those Clockify-owned entries (command references `clockify-inactivity` / `.cursor/hooks/clockify-inactivity.sh`) and delete `.cursor/hooks/clockify-inactivity.sh` if present. If `hooks.json` has no remaining hooks, delete the file.
+3. In the managed `.gitignore` stanza, ensure `.cursor/hooks/clockify-inactivity.sh` is listed (personal glue — same intent as the rule path). Do **not** add `.cursor/hooks.json` (shared file; committing it is user/team choice). Do not ignore all of `.cursor/` or all of `.cursor/hooks/`.
+4. If `inactivity.enabled` is **false**: remove those Clockify-owned entries (command references `clockify-inactivity` / `.cursor/hooks/clockify-inactivity.sh`) and delete `.cursor/hooks/clockify-inactivity.sh` if present. If `hooks.json` has no remaining hooks, delete the file. Remove `.cursor/hooks/clockify-inactivity.sh` from the managed `.gitignore` stanza.
 
 Ownership marker for `/clockify-unautomate`: the script path `.cursor/hooks/clockify-inactivity.sh`. Leave unrelated hooks intact.
 
-Cursor glue is personal (init already gitignores the rule path). Do not commit rules/hooks unless the team opts in; do not gitignore all of `.cursor/`.
+Cursor glue is personal (init already gitignores the rule path; automate adds the inactivity script path when hooks are installed). Do not commit rules/hooks unless the team opts in; do not gitignore all of `.cursor/`. Do not gitignore `.cursor/hooks.json`.
 
 Safe to re-run: update the rule and inactivity script; do not duplicate hook entries. Re-run ensure when templates or Cursor task names changed.
 

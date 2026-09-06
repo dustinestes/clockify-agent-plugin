@@ -158,7 +158,7 @@ Skip when `entry.automated.enabled` is already true unless the user asks to reco
 1. **Enable?** AskQuestion (default **yes**): stop a running timer after inactivity to prevent runaway time?
 2. **Minutes** — only if yes: AskQuestion with presets (suggested default **45**) or a custom positive int.
 
-Patch `entry.automated.inactivity`. When `enabled` is true, automate **must** install `.cursor/hooks/clockify-inactivity.sh` and register it under `sessionStart` / `sessionEnd` / `stop` in `.cursor/hooks.json` (fail-open; instruct via `sessionStart`). When false, remove those Clockify-owned entries and the script. `/clockify-unautomate` removes them surgically by script path.
+Patch `entry.automated.inactivity`. When `enabled` is true, automate **must** install `.cursor/hooks/clockify-inactivity.sh`, register it under `sessionStart` / `sessionEnd` / `stop` in `.cursor/hooks.json` (fail-open; instruct via `sessionStart`), and add the script path to the managed `.gitignore` stanza (do **not** ignore `hooks.json`). When false, remove those Clockify-owned entries, the script, and its gitignore line. `/clockify-unautomate` removes them surgically by script path.
 
 ### Project client (Clockify only)
 
