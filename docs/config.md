@@ -80,7 +80,7 @@ If config is missing, runs init first. Then:
 3. **Runaway wizard** — enable + `stop_after_minutes` (suggested default 45)
 4. Patches `entry.automated` (enabled, forge triggers, platforms, runaway), ensures project/tasks, writes `.cursor/rules/clockify.mdc`, and when runaway is enabled installs Clockify-owned runaway hooks (`.cursor/hooks/clockify-runaway.sh`)
 
-Plan/Debug detection is **rule-first** (the Cursor rule tells the agent when to start/stop). Hook-based mode detection is a follow-up: [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85). Runaway hooks are **required** when the runaway wizard enables them (not optional).
+Plan/Debug detection is **rule-first** (the Cursor rule tells the agent when to start/stop). Work outside configured automate scenarios is timer / enter-time. Runaway hooks are **required** when the runaway wizard enables them (not optional).
 
 ### Common automate outcomes
 

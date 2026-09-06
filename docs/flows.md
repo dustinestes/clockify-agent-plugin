@@ -149,7 +149,7 @@ Same for `debug` with `name: agent_debug` (or renamed).
 
 If both declined: `platforms.cursor.enabled: false`, `modes: {}`.
 
-Plan/Debug detection is **rule-first** (`.cursor/rules/clockify.mdc`). Hook-based mode detection is out of scope here — follow-up [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85).
+Plan/Debug detection is **rule-first** (`.cursor/rules/clockify.mdc`). Mode hooks are not supported ([#85](https://github.com/dustinestes/clockify-agent-plugin/issues/85) wontfix).
 
 ### Runaway wizard
 

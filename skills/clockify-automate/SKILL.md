@@ -214,7 +214,7 @@ Also:
 
 1. Leftover rename: if `.cursor/rules/clockify-time.mdc` still exists, move its content into `clockify.mdc` (or delete it after writing the new file). Do **not** leave both rule files.
 2. In the managed `.gitignore` stanza, ensure `.cursor/rules/clockify.mdc` is listed and drop any `.cursor/rules/clockify-time.mdc` line.
-3. There is no PR-close Cursor hook; `pr_closed` is the agent rule when the user closes or abandons a PR in this session. Plan/Debug detection is **rule-first** only (no mode hooks in this skill — [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85)).
+3. There is no PR-close Cursor hook; `pr_closed` is the agent rule when the user closes or abandons a PR in this session. Plan/Debug detection is **rule-first** only (no mode hooks — [#85](https://github.com/dustinestes/clockify-agent-plugin/issues/85) wontfix).
 
 ## Runaway hooks
 

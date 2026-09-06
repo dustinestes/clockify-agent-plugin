@@ -144,7 +144,7 @@ Each mode:
 | `description.from` | `prompt` (default) or `template` |
 | `task.from` | `fixed` (default) or `none`; fixed uses `name` (`agent_planning` / `agent_debug` by default) and `if_missing: create` |
 
-Pass `cursor_mode: plan` or `cursor_mode: debug` on `clockify_start_timer` so the mode block overrides forge `on_start`. Detection is **rule-first** (Cursor rules instruct the agent). Optional hook-based mode detection: [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85).
+Pass `cursor_mode: plan` or `cursor_mode: debug` on `clockify_start_timer` so the mode block overrides forge `on_start`. Detection is **rule-first** (Cursor rules instruct the agent). Mode hooks are not supported ([#85](https://github.com/dustinestes/clockify-agent-plugin/issues/85) wontfix).
 
 ### Runaway
 
