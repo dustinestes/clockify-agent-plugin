@@ -84,4 +84,4 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 
 ## Default yaml (unless user overrides)
 
-Copy the plugin `.clockify/config.yml.example` as the base scaffold. Roots are `plugin`, `scope`, and `entry` (`timer` / `manual` / `automated`): required workspace pin, project from `local_folder`, timer description prompt with task none (do not block starts on a task name), manual prompt defaults, `entry.automated.enabled: false` with `forge: none`, empty triggers, inactivity 45 minutes, Cursor platforms off.
+Copy the plugin `.clockify/config.yml.example` as the base scaffold. Roots are `plugin`, `scope`, and `entry` (`timer` / `manual` / `automated`): required workspace pin, project from `local_folder`, timer description prompt with task none (do not block starts on a task name), manual prompt defaults, `entry.automated.enabled: false` with `forge: none`, empty triggers, runaway ceiling 45 minutes, Cursor platforms off.

@@ -39,7 +39,7 @@ Unofficial agent plugin for [Clockify](https://clockify.me): [MCP](https://model
 | Overlap guards                          | Handle overlapping time entries based on config                                 | [schema: overlap](docs/schema/config.yml.md#overlap)         |
 | Init then Automate                      | `/clockify-init` pins workspace; `/clockify-automate` enables forge + Cursor Plan/Debug     | [Config: Init vs Automate](docs/config.md#init-vs-automate)  |
 | Description templates                   | Tokenized strings (`{issue_number}`, `{label}`, …) or agent prompt                    | [schema: placeholders](docs/schema/config.yml.md#description-placeholders) |
-| Timer Runaway Prevention  | Stop a timer after inactivity to prevent timer runaway                                  | [schema: inactivity](docs/schema/config.yml.md#inactivity)   |
+| Timer Runaway Prevention  | Ask when a running timer exceeds a ceiling so Clockify is ready for automation            | [schema: runaway](docs/schema/config.yml.md#runaway)         |
 
 ---
 
@@ -89,7 +89,7 @@ Credentials, allowlists, and non-Cursor hosts: [docs/use.md](docs/use.md).
 ### Add Clockify to a repo (each repo)
 
 1. In that repo, run `/clockify-init` — choose a Clockify workspace. Writes v3 `.clockify/config.yml` (prompt descriptions, timer starts without requiring a task; automation off). After this you can enter time with skills (start/stop timer, enter-time, summarize).
-2. Optional: run `/clockify-automate` for forge (GitHub) + Cursor Plan/Debug + inactivity, project/task ensure, Cursor rules, and inactivity hooks when enabled.
+2. Optional: run `/clockify-automate` for forge (GitHub) + Cursor Plan/Debug + runaway, project/task ensure, Cursor rules, and runaway hooks when enabled.
 
 To undo a repo without uninstalling the plugin: [docs/use.md](docs/use.md#remove-clockify-from-a-repo).
 
@@ -107,7 +107,7 @@ You talk to the agent in plain language (or run a `/skill`). The agent calls MCP
 |-------|-------|---------|---------|
 | Repo | [`clockify-init`](skills/clockify-init/SKILL.md) | Pin workspace; write v3 base config + ignore defaults (no project ensure) | `/clockify-init` |
 | Repo | [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Full local teardown (keep plugin unless asked) | `/clockify-uninit` |
-| Mode | [`clockify-automate`](skills/clockify-automate/SKILL.md) | Agent mode on: forge + Cursor Plan/Debug + inactivity, ensure, rules, hooks when inactivity enabled | `/clockify-automate` |
+| Mode | [`clockify-automate`](skills/clockify-automate/SKILL.md) | Agent mode on: forge + Cursor Plan/Debug + runaway, ensure, rules, hooks when runaway enabled | `/clockify-automate` |
 | Mode | [`clockify-unautomate`](skills/clockify-unautomate/SKILL.md) | Agent mode off: remove rule/hooks; reset `entry.automated` to example defaults | `/clockify-unautomate` |
 | Timer | [`clockify-start-timer`](skills/clockify-start-timer/SKILL.md) | Start a running timer (`entry_method: timer`) | `/clockify-start-timer` or “start a timer on this issue” |
 | Timer | [`clockify-stop-timer`](skills/clockify-stop-timer/SKILL.md) | Stop the running timer | `/clockify-stop-timer` or “stop my Clockify timer” |

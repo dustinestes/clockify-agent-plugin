@@ -25,7 +25,7 @@ clockify-agent-plugin/
 ├── assets/                      # Branding (logo, lockups, fonts, palette)
 ├── docs/
 ├── skills/                      # Agent Skills (Directory snapshot)
-│   └── clockify-automate/hooks/ # Inactivity hook template → consumer .cursor/hooks/
+│   └── clockify-automate/hooks/ # Runaway hook template → consumer .cursor/hooks/
 ├── src/                         # MCP server
 ├── package.json
 └── README.md

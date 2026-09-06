@@ -3,8 +3,8 @@ name: clockify-automate
 description: >-
   Turn on agent-mediated Clockify tracking: if .clockify/config.yml is missing,
   run minimal clockify-init first, then forge wizard (GitHub) + Cursor Plan/Debug
-  platforms + inactivity wizard, ensure project/tasks, write Cursor rules, and
-  when inactivity is enabled install Clockify-owned inactivity hooks. Use when
+  platforms + runaway wizard, ensure project/tasks, write Cursor rules, and
+  when runaway is enabled install Clockify-owned runaway hooks. Use when
   the user wants the agent to start/stop timers in the issue/PR workflow and
   Plan/Debug modes. Safe to re-run.
 disable-model-invocation: true
@@ -12,7 +12,7 @@ disable-model-invocation: true
 
 # Clockify automate
 
-Mode on. This is not a second init. Wizards configure forge + Cursor platforms + inactivity, patch yaml, ensure Clockify resources, write Cursor glue, and install Clockify-owned inactivity hooks when enabled.
+Mode on. This is not a second init. Wizards configure forge + Cursor platforms + runaway, patch yaml, ensure Clockify resources, write Cursor glue, and install Clockify-owned runaway hooks when enabled.
 
 ## Config root
 
@@ -136,21 +136,23 @@ Write under `entry.automated.platforms.cursor`:
 
 If the user declines both modes, leave `platforms.cursor.enabled: false` and `modes: {}`.
 
-## Inactivity wizard
+## Runaway wizard
 
-Skip only when `entry.automated.enabled` is already true **and** the user did not ask to reconfigure inactivity. After `/clockify-unautomate`, always ask (example defaults restored).
+Skip only when `entry.automated.enabled` is already true **and** the user did not ask to reconfigure runaway. After `/clockify-unautomate`, always ask (example defaults restored).
+
+This is **Clockify readiness**, not IDE idle detection: when the plugin next sees a running timer past `stop_after_minutes`, AskQuestion what to do so automations have a clean state. Same check for in-session resume and for a preexisting timer started outside the plugin.
 
 1. **Enable?** AskQuestion (default **yes**):
 
    ```text
-   Stop a running timer after inactivity to prevent runaway time?
-   yes — enable inactivity automation (hooks + rule check)
-   no — leave timers running until you stop them
+   Warn when a running timer exceeds a runaway ceiling (forgotten / long-running)?
+   yes — enable runaway checks (hooks + AskQuestion when past ceiling)
+   no — leave long-running timers alone until you stop them
    ```
 
-2. **Minutes** — only if they chose **yes**. AskQuestion with presets (include **45** as the suggested default) and allow a custom positive integer via chat/Other. Write `stop_after_minutes` as a positive int (YAML number).
+2. **Minutes** — only if they chose **yes**. AskQuestion with presets (include **45** as the suggested default) and allow a custom positive integer via chat/Other. Calibrate to their workflow (e.g. “a timer this long would be unusual”). Write `stop_after_minutes` as a positive int (YAML number).
 
-3. Answers feed the patch below: `entry.automated.inactivity.enabled` and, when enabled, `stop_after_minutes`. If **no**: set `enabled: false` and keep the existing `stop_after_minutes` value (so a later re-enable keeps their minutes).
+3. Answers feed the patch below: `entry.automated.runaway.enabled` and, when enabled, `stop_after_minutes`. If **no**: set `enabled: false` and keep the existing `stop_after_minutes` value (so a later re-enable keeps their minutes).
 
 ## Patch yaml
 
@@ -176,7 +178,7 @@ After wizards, patch `.clockify/config.yml` (do not wipe unrelated keys):
   ```
 
 - `entry.automated.platforms.cursor` from the Cursor wizard
-- `entry.automated.inactivity` from the inactivity wizard
+- `entry.automated.runaway` from the runaway wizard
 - `scope.project` from the forge project step when set
 
 Keep rounding and overlap from the base yaml unless the user asks to change them.
@@ -202,7 +204,10 @@ Add or update `.cursor/rules/clockify.mdc` from the **declared** config (trigger
 - **Plan start** only when there is **no** issue in context; if an issue is in context, use forge `issue_start` instead
 - **Build** (leaving Plan) = **stop only** — do not start a Build timer
 - Warn before any start that would replace a different running timer (same as `issue_switch`)
-- On session start / resume → `clockify_get_running_timer`; if `inactivity.pastThreshold`, stop (or ask)
+- On session start / resume (and whenever checking a running timer) → `clockify_get_running_timer`; if `runaway.pastCeiling`, **AskQuestion** (do not silently stop):
+  1. Keep running — valid long session
+  2. Stop and cap — `clockify_stop_timer` with `runaway_stop: true` and `entry_method: automated` (end = start + stop_after_minutes; no stop rounding)
+  3. Stop at now — normal `clockify_stop_timer` with `entry_method: automated` (wall time + rounding)
 - If a tool returns `overlap: true`, ask before `confirm_overlap: true` unless `overlap.on_conflict` is `override`
 
 Also:
@@ -211,20 +216,20 @@ Also:
 2. In the managed `.gitignore` stanza, ensure `.cursor/rules/clockify.mdc` is listed and drop any `.cursor/rules/clockify-time.mdc` line.
 3. There is no PR-close Cursor hook; `pr_closed` is the agent rule when the user closes or abandons a PR in this session. Plan/Debug detection is **rule-first** only (no mode hooks in this skill — [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85)).
 
-## Inactivity hooks
+## Runaway hooks
 
-Required when `entry.automated.inactivity.enabled` is **true** (after the inactivity wizard / patch). Not optional.
+Required when `entry.automated.runaway.enabled` is **true** (after the runaway wizard / patch). Not optional.
 
-1. Copy the plugin template [`hooks/clockify-inactivity.sh`](./hooks/clockify-inactivity.sh) (next to this skill) to `.cursor/hooks/clockify-inactivity.sh` and `chmod +x` it. Overwrite on re-run so the script stays current.
-2. Merge into `.cursor/hooks.json` (create with `"version": 1` and empty `hooks` if missing). Under each of `sessionStart`, `sessionEnd`, and `stop`, ensure **one** entry whose `command` is `.cursor/hooks/clockify-inactivity.sh`. Do **not** set `failClosed`. Do **not** duplicate entries that already target that script path.
-3. In the managed `.gitignore` stanza, ensure `.cursor/hooks/clockify-inactivity.sh` is listed (personal glue — same intent as the rule path). Do **not** add `.cursor/hooks.json` (shared file; committing it is user/team choice). Do not ignore all of `.cursor/` or all of `.cursor/hooks/`.
-4. If `inactivity.enabled` is **false**: remove those Clockify-owned entries (command references `clockify-inactivity` / `.cursor/hooks/clockify-inactivity.sh`) and delete `.cursor/hooks/clockify-inactivity.sh` if present. If `hooks.json` has no remaining hooks, delete the file. Remove `.cursor/hooks/clockify-inactivity.sh` from the managed `.gitignore` stanza.
+1. Copy the plugin template [`hooks/clockify-runaway.sh`](./hooks/clockify-runaway.sh) (next to this skill) to `.cursor/hooks/clockify-runaway.sh` and `chmod +x` it. Overwrite on re-run so the script stays current.
+2. Merge into `.cursor/hooks.json` (create with `"version": 1` and empty `hooks` if missing). Under each of `sessionStart`, `sessionEnd`, and `stop`, ensure **one** entry whose `command` is `.cursor/hooks/clockify-runaway.sh`. Do **not** set `failClosed`. Do **not** duplicate entries that already target that script path.
+3. In the managed `.gitignore` stanza, ensure `.cursor/hooks/clockify-runaway.sh` is listed (personal glue — same intent as the rule path). Do **not** add `.cursor/hooks.json` (shared file; committing it is user/team choice). Do not ignore all of `.cursor/` or all of `.cursor/hooks/`.
+4. If `runaway.enabled` is **false**: remove those Clockify-owned entries (command references `clockify-runaway` / `.cursor/hooks/clockify-runaway.sh`) and delete `.cursor/hooks/clockify-runaway.sh` if present. If `hooks.json` has no remaining hooks, delete the file. Remove `.cursor/hooks/clockify-runaway.sh` from the managed `.gitignore` stanza. If `.cursor/hooks/` is then empty, delete the empty directory.
 
-Ownership marker for `/clockify-unautomate`: the script path `.cursor/hooks/clockify-inactivity.sh`. Leave unrelated hooks intact.
+Ownership marker for `/clockify-unautomate`: the script path `.cursor/hooks/clockify-runaway.sh`. Leave unrelated hooks intact.
 
-Cursor glue is personal (init already gitignores the rule path; automate adds the inactivity script path when hooks are installed). Do not commit rules/hooks unless the team opts in; do not gitignore all of `.cursor/`. Do not gitignore `.cursor/hooks.json`.
+Cursor glue is personal (init already gitignores the rule path; automate adds the runaway script path when hooks are installed). Do not commit rules/hooks unless the team opts in; do not gitignore all of `.cursor/`. Do not gitignore `.cursor/hooks.json`.
 
-Safe to re-run: update the rule and inactivity script; do not duplicate hook entries. Re-run ensure when templates or Cursor task names changed.
+Safe to re-run: update the rule and runaway script; do not duplicate hook entries. Re-run ensure when templates or Cursor task names changed.
 
 ## Rule snippet
 
@@ -254,7 +259,9 @@ when no issue is in context; with an issue in context use issue_start. Build
 (leaving Plan) is stop only — do not start a Build timer. Warn before start
 when a different timer is running.
 
-Check running timers for inactivity on session resume. Honor overlap.on_conflict.
+On session resume / when checking a running timer: if runaway.pastCeiling,
+AskQuestion (keep running | stop and cap with runaway_stop | stop at now).
+Honor overlap.on_conflict.
 
 Use Clockify MCP tools only; never invent project/task ids.
 ```
@@ -265,9 +272,10 @@ Use Clockify MCP tools only; never invent project/task ids.
 - Treat `pr_merged` as valid — GitHub merge is an unwatched action and is not supported
 - Install a background daemon
 - Skip init when config or ignore defaults are missing
-- Skip the inactivity wizard on a fresh automate (or after unautomate)
-- Skip installing inactivity hooks when `inactivity.enabled` is true
-- Leave orphan Clockify inactivity hooks/script when `inactivity.enabled` is false
+- Skip the runaway wizard on a fresh automate (or after unautomate)
+- Skip installing runaway hooks when `runaway.enabled` is true
+- Leave orphan Clockify runaway hooks/script when `runaway.enabled` is false
+- Silently stop a timer past the runaway ceiling — always AskQuestion first
 - Prefix client-picker options with numbers (`None` and `Create Client` are enough; AskQuestion adds A/B/C)
 - Use AskQuestion for the **new client name** after **Create Client** — chat only
 - Write client into `config.yml`

@@ -90,7 +90,7 @@ const overlapSchema = z
   })
   .default({});
 
-const inactivitySchema = z
+const runawaySchema = z
   .object({
     enabled: z.boolean().default(false),
     stop_after_minutes: positiveInt.default(45),
@@ -186,7 +186,7 @@ const automatedMethodSchema = z
         }),
       )
       .default([]),
-    inactivity: inactivitySchema,
+    runaway: runawaySchema,
     platforms: platformsSchema,
   })
   .default({});
@@ -283,7 +283,7 @@ function rejectLegacyTaskFrom(
 
 export type ClockifyConfig = z.infer<typeof clockifyConfigSchema>;
 export type RoundingConfig = ClockifyConfig["entry"]["timer"]["rounding"];
-export type InactivityConfig = ClockifyConfig["entry"]["automated"]["inactivity"];
+export type RunawayConfig = ClockifyConfig["entry"]["automated"]["runaway"];
 export type DescriptionConfig =
   | ClockifyConfig["entry"]["timer"]["description"]
   | ClockifyConfig["entry"]["manual"]["description"]
@@ -720,15 +720,24 @@ export function applyRoundingToInterval(
   };
 }
 
-export function isTimerPastInactivity(
+export function isTimerPastRunawayCeiling(
   startedAtIso: string,
-  inactivity: InactivityConfig,
+  runaway: RunawayConfig,
   now = new Date(),
 ): boolean {
-  if (!inactivity.enabled) return false;
+  if (!runaway.enabled) return false;
   const started = new Date(startedAtIso).getTime();
-  const limitMs = inactivity.stop_after_minutes * 60 * 1000;
+  const limitMs = runaway.stop_after_minutes * 60 * 1000;
   return now.getTime() - started >= limitMs;
+}
+
+/** Hard ceiling end for runaway-path stop: start + stop_after_minutes (no rounding). */
+export function runawayCeilingEndIso(
+  startedAtIso: string,
+  stopAfterMinutes: number,
+): string {
+  const startMs = new Date(startedAtIso).getTime();
+  return new Date(startMs + stopAfterMinutes * 60 * 1000).toISOString();
 }
 
 export type EntryMethod = "timer" | "manual" | "automated";

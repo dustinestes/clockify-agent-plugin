@@ -20,7 +20,7 @@ v2 root keys (`plugin_internal`, `entry_methods`) fail closed — re-run `/clock
   - [Overlap](#overlap)
   - [AI contract (forge triggers)](#ai-contract-forge-triggers)
   - [Cursor platforms](#cursor-platforms)
-  - [Inactivity](#inactivity)
+  - [Runaway](#runaway)
 - [Tools that honor config](#tools-that-honor-config)
 
 ---
@@ -90,7 +90,7 @@ Pass forge fields on tools as `issue_number` / `issue_title` / `label` (deprecat
 | `on_start.description` | Forge start description: `from: prompt` \| `template` (+ `template` string). |
 | `on_start.task` | Forge start task: `from: prompt` \| `template` \| `fixed` \| `local_folder` \| `none`; `if_missing: create` \| `none` \| `prompt`. |
 | `triggers` | Forge event → action pairs (see [AI contract](#ai-contract-forge-triggers)). Require `enabled: true` and a real forge (not `none`). |
-| `inactivity` | Stop guidance when a timer exceeds `stop_after_minutes` (positive int; init default 45). Automate wizard sets enable + minutes; hooks required when enabled. |
+| `runaway` | Clockify readiness: when a running timer exceeds `stop_after_minutes` (positive int; init default 45), AskQuestion before continuing. Automate wizard sets enable + minutes; hooks required when enabled. |
 | `platforms.cursor` | Plan/Debug mode blocks; see [Cursor platforms](#cursor-platforms). |
 
 `on_start` applies to **forge starts** only. Stop triggers ignore it. When `clockify_start_timer` is called with `cursor_mode`, the matching `platforms.cursor.modes.<mode>` block overrides forge `on_start`.
@@ -146,11 +146,19 @@ Each mode:
 
 Pass `cursor_mode: plan` or `cursor_mode: debug` on `clockify_start_timer` so the mode block overrides forge `on_start`. Detection is **rule-first** (Cursor rules instruct the agent). Optional hook-based mode detection: [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85).
 
-### Inactivity
+### Runaway
 
-Set by the `/clockify-automate` inactivity wizard (`enabled` + `stop_after_minutes`). When `enabled` is true, automate **must** install Clockify-owned Cursor hooks (`sessionStart` / `sessionEnd` / `stop` via `.cursor/hooks/clockify-inactivity.sh`) — fail-open, instruct via `sessionStart` `additional_context`. The Cursor rule still backs up the check on session resume. Best-effort on agent/session boundaries (`clockify_get_running_timer` returns `inactivity.pastThreshold`). No background daemon while Cursor is closed. Temporary pause ([issue #87](https://github.com/dustinestes/clockify-agent-plugin/issues/87)) must inert/restore these hooks when it lands.
+**Clockify readiness**, not IDE idle detection. When the plugin (or agent) next interacts with Clockify and finds a **running** timer whose duration already exceeds `stop_after_minutes`, AskQuestion so automations have an intentional state:
 
-`stop_after_minutes` is a positive integer (YAML `15` or `"15"`). Init example default is 45; automate asks and may change it.
+1. Keep running — valid long session
+2. Stop and cap — end at `start + stop_after_minutes` (hard ceiling; **no stop rounding**)
+3. Stop at now — full wall duration + normal rounding
+
+Same check for in-session resume and for a preexisting timer started outside the plugin / before Cursor opened. Detection is a **floor** (at least N minutes before `pastCeiling`); not a guarantee of action at minute N. No background daemon. Intentional `/clockify-stop-timer` without `runaway_stop` ignores the ceiling.
+
+Set by the `/clockify-automate` runaway wizard (`enabled` + `stop_after_minutes`). When `enabled` is true, automate **must** install Clockify-owned Cursor hooks (`sessionStart` / `sessionEnd` / `stop` via `.cursor/hooks/clockify-runaway.sh`) — fail-open; `sessionStart` instructs AskQuestion when `pastCeiling`. Temporary pause ([issue #87](https://github.com/dustinestes/clockify-agent-plugin/issues/87)) must inert/restore these hooks when it lands.
+
+`stop_after_minutes` is a positive integer (YAML `15` or `"15"`). Init example default is 45; automate asks and may change it. Calibrate to workflow (e.g. “a timer this long would be unusual for my issue work”).
 
 ```yaml
 entry:
@@ -160,7 +168,7 @@ entry:
       increment_minutes: 15
       mode: down
   automated:
-    inactivity:
+    runaway:
       enabled: true
       stop_after_minutes: 15
 ```
@@ -177,7 +185,7 @@ Full catalog: [mcp.md](../mcp.md). Tools that read `.clockify/config.yml`:
 - `clockify_start_timer` - optional `start`, `entry_method`, `cursor_mode`, `label` / template fields; timer/`automated` include_seconds + start rounding + gap-fit + overlap
 - `clockify_stop_timer` - `entry_method` end rounding, include_seconds, overlap
 - `clockify_create_time_entry` - `manual`/`automated` description + overlap (no rounding)
-- `clockify_get_running_timer` - `entry.automated.inactivity`
+- `clockify_get_running_timer` - `entry.automated.runaway`
 - `clockify_ensure_project` / `clockify_ensure_task` - taxonomy bootstrap (`client_id` on create; `clockify_set_project_client` to assign on existing)
 
 ---

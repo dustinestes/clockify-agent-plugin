@@ -21,16 +21,16 @@ To remove `.clockify/` entirely, use [`clockify-uninit`](../clockify-uninit/SKIL
 ## Confirm
 
 1. Inventory with tools if needed, then **repeat the result in a normal chat message** (markdown list of paths). Do not rely on tool snippets as the only listing.
-2. Chat list: rule + Clockify-owned hooks (including `.cursor/hooks/clockify-inactivity.sh` when present), and note that `entry.automated` in `.clockify/config.yml` will be **reset to example defaults** (forge/on_start/modes wiped). The managed `.clockify/` gitignore line stays. `plugin` / `scope` / `entry.timer` / `entry.manual` are not touched.
+2. Chat list: rule + Clockify-owned hooks (including `.cursor/hooks/clockify-runaway.sh` when present), and note empty dirs that will be removed if they become empty after cleanup. Note that `entry.automated` in `.clockify/config.yml` will be **reset to example defaults** (forge/on_start/modes wiped). The managed `.clockify/` gitignore line stays. `plugin` / `scope` / `entry.timer` / `entry.manual` are not touched.
 3. Then AskQuestion with **only** a short confirm, e.g. “Roll back Clockify automate in this repo?” — do **not** put the inventory in the question box.
 4. Do **not** delete `.clockify/` or the managed `.clockify/` gitignore line.
 5. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
 
 ## Removals
 
-1. Delete `.cursor/rules/clockify.mdc` only (leave other rules alone). Also delete leftover `.cursor/rules/clockify-time.mdc` if present — do not leave either file.
-2. Edit `.cursor/hooks.json`: drop **only** Clockify-owned hook entries — those whose `command` references `clockify-inactivity` / `.cursor/hooks/clockify-inactivity.sh`, or that only invoke Clockify tools / were added by `clockify-automate`. Leave unrelated hooks intact. Delete `.cursor/hooks/clockify-inactivity.sh` if present. If the file becomes empty or `{}` with no remaining hooks, delete `hooks.json`.
-3. If the managed gitignore stanza includes `.cursor/rules/clockify.mdc`, `.cursor/rules/clockify-time.mdc`, or `.cursor/hooks/clockify-inactivity.sh`, remove those lines (the rule/script files are gone). Keep:
+1. Delete `.cursor/rules/clockify.mdc` only (leave other rules alone). Also delete leftover `.cursor/rules/clockify-time.mdc` if present — do not leave either file. If `.cursor/rules/` is then **empty**, delete the empty directory. Never delete a non-empty `rules/` dir or unrelated `*.mdc` files.
+2. Edit `.cursor/hooks.json`: drop **only** Clockify-owned hook entries — those whose `command` references `clockify-runaway` / `.cursor/hooks/clockify-runaway.sh`, or that only invoke Clockify tools / were added by `clockify-automate`. Leave unrelated hooks intact. Delete `.cursor/hooks/clockify-runaway.sh` if present. If the file becomes empty or `{}` with no remaining hooks, delete `hooks.json`. If `.cursor/hooks/` is then **empty**, delete the empty directory. Never delete unrelated hook scripts or a non-empty `hooks/` dir. Do **not** delete `.cursor/` wholesale.
+3. If the managed gitignore stanza includes `.cursor/rules/clockify.mdc`, `.cursor/rules/clockify-time.mdc`, or `.cursor/hooks/clockify-runaway.sh`, remove those lines (the rule/script files are gone). Keep:
 
    ```gitignore
    # Clockify Agent Plugin — personal time-tracking (delete this block to share with the team)
@@ -63,7 +63,7 @@ To remove `.clockify/` entirely, use [`clockify-uninit`](../clockify-uninit/SKIL
      overlap:
        on_conflict: prompt
      triggers: []
-     inactivity:
+     runaway:
        enabled: true
        stop_after_minutes: 45
      platforms:
@@ -77,6 +77,8 @@ To remove `.clockify/` entirely, use [`clockify-uninit`](../clockify-uninit/SKIL
 ## Do not
 
 - Wipe unrelated Cursor hooks or rules
+- Delete a non-empty `.cursor/hooks/` or `.cursor/rules/` directory
+- Delete `.cursor/` wholesale
 - Delete `.clockify/` or a non-empty `.gitignore`
 - Leave forge / `on_start` / `platforms.cursor.modes` in place “for convenience”
 - Invent retain-vs-reask rules for a later `/clockify-automate` — the next automate run is a full wizard again

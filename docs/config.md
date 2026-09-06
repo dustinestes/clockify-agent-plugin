@@ -67,7 +67,7 @@ Pins the workspace and writes v3 yaml from [`.clockify/config.yml.example`](../.
 - `scope.project.from: local_folder`
 - `entry.timer` — description `from: prompt`; task `from: none` (start without blocking on a task name)
 - `entry.manual` — description and task `from: prompt`
-- `entry.automated.enabled: false`, `forge: none`, empty `triggers`, inactivity 45 minutes, `platforms.cursor` off
+- `entry.automated.enabled: false`, `forge: none`, empty `triggers`, runaway ceiling 45 minutes, `platforms.cursor` off
 
 Does **not** create Clockify projects or tasks. Timer and enter-time work after init; run `/clockify-automate` when you want agent automation.
 
@@ -77,10 +77,10 @@ If config is missing, runs init first. Then:
 
 1. **Forge wizard** — GitHub (`entry.automated.forge: github`), how `scope.project` resolves, `on_start` description/task (and `when_multiple_labels` when `{label}` is used), optional client on ensure
 2. **Cursor platforms wizard** — Plan/Debug mode timers (`platforms.cursor.modes.plan` / `debug`)
-3. **Inactivity wizard** — enable + `stop_after_minutes` (suggested default 45)
-4. Patches `entry.automated` (enabled, forge triggers, platforms, inactivity), ensures project/tasks, writes `.cursor/rules/clockify.mdc`, and when inactivity is enabled installs Clockify-owned inactivity hooks (`.cursor/hooks/clockify-inactivity.sh`)
+3. **Runaway wizard** — enable + `stop_after_minutes` (suggested default 45)
+4. Patches `entry.automated` (enabled, forge triggers, platforms, runaway), ensures project/tasks, writes `.cursor/rules/clockify.mdc`, and when runaway is enabled installs Clockify-owned runaway hooks (`.cursor/hooks/clockify-runaway.sh`)
 
-Plan/Debug detection is **rule-first** (the Cursor rule tells the agent when to start/stop). Hook-based mode detection is a follow-up: [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85). Inactivity hooks are **required** when the inactivity wizard enables them (not optional).
+Plan/Debug detection is **rule-first** (the Cursor rule tells the agent when to start/stop). Hook-based mode detection is a follow-up: [issue #85](https://github.com/dustinestes/clockify-agent-plugin/issues/85). Runaway hooks are **required** when the runaway wizard enables them (not optional).
 
 ### Common automate outcomes
 
@@ -142,7 +142,7 @@ Full field list: [schema/config.yml.md](./schema/config.yml.md). Wizard maps: [f
 
 - **Default:** do not commit `.clockify/`. Init writes a directory self-ignore and a managed stanza in the repo `.gitignore`.
 - **Team opt-in:** delete the managed ignore block and commit `.clockify/` on purpose if the team wants shared standards. Still never commit API keys.
-- **Cursor glue:** `.cursor/rules/clockify.mdc` is listed in the managed stanza when automate writes rules; `.cursor/hooks/clockify-inactivity.sh` is listed when inactivity hooks are installed. Do **not** ignore `.cursor/hooks.json` (shared) or all of `.cursor/`.
+- **Cursor glue:** `.cursor/rules/clockify.mdc` is listed in the managed stanza when automate writes rules; `.cursor/hooks/clockify-runaway.sh` is listed when runaway hooks are installed. Do **not** ignore `.cursor/hooks.json` (shared) or all of `.cursor/`.
 - **Cleanup:** run `clockify-unautomate` to drop Cursor glue and **reset** `entry.automated` to example defaults (full rollback — not a pause). Temporary disable/enable without losing settings: [#87](https://github.com/dustinestes/clockify-agent-plugin/issues/87). Or `clockify-uninit` for full local teardown. Uninit removes the managed gitignore stanza; if `.gitignore` is then empty (or whitespace-only), it deletes the file. A non-empty `.gitignore` is never deleted.
 - A global `core.excludesfile` can ignore Clockify files in every repo; it is an extra option, not a substitute for init’s repo-local default.
 
