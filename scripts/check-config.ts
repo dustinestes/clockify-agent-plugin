@@ -19,7 +19,8 @@ import {
   gapFitStart,
   intervalsOverlap,
   isAutomationConfigured,
-  isTimerPastInactivity,
+  isTimerPastRunawayCeiling,
+  runawayCeilingEndIso,
   latestCompletedEnd,
   listCursorModeTasksToEnsure,
   loadClockifyConfig,
@@ -48,7 +49,7 @@ const cfg = clockifyConfigSchema.parse({
       enabled: true,
       forge: "github",
       triggers: [{ event: "issue_start", action: "start_timer" }],
-      inactivity: { enabled: true, stop_after_minutes: 45 },
+      runaway: { enabled: true, stop_after_minutes: 45 },
       on_start: {
         description: {
           from: "template",
@@ -232,7 +233,7 @@ assert.equal(billingFloor.end, "2026-08-09T19:00:00.000Z");
 
 const started = new Date(Date.now() - 50 * 60 * 1000).toISOString();
 assert.equal(
-  isTimerPastInactivity(started, cfg.entry.automated.inactivity),
+  isTimerPastRunawayCeiling(started, cfg.entry.automated.runaway),
   true,
 );
 
@@ -668,7 +669,7 @@ entry:
   automated:
     enabled: true
     forge: github
-    inactivity:
+    runaway:
       enabled: true
       stop_after_minutes: 15
     triggers:
@@ -677,7 +678,7 @@ entry:
 `),
 );
 assert.equal(customMinutes.entry.timer.rounding.mode, "down");
-assert.equal(customMinutes.entry.automated.inactivity.stop_after_minutes, 15);
+assert.equal(customMinutes.entry.automated.runaway.stop_after_minutes, 15);
 assert.equal(customMinutes.entry.automated.triggers[0]?.event, "pr_closed");
 
 const quotedMinutes = parseClockifyConfig(
@@ -692,32 +693,35 @@ entry:
       increment_minutes: "30"
       minimum_minutes: "20"
   automated:
-    inactivity:
+    runaway:
       stop_after_minutes: "15"
 `),
 );
 assert.equal(quotedMinutes.entry.timer.rounding.increment_minutes, 30);
 assert.equal(quotedMinutes.entry.timer.rounding.minimum_minutes, 20);
-assert.equal(quotedMinutes.entry.automated.inactivity.stop_after_minutes, 15);
+assert.equal(quotedMinutes.entry.automated.runaway.stop_after_minutes, 15);
 
-const shortInactivity = {
+const shortRunaway = {
   enabled: true,
   stop_after_minutes: 15,
 };
 assert.equal(
-  isTimerPastInactivity(
+  isTimerPastRunawayCeiling(
     new Date(Date.now() - 20 * 60 * 1000).toISOString(),
-    shortInactivity,
+    shortRunaway,
   ),
   true,
 );
 assert.equal(
-  isTimerPastInactivity(
+  isTimerPastRunawayCeiling(
     new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-    shortInactivity,
+    shortRunaway,
   ),
   false,
 );
+
+const ceilingEnd = runawayCeilingEndIso("2026-09-06T12:00:00.000Z", 45);
+assert.equal(ceilingEnd, "2026-09-06T12:45:00.000Z");
 
 function assertInvalidConfig(raw: unknown, ...needles: string[]): void {
   try {

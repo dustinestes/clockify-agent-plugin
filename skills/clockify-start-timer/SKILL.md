@@ -22,7 +22,7 @@ Interactive **Timer** method (`entry_method: timer`). Agent-mediated starts belo
 
 1. `clockify_get_running_timer` with `config_root`.
    - Same work already running (same issue / same description): report it. Do **not** stop or start again.
-   - Anything else running (including inactivity `pastThreshold`): **do not stop yet.** Show description, project, duration (and inactivity if past threshold). Ask whether to stop it and start the new one. Only stop-then-start after they confirm. If they decline, leave the running timer.
+   - Anything else running (including runaway `pastCeiling`): **do not stop yet.** Show description, project, duration (and runaway ceiling if past). Ask whether to stop it and start the new one. Only stop-then-start after they confirm. If they decline, leave the running timer. If they stop and it was past ceiling, AskQuestion cap (`runaway_stop: true`) vs stop at now before calling `clockify_stop_timer`.
    - Nothing running: continue.
 2. Resolve project: user name, config `local_folder` name, or list/ensure.
 3. Resolve task from `entry.timer.task.from` — **never block the start waiting on a task.** A missing task is fine; a missing time entry is not. They can assign a task later in Clockify.

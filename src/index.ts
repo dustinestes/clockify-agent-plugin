@@ -16,7 +16,8 @@ import {
   completedOverlaps,
   floorToMinute,
   gapFitStart,
-  isTimerPastInactivity,
+  isTimerPastRunawayCeiling,
+  runawayCeilingEndIso,
   latestCompletedEnd,
   describeConfigDiscovery,
   loadClockifyConfig,
@@ -620,7 +621,7 @@ registerClockifyTool(
   {
     title: "Get running timer",
     description:
-      "Returns the currently running timer for the user, if any. Includes inactivity hint from .clockify/config.yml when configured." +
+      "Returns the currently running timer for the user, if any. Includes runaway ceiling hint from .clockify/config.yml when configured." +
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
@@ -632,19 +633,19 @@ registerClockifyTool(
       const running = await client(config_root).getRunningTimer(workspace_id);
       if (!running) return textResult({ running: false });
       const loaded = loadConfig(config_root);
-      const inactivity = loaded.config.entry.automated.inactivity;
-      const pastInactivity = isTimerPastInactivity(
+      const runaway = loaded.config.entry.automated.runaway;
+      const pastCeiling = isTimerPastRunawayCeiling(
         running.timeInterval.start,
-        inactivity,
+        runaway,
       );
       return textResult({
         ...running,
-        inactivity: {
-          enabled: inactivity.enabled,
-          stop_after_minutes: inactivity.stop_after_minutes,
-          pastThreshold: pastInactivity,
-          recommendation: pastInactivity
-            ? "Timer exceeded inactivity threshold - stop it (or ask the user) per .clockify/config.yml."
+        runaway: {
+          enabled: runaway.enabled,
+          stop_after_minutes: runaway.stop_after_minutes,
+          pastCeiling,
+          guidance: pastCeiling
+            ? "Timer is past the runaway ceiling. Ask the user: keep running, stop and cap at start+stop_after_minutes (runaway_stop), or stop at now. Do not silently stop."
             : undefined,
         },
       });
@@ -815,7 +816,7 @@ registerClockifyTool(
   {
     title: "Stop timer",
     description:
-      "Stops the currently running timer. Honors entry_method rounding (end only), include_seconds, and overlap.on_conflict." +
+      "Stops the currently running timer. Honors entry_method rounding (end only), include_seconds, and overlap.on_conflict. Pass runaway_stop true after the user chooses a runaway ceiling stop (end = start + stop_after_minutes, no stop rounding)." +
       CONFIG_ROOT_TOOL_HINT,
     inputSchema: {
       config_root: configRootField,
@@ -832,6 +833,12 @@ registerClockifyTool(
         .boolean()
         .optional()
         .describe("Override config rounding (default: use the entry_method block)."),
+      runaway_stop: z
+        .boolean()
+        .optional()
+        .describe(
+          "When true and runaway.enabled, set end to start + stop_after_minutes (hard ceiling; skip stop rounding). Use only after AskQuestion for pastCeiling.",
+        ),
     },
   },
   async ({
@@ -840,6 +847,7 @@ registerClockifyTool(
     entry_method,
     confirm_overlap,
     apply_rounding,
+    runaway_stop,
   }) => {
     try {
       const loaded = loadConfig(config_root);
@@ -858,19 +866,34 @@ registerClockifyTool(
 
       const method: TimerEntryMethod = entry_method ?? "timer";
       const block = loaded.config.entry[method];
-      const rounding = {
-        ...block.rounding,
-        enabled: apply_rounding ?? block.rounding.enabled,
-      };
-      let endIso = new Date().toISOString();
-      if (!block.include_seconds) {
-        endIso = floorToMinute(endIso);
+      const runaway = loaded.config.entry.automated.runaway;
+      const useRunawayCeiling = Boolean(runaway_stop) && runaway.enabled;
+
+      let stopped: { end: string; rawEnd: string; applied: boolean };
+      if (useRunawayCeiling) {
+        let endIso = runawayCeilingEndIso(
+          running.timeInterval.start,
+          runaway.stop_after_minutes,
+        );
+        if (!block.include_seconds) {
+          endIso = floorToMinute(endIso);
+        }
+        stopped = { end: endIso, rawEnd: endIso, applied: false };
+      } else {
+        const rounding = {
+          ...block.rounding,
+          enabled: apply_rounding ?? block.rounding.enabled,
+        };
+        let endIso = new Date().toISOString();
+        if (!block.include_seconds) {
+          endIso = floorToMinute(endIso);
+        }
+        stopped = applyStopRounding(
+          running.timeInterval.start,
+          endIso,
+          rounding,
+        );
       }
-      const stopped = applyStopRounding(
-        running.timeInterval.start,
-        endIso,
-        rounding,
-      );
       const nearby = await loadEntriesAround(
         api,
         workspace_id,
@@ -894,8 +917,10 @@ registerClockifyTool(
       }
 
       const entry = await api.stopTimer(workspace_id, stopped.end);
+      const rounding = block.rounding;
       return textResult({
         entry,
+        runaway_stop: useRunawayCeiling,
         rounding: {
           applied: stopped.applied,
           mode: rounding.stop_mode ?? rounding.mode,

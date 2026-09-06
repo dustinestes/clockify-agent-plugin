@@ -55,7 +55,7 @@ entry:
     overlap:
       on_conflict: prompt
     triggers: []
-    inactivity:
+    runaway:
       enabled: true
       stop_after_minutes: 45
     platforms:

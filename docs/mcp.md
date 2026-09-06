@@ -32,7 +32,7 @@ Clockify Agent Plugin MCP tools and other configuration information.
 | `clockify_list_tags` | List tags |
 | `clockify_list_tasks` | List tasks on a project |
 | `clockify_ensure_task` | Find or create task (e.g. forge label name) |
-| `clockify_get_running_timer` | Current running timer (+ inactivity hint) |
+| `clockify_get_running_timer` | Current running timer (+ runaway ceiling hint) |
 | `clockify_start_timer` | Start a timer (optional start; `entry_method`; `cursor_mode`; template fields including `label`) |
 | `clockify_stop_timer` | Stop the running timer (optional rounding) |
 | `clockify_create_time_entry` | Create a completed entry (explicit start/end; no rounding) |
