@@ -214,6 +214,8 @@ Related npm scripts (wrappers only; same flags underneath):
 # Test Automated
 /clockify-automate
 # Start work that would hit one of the triggers configured in config.yml
+/clockify-automate-disable
+/clockify-automate-enable
 /clockify-unautomate
 
 # Test Status and Summarizer

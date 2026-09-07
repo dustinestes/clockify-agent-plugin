@@ -3,9 +3,10 @@ name: clockify-uninit
 description: >-
   Remove Clockify integration artifacts from a consumer repo: .clockify/,
   clockify rule, Clockify-owned hooks, and the managed gitignore stanza.
-  Use when uninstalling repo Clockify standards. To keep config and only turn
-  off agent mode, use clockify-unautomate instead. Does not uninstall the
-  Clockify Agent Plugin unless the user asks.
+  Use when uninstalling repo Clockify standards. To pause and keep settings,
+  use clockify-automate-disable; to reset automate yaml and keep config, use
+  clockify-unautomate. Does not uninstall the Clockify Agent Plugin unless the
+  user asks.
 disable-model-invocation: true
 ---
 
@@ -13,7 +14,9 @@ disable-model-invocation: true
 
 Full local teardown of Clockify-owned files in a **consumer** repo. Confirm with the user before deleting.
 
-If they only want to stop agent-mediated timers and **keep** `.clockify/config.yml`, stop and run [`clockify-unautomate`](../clockify-unautomate/SKILL.md) instead.
+If they only want to **pause** agent-mediated timers and **keep** forge/platform settings, stop and run [`clockify-automate-disable`](../clockify-automate-disable/SKILL.md) instead.
+
+If they want to stop agent mode and **reset** automate yaml toward init defaults (keep `.clockify/config.yml`), stop and run [`clockify-unautomate`](../clockify-unautomate/SKILL.md) instead.
 
 ## Confirm
 

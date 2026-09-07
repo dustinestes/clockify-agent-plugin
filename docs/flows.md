@@ -23,6 +23,7 @@ Decision maps for skills. Agent procedures stay in each `SKILL.md`; field lists 
   - [AskQuestion: assign client](#askquestion-assign-client)
   - [on_start resolution](#on_start-resolution)
   - [Data in / out](#data-in--out-automate)
+- [clockify-automate-disable / enable](#clockify-automate-disable--enable)
 
 ---
 
@@ -40,16 +41,21 @@ flowchart TD
   cursorWiz["Cursor platforms\nplan + debug"]
   runawayWiz["Runaway wizard\nenable + minutes"]
   patch["Patch entry.automated +\nensure + rules +\nrunaway hooks"]
+  disable["clockify-automate-disable"]
+  paused["Paused\nsettings kept"]
+  enable["clockify-automate-enable"]
 
   init --> baseYaml --> manualUse
   baseYaml --> automate
   automate --> forgeWiz --> cursorWiz --> runawayWiz --> patch
+  patch --> disable --> paused --> enable --> patch
 ```
 
 | Stage | Skill | User gets |
 |-------|-------|-----------|
 | Base | `/clockify-init` | Workspace pin, prompt descriptions, timer task none, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off |
 | Automated | `/clockify-automate` | Forge wizard (GitHub), Cursor Plan/Debug, runaway enable + minutes, ensure project/tasks, Cursor rules, runaway hooks when enabled |
+| Pause | `/clockify-automate-disable` / `enable` | Temporary off/on; keep forge / triggers / modes; remove/restore Cursor glue |
 
 ---
 
@@ -95,7 +101,7 @@ Mode on. If config is missing, run init first. Then forge + Cursor + runaway wiz
 
 ### Forge wizard
 
-Skip when `entry.automated.forge` is already a real forge and `enabled` is true, unless the user asks to reconfigure.
+Skip when `entry.automated.forge` is already a real forge, unless the user asks to reconfigure. After `/clockify-unautomate`, forge is `none` — always ask. After `/clockify-automate-disable`, forge stays set — skip (resume like enable) unless they ask to reconfigure.
 
 1. **Forge** — AskQuestion. Only **GitHub** is implemented. Set `entry.automated.forge: github`.
 2. **Project** — how `scope.project` resolves: `local_folder`, `fixed` (+ name), or `prompt` (ask each time; skip ensure).
@@ -121,6 +127,8 @@ triggers:
 ```
 
 ### Cursor platforms wizard
+
+Skip when `platforms.cursor.modes` already has mode blocks (even if `platforms.cursor.enabled` is false after a pause), unless the user asks to reconfigure. After `/clockify-unautomate`, `modes` is `{}` — always ask.
 
 Ask whether to enable Cursor Plan and Debug mode timers (defaults: **yes** for both). Optionally rename fixed task names (defaults: `agent_planning`, `agent_debug`).
 
@@ -153,7 +161,7 @@ Plan/Debug detection is **rule-first** (`.cursor/rules/clockify.mdc`). Mode hook
 
 ### Runaway wizard
 
-Skip when `entry.automated.enabled` is already true unless the user asks to reconfigure runaway. After `/clockify-unautomate`, always ask.
+Skip when `entry.automated.forge` is already a real forge unless the user asks to reconfigure runaway. After `/clockify-unautomate`, always ask. After `/clockify-automate-disable`, keep existing `runaway` values unless they ask to reconfigure.
 
 1. **Enable?** AskQuestion (default **yes**): warn when a running timer exceeds a runaway ceiling?
 2. **Minutes** — only if yes: AskQuestion with presets (suggested default **45**) or a custom positive int.
@@ -231,6 +239,26 @@ When `cursor_mode` is set, the matching `platforms.cursor.modes.<mode>` block ov
 | Out (yaml) | `entry.automated.enabled: true`, `forge`, `on_start`, forge `triggers`, `platforms.cursor`, `runaway`; may patch `scope.project` |
 | Out (Clockify) | `ensure_project` / `set_project_client` / `create_client` as needed; `ensure_task` for `{label}` labels, `local_folder`/`fixed` on_start tasks, Cursor fixed task names |
 | Out (Cursor) | `.cursor/rules/clockify.mdc` from declared triggers + platforms; when runaway enabled, `.cursor/hooks/clockify-runaway.sh` + `hooks.json` entries |
+
+---
+
+<br>
+
+## clockify-automate-disable / enable
+
+Temporary pause without wiping automate-owned settings. Skills: [clockify-automate-disable](../skills/clockify-automate-disable/SKILL.md), [clockify-automate-enable](../skills/clockify-automate-enable/SKILL.md). Full rollback remains [clockify-unautomate](../skills/clockify-unautomate/SKILL.md).
+
+| Want | Skill |
+|------|-------|
+| Temporary pause, keep settings | `/clockify-automate-disable` → `/clockify-automate-enable` |
+| Full rollback of automate settings | `/clockify-unautomate` |
+| Remove all local Clockify files | `/clockify-uninit` |
+
+**Disable:** confirm → remove Cursor rule + Clockify-owned runaway hooks → set `entry.automated.enabled: false` and `platforms.cursor.enabled: false` → keep forge / `on_start` / triggers / runaway prefs / `modes`.
+
+**Enable:** confirm → set `enabled: true`, restore `platforms.cursor.enabled` when modes warrant it → rewrite rule from preserved config → reinstall runaway hooks only if `runaway.enabled` is still true. Skip wizards unless `forge` is `none` (then redirect to `/clockify-automate`).
+
+Re-running `/clockify-automate` while paused also skips wizards when forge is already set (same resume path) unless the user asks to reconfigure.
 
 ---
 

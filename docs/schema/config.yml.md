@@ -83,15 +83,24 @@ Pass forge fields on tools as `issue_number` / `issue_title` / `label` (deprecat
 
 | Key | Purpose |
 |-----|---------|
-| `enabled` | `false` after init; `true` after `/clockify-automate`. When `false`, `triggers` must be empty. |
+| `enabled` | Live automation on/off. `true` after `/clockify-automate` (or `/clockify-automate-enable`). `false` after init, `/clockify-unautomate`, or `/clockify-automate-disable`. When false with `forge: none` and empty triggers = init/unautomate. When false with forge/triggers/modes kept = **paused** (disable). |
 | `forge` | `none` \| `github` \| `gitlab` \| `bitbucket`. Only **github** is implemented; others are stubs. Init leaves `none`. |
 | `include_seconds` | Same role as timer: whether start/stop keep sub-minute precision before rounding. |
 | `on_start.when_multiple_labels` | When a template contains `{label}` and the work item has 2+ labels: `first` (forge/API list order) or `prompt` (AskQuestion). Default `first`. |
 | `on_start.description` | Forge start description: `from: prompt` \| `template` (+ `template` string). |
 | `on_start.task` | Forge start task: `from: prompt` \| `template` \| `fixed` \| `local_folder` \| `none`; `if_missing: create` \| `none` \| `prompt`. |
-| `triggers` | Forge event → action pairs (see [AI contract](#ai-contract-forge-triggers)). Require `enabled: true` and a real forge (not `none`). |
-| `runaway` | Clockify readiness: when a running timer exceeds `stop_after_minutes` (positive int; init default 45), AskQuestion before continuing. Automate wizard sets enable + minutes; hooks required when enabled. |
+| `triggers` | Forge event → action pairs (see [AI contract](#ai-contract-forge-triggers)). Require a real forge (not `none`). May remain when `enabled` is false (paused). |
+| `runaway` | Clockify readiness: when a running timer exceeds `stop_after_minutes` (positive int; init default 45), AskQuestion before continuing. Automate wizard sets enable + minutes; hooks required when live automation and runaway are both on. |
 | `platforms.cursor` | Plan/Debug mode blocks; see [Cursor platforms](#cursor-platforms). |
+
+**Pause vs rollback**
+
+| Want | Skill | Yaml |
+|------|-------|------|
+| Temporary pause, keep settings | `/clockify-automate-disable` → `/clockify-automate-enable` | `enabled: false`; keep forge / `on_start` / triggers / runaway prefs / `modes`; set `platforms.cursor.enabled: false` without clearing modes |
+| Full rollback of automate settings | `/clockify-unautomate` | Reset `entry.automated` to example defaults (`forge: none`, empty triggers, modes cleared) |
+
+Manual pause (same as disable): set `entry.automated.enabled: false` and `platforms.cursor.enabled: false` (keep `modes`); remove `.cursor/rules/clockify.mdc` and Clockify-owned runaway hooks. Manual resume: set `enabled: true`, restore `platforms.cursor.enabled` when modes should be live, rewrite the rule from config, reinstall hooks if `runaway.enabled` is true. Do not clear forge/triggers/modes unless you intend a full unautomate.
 
 `on_start` applies to **forge starts** only. Stop triggers ignore it. When `clockify_start_timer` is called with `cursor_mode`, the matching `platforms.cursor.modes.<mode>` block overrides forge `on_start`.
 
@@ -156,7 +165,7 @@ Pass `cursor_mode: plan` or `cursor_mode: debug` on `clockify_start_timer` so th
 
 Same check for in-session resume and for a preexisting timer started outside the plugin / before Cursor opened. Detection is a **floor** (at least N minutes before `pastCeiling`); not a guarantee of action at minute N. No background daemon. Intentional `/clockify-stop-timer` without `runaway_stop` ignores the ceiling.
 
-Set by the `/clockify-automate` runaway wizard (`enabled` + `stop_after_minutes`). When `enabled` is true, automate **must** install Clockify-owned Cursor hooks (`sessionStart` / `sessionEnd` / `stop` via `.cursor/hooks/clockify-runaway.sh`) — fail-open; `sessionStart` instructs AskQuestion when `pastCeiling`. Temporary pause ([issue #87](https://github.com/dustinestes/clockify-agent-plugin/issues/87)) must inert/restore these hooks when it lands.
+Set by the `/clockify-automate` runaway wizard (`enabled` + `stop_after_minutes`). When live automation is on and `runaway.enabled` is true, automate (or `/clockify-automate-enable`) **must** install Clockify-owned Cursor hooks (`sessionStart` / `sessionEnd` / `stop` via `.cursor/hooks/clockify-runaway.sh`) — fail-open; `sessionStart` instructs AskQuestion when `pastCeiling`. `/clockify-automate-disable` removes those hooks without flipping `runaway.enabled` (so enable can restore them). `/clockify-unautomate` removes hooks as part of full rollback.
 
 `stop_after_minutes` is a positive integer (YAML `15` or `"15"`). Init example default is 45; automate asks and may change it. Calibrate to workflow (e.g. “a timer this long would be unusual for my issue work”).
 

@@ -12,6 +12,7 @@ A collection of answers to popular questions about this plugin.
 - [Contents](#contents)
 - [/clockify-init](#clockify-init)
 - [/clockify-automate](#clockify-automate)
+- [/clockify-automate-disable](#clockify-automate-disable)
 
 ---
 
@@ -57,6 +58,23 @@ A collection of answers to popular questions about this plugin.
 
   <br>
   `entry.automated.forge` accepts `gitlab` and `bitbucket` as stubs. Only **GitHub** is implemented; the forge wizard offers GitHub as the working choice.
+</details>
+
+---
+
+<br>
+
+## /clockify-automate-disable
+
+<details>
+  <summary>When should I disable vs unautomate?</summary>
+
+  <br>
+  **Disable** (`/clockify-automate-disable`) is a temporary pause: Cursor rule/hooks go away, `enabled` flips off, but forge / `on_start` / triggers / runaway prefs / Cursor `modes` stay so `/clockify-automate-enable` can restore glue without re-running wizards.
+
+  **Unautomate** (`/clockify-unautomate`) is a full rollback: same glue removal, plus `entry.automated` reset to example defaults (`forge: none`, empty triggers, modes cleared). The next `/clockify-automate` runs the wizards again.
+
+  To remove `.clockify/` entirely, use `/clockify-uninit`.
 </details>
 
 ---
