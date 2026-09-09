@@ -8,7 +8,8 @@
 <br>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-pre--release-C9A227?style=flat-square&labelColor=2A2A2A" alt="Pre-release">
+  <img src="https://img.shields.io/badge/status-stable-C9A227?style=flat-square&labelColor=2A2A2A" alt="Stable">
+  <img src="https://img.shields.io/badge/version-1.0.0-C9A227?style=flat-square&labelColor=2A2A2A" alt="1.0.0">
   <img src="https://img.shields.io/badge/stack-TypeScript%20%2F%20MCP-C9A227?style=flat-square&labelColor=2A2A2A" alt="TypeScript / MCP">
   <img src="https://img.shields.io/badge/license-MIT-C9A227?style=flat-square&labelColor=2A2A2A" alt="MIT">
 </p>
