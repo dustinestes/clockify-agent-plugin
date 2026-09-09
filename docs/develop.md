@@ -31,7 +31,7 @@ How to change this plugin. Edit and build in this checkout. Validate against tho
 
 Also meet [Getting started](../README.md#getting-started) (Node 18+, Cursor, Clockify API key) prerequisites. Skip this section if this checkout already builds.
 
-**Maintainer tooling** (CI / publish / local install of this repo): **Node 22.22.2+** and **npm 12.0.2** (`packageManager` in `package.json`). Enable with Corepack (`corepack enable && corepack prepare`) or `npm install -g npm@12.0.2`. Consumer runtime for the published package remains Node 18+.
+**Maintainer tooling** (CI / publish / local install of this repo): **Node 22.22.3+** (npm 12 needs `^22.22.2`; avoid Actions toolcache **22.22.2**, which ships a broken bundled npm) and **npm 12.0.2** (`packageManager` in `package.json`). Prefer Corepack (`corepack enable npm && corepack prepare npm@12.0.2 --activate`) over `npm install -g`. Consumer runtime for the published package remains Node 18+.
 
 | Name | Description | Command |
 |------|-------------|---------|

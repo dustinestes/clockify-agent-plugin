@@ -88,7 +88,7 @@ Leave `.mcp.json` as unpinned npx. Do not point it at `dist/`.
 
 ### CI
 
-Pull requests and pushes to `main` run on **Node 22.22.2** with **npm 12.0.2** pinned (same as publish; see `packageManager` in `package.json`). Steps: `npm ci`, `npm run build`, `npm run test:config`, `npm run check:versions`, and `npm run smoke:handshake` with no Clockify credentials. Handshake only checks MCP `initialize` against `dist/`. That workflow does not publish.
+Pull requests and pushes to `main` run on **Node 22.22.3** with **npm 12.0.2** via Corepack (same as publish; see `packageManager` in `package.json`). Steps: `npm ci`, `npm run build`, `npm run test:config`, `npm run check:versions`, and `npm run smoke:handshake` with no Clockify credentials. Handshake only checks MCP `initialize` against `dist/`. That workflow does not publish.
 
 ### Release
 
@@ -128,7 +128,7 @@ Keep `.mcp.json` **unpinned** (`npx -y @dustinestes/clockify-agent-plugin`, no `
 }
 ```
 
-On `release: published`, `publish.yml` pins npm **12.0.2** (not `npm@latest`), then runs build, config tests, handshake, version check, then `npm publish --access public` via OIDC. Verify `npm view @dustinestes/clockify-agent-plugin version`. Do not publish on every push to `main`.
+On `release: published`, `publish.yml` activates npm **12.0.2** via Corepack (not `npm@latest` / not `npm install -g`), then runs build, config tests, handshake, version check, then `npm publish --access public` via OIDC. Verify `npm view @dustinestes/clockify-agent-plugin version`. Do not publish on every push to `main`.
 
 <br>
 
