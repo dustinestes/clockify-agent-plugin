@@ -20,17 +20,17 @@ Pass `config_root` on Clockify MCP calls. If it is already known this session an
 
 ## Init first (if needed)
 
-If `.clockify/config.yml` is missing (`clockify_get_config` with `config_root` returns `found: false`), **perform [`clockify-init`](../clockify-init/SKILL.md)** (workspace AskQuestion only, write v3 base yaml, ignore markers). It is idempotent. Then continue below. Do not restate or fork that skill’s config/ignore steps.
+If `.clockify/config.yml` is missing (`clockify_get_config` with `config_root` returns `found: false`), **perform [`clockify-init`](../clockify-init/SKILL.md)** (workspace AskQuestion only, write v4 base yaml, ignore markers). It is idempotent. Then continue below. Do not restate or fork that skill’s config/ignore steps.
 
 If config already exists, do not overwrite the whole file — patch only the `entry.automated` (and `scope.project` when the forge wizard sets it) fields below.
 
-**Paused resume:** If `forge` is already a real forge and `enabled` is false (after `/clockify-automate-disable`), skip the wizards below unless the user asks to reconfigure. Set `enabled: true`, restore `platforms.cursor.enabled` when modes warrant it, rewrite Cursor rules, and install/remove runaway hooks per `runaway.enabled` — same as [`clockify-automate-enable`](../clockify-automate-enable/SKILL.md). Temporary pause without wizards: that skill pair.
+**Paused resume:** If any `entry.automated.forge.*.enabled` is true and root `enabled` is false (after `/clockify-automate-disable`), skip the wizards below unless the user asks to reconfigure. Set `enabled: true`, restore `platforms.cursor.enabled` when modes warrant it, rewrite Cursor rules, and install/remove runaway hooks per `settings.runaway.enabled` — same as [`clockify-automate-enable`](../clockify-automate-enable/SKILL.md). Temporary pause without wizards: that skill pair.
 
 ## Forge wizard
 
-Skip this wizard only when `entry.automated.forge` is already a real forge (`github` / `gitlab` / `bitbucket`), unless the user asks to reconfigure forge settings. After `/clockify-unautomate`, forge is `none` — always run the full wizard. After `/clockify-automate-disable`, forge stays set — skip and treat like enable (flip `enabled` on + refresh glue) unless they ask to reconfigure.
+Skip this wizard only when any `entry.automated.forge.*.enabled` is already true, unless the user asks to reconfigure forge settings. After `/clockify-unautomate`, all `forge.*.enabled` are false — always run the full wizard. After `/clockify-automate-disable`, forge `*.enabled` flags stay — skip and treat like enable (flip root `enabled` on + refresh glue) unless they ask to reconfigure.
 
-1. **Forge** — AskQuestion. Only **GitHub** is implemented; present it as the choice (other forges are stubs — do not offer them as working options). Set `entry.automated.forge: github`.
+1. **Forge** — AskQuestion. Only **GitHub** is implemented; present it as the choice (other forges are stubs — do not offer them as working options). Set `entry.automated.forge.github.enabled: true` (leave `gitlab` / `bitbucket` at `enabled: false`).
 
 2. **Project** — AskQuestion how `scope.project` resolves:
 
@@ -53,7 +53,7 @@ Skip this wizard only when `entry.automated.forge` is already a real forge (`git
    template — expand a template with tokens
    ```
 
-   If `template`: offer preset `{issue_number} - {issue_title}` or ask for a custom template string (tokens: `{issue_number}`, `{issue_title}`, `{label}`, `{local_folder}`). Write `entry.automated.on_start.description` accordingly (`from: prompt` or `from: template` + `template`).
+   If `template`: offer preset `{issue_number} - {issue_title}` or ask for a custom template string (tokens: `{issue_number}`, `{issue_title}`, `{label}`, `{local_folder}`). Write `entry.automated.settings.on_start.description` accordingly (`from: prompt` or `from: template` + `template`).
 
 4. **on_start task** — AskQuestion:
 
@@ -72,7 +72,7 @@ Skip this wizard only when `entry.automated.forge` is already a real forge (`git
    - `none` → `from: none`, `if_missing: none`.
    - `prompt` → `from: prompt`, `if_missing: prompt`.
 
-5. **when_multiple_labels** — Ask only if any chosen `on_start` description or task template contains `{label}`:
+5. **when_multiple_labels** — Ask only if any chosen `settings.on_start` description or task template contains `{label}`:
 
    ```text
    When an issue has multiple labels, which label should resolve {label}?
@@ -80,7 +80,7 @@ Skip this wizard only when `entry.automated.forge` is already a real forge (`git
    prompt — ask which label each time
    ```
 
-   Default if skipped: `first`. Write `entry.automated.on_start.when_multiple_labels`.
+   Default if skipped: `first`. Write `entry.automated.settings.on_start.when_multiple_labels`.
 
 6. **Client when ensuring project** — Clients are set on the Clockify **project**, not in `config.yml`. After the Clockify **project name** is known (`local_folder` folder name, or `scope.project.name` for fixed; skip client picker when `scope.project.from` is `prompt`), run the client flow before ensure:
 
@@ -140,7 +140,7 @@ If the user declines both modes, leave `platforms.cursor.enabled: false` and `mo
 
 ## Runaway wizard
 
-Skip only when `entry.automated.forge` is already a real forge **and** the user did not ask to reconfigure runaway. After `/clockify-unautomate`, always ask (example defaults restored). After `/clockify-automate-disable`, forge stays set — keep existing `runaway` values (do not re-ask) unless they ask to reconfigure.
+Skip only when any `entry.automated.forge.*.enabled` is already true **and** the user did not ask to reconfigure runaway. After `/clockify-unautomate`, always ask (example defaults restored). After `/clockify-automate-disable`, forge stays enabled — keep existing `settings.runaway` values (do not re-ask) unless they ask to reconfigure.
 
 This is **Clockify readiness**, not IDE idle detection: when the plugin next sees a running timer past `stop_after_minutes`, AskQuestion what to do so automations have a clean state. Same check for in-session resume and for a preexisting timer started outside the plugin.
 
@@ -154,15 +154,15 @@ This is **Clockify readiness**, not IDE idle detection: when the plugin next see
 
 2. **Minutes** — only if they chose **yes**. AskQuestion with presets (include **45** as the suggested default) and allow a custom positive integer via chat/Other. Calibrate to their workflow (e.g. “a timer this long would be unusual”). Write `stop_after_minutes` as a positive int (YAML number).
 
-3. Answers feed the patch below: `entry.automated.runaway.enabled` and, when enabled, `stop_after_minutes`. If **no**: set `enabled: false` and keep the existing `stop_after_minutes` value (so a later re-enable keeps their minutes).
+3. Answers feed the patch below: `entry.automated.settings.runaway.enabled` and, when enabled, `stop_after_minutes`. If **no**: set `enabled: false` and keep the existing `stop_after_minutes` value (so a later re-enable keeps their minutes).
 
 ## Patch yaml
 
 After wizards, patch `.clockify/config.yml` (do not wipe unrelated keys):
 
 - `entry.automated.enabled: true`
-- `entry.automated.forge: github` (from forge wizard)
-- `entry.automated.on_start` as answered (including `when_multiple_labels`)
+- `entry.automated.forge.github.enabled: true` (from forge wizard; only github implemented)
+- `entry.automated.settings.on_start` as answered (including `when_multiple_labels`)
 - `entry.automated.triggers` (forge):
 
   ```yaml
@@ -180,16 +180,16 @@ After wizards, patch `.clockify/config.yml` (do not wipe unrelated keys):
   ```
 
 - `entry.automated.platforms.cursor` from the Cursor wizard
-- `entry.automated.runaway` from the runaway wizard
+- `entry.automated.settings.runaway` from the runaway wizard
 - `scope.project` from the forge project step when set
 
-Keep rounding and overlap from the base yaml unless the user asks to change them.
+Keep `entry.automated.settings.rounding` and `settings.overlap` from the base yaml unless the user asks to change them (rounding uses `start_mode` / `stop_mode` only — no `mode` key).
 
 ## Ensure
 
 1. **Project / client** — When `scope.project.from` is `local_folder` or `fixed`, run the client flow (forge wizard step 6) if not already done this session, then `clockify_ensure_project` with `config_root` (and `client_id` when creating a new project). Skip ensure when `from` is `prompt`.
-2. **Forge label tasks** — If any `on_start` description or task template contains `{label}`: `gh label list --json name` (or GitHub API). For each label: `clockify_ensure_task` with `config_root`, `project_id`, and label `name`. If there are no remotes or labels, skip and say so — still keep the project if ensure ran.
-3. **local_folder / fixed on_start tasks** — When `on_start.task.from` is `local_folder` or `fixed`, `clockify_ensure_task` once for that name when `if_missing` is `create`.
+2. **Forge label tasks** — If any `settings.on_start` description or task template contains `{label}`: `gh label list --json name` (or GitHub API). For each label: `clockify_ensure_task` with `config_root`, `project_id`, and label `name`. If there are no remotes or labels, skip and say so — still keep the project if ensure ran.
+3. **local_folder / fixed on_start tasks** — When `settings.on_start.task.from` is `local_folder` or `fixed`, `clockify_ensure_task` once for that name when `if_missing` is `create`.
 4. **Cursor fixed tasks** — For each enabled Cursor mode with `task.from: fixed`, `clockify_ensure_task` for that `name`.
 
 ## Write Cursor rules
@@ -198,11 +198,11 @@ Add or update `.cursor/rules/clockify.mdc` from the **declared** config (trigger
 
 - Passes `config_root` on Clockify MCP calls: reuse the known git toplevel this session; re-resolve only if the folder or focused root changed (cwd first, not the open file)
 - Passes `entry_method: automated` on `clockify_start_timer` / `clockify_stop_timer`
-- **Forge starts** honor `entry.automated.on_start` (description + task templates/tokens; resolve `{label}` per `when_multiple_labels`: `first` or AskQuestion `prompt`)
+- **Forge starts** honor `entry.automated.settings.on_start` (description + task templates/tokens; resolve `{label}` per `when_multiple_labels`: `first` or AskQuestion `prompt`)
 - On starting work on an issue → start (issue fields / template tokens); honor `task.from` / `task.if_missing`
 - On finishing issue work, shipping a PR, or closing/abandoning a PR in-session → stop
 - On switching issues → **warn** with the running timer’s description/duration; stop-then-start only after the user confirms
-- **Plan / Debug:** when starting a timer for that Cursor mode, pass `cursor_mode: plan` or `cursor_mode: debug` on `clockify_start_timer` (mode block overrides forge `on_start`)
+- **Plan / Debug:** when starting a timer for that Cursor mode, pass `cursor_mode: plan` or `cursor_mode: debug` on `clockify_start_timer` (mode block overrides forge `settings.on_start`)
 - **Plan start** only when there is **no** issue in context; if an issue is in context, use forge `issue_start` instead
 - **Build** (leaving Plan) = **stop only** — do not start a Build timer
 - Warn before any start that would replace a different running timer (same as `issue_switch`)
@@ -210,7 +210,7 @@ Add or update `.cursor/rules/clockify.mdc` from the **declared** config (trigger
   1. Keep running — valid long session
   2. Stop and cap — `clockify_stop_timer` with `runaway_stop: true` and `entry_method: automated` (end = start + stop_after_minutes; no stop rounding)
   3. Stop at now — normal `clockify_stop_timer` with `entry_method: automated` (wall time + rounding)
-- If a tool returns `overlap: true`, ask before `confirm_overlap: true` unless `overlap.on_conflict` is `override`
+- If a tool returns `overlap: true`, ask before `confirm_overlap: true` unless `settings.overlap.on_conflict` is `override`
 
 Also:
 
@@ -220,12 +220,12 @@ Also:
 
 ## Runaway hooks
 
-Required when `entry.automated.runaway.enabled` is **true** (after the runaway wizard / patch). Not optional.
+Required when `entry.automated.settings.runaway.enabled` is **true** (after the runaway wizard / patch). Not optional.
 
 1. Copy the plugin template [`hooks/clockify-runaway.sh`](./hooks/clockify-runaway.sh) (next to this skill) to `.cursor/hooks/clockify-runaway.sh` and `chmod +x` it. Overwrite on re-run so the script stays current.
 2. Merge into `.cursor/hooks.json` (create with `"version": 1` and empty `hooks` if missing). Under each of `sessionStart`, `sessionEnd`, and `stop`, ensure **one** entry whose `command` is `.cursor/hooks/clockify-runaway.sh`. Do **not** set `failClosed`. Do **not** duplicate entries that already target that script path.
 3. In the managed `.gitignore` stanza, ensure `.cursor/hooks/clockify-runaway.sh` is listed (personal glue — same intent as the rule path). Do **not** add `.cursor/hooks.json` (shared file; committing it is user/team choice). Do not ignore all of `.cursor/` or all of `.cursor/hooks/`.
-4. If `runaway.enabled` is **false**: remove those Clockify-owned entries (command references `clockify-runaway` / `.cursor/hooks/clockify-runaway.sh`) and delete `.cursor/hooks/clockify-runaway.sh` if present. If `hooks.json` has no remaining hooks, delete the file. Remove `.cursor/hooks/clockify-runaway.sh` from the managed `.gitignore` stanza. If `.cursor/hooks/` is then empty, delete the empty directory.
+4. If `settings.runaway.enabled` is **false**: remove those Clockify-owned entries (command references `clockify-runaway` / `.cursor/hooks/clockify-runaway.sh`) and delete `.cursor/hooks/clockify-runaway.sh` if present. If `hooks.json` has no remaining hooks, delete the file. Remove `.cursor/hooks/clockify-runaway.sh` from the managed `.gitignore` stanza. If `.cursor/hooks/` is then empty, delete the empty directory.
 
 Ownership marker for `/clockify-unautomate`: the script path `.cursor/hooks/clockify-runaway.sh`. Leave unrelated hooks intact.
 
@@ -245,12 +245,12 @@ directory (open tabs are not required). In a multi-root workspace,
 git-toplevel the focused path; re-resolve when focus moves to another root.
 Do not pass the .code-workspace parent.
 
-Forge starts: use entry.automated.on_start for description and task. Expand
-templates with issue_number, issue_title, label, local_folder. When a template
-contains {label} and the issue has multiple labels, honor
-on_start.when_multiple_labels (first | prompt). Pass entry_method: automated.
-If another timer is running, warn and confirm before stopping it (same as
-issue_switch).
+Forge starts: use entry.automated.settings.on_start for description and task.
+Expand templates with issue_number, issue_title, label, local_folder. When a
+template contains {label} and the issue has multiple labels, honor
+settings.on_start.when_multiple_labels (first | prompt). Pass
+entry_method: automated. If another timer is running, warn and confirm before
+stopping it (same as issue_switch).
 
 When they finish the issue, switch issues (after confirm), ship the PR, or
 close or abandon the PR in this session, stop the timer with
@@ -263,7 +263,7 @@ when a different timer is running.
 
 On session resume / when checking a running timer: if runaway.pastCeiling,
 AskQuestion (keep running | stop and cap with runaway_stop | stop at now).
-Honor overlap.on_conflict.
+Honor settings.overlap.on_conflict.
 
 Use Clockify MCP tools only; never invent project/task ids.
 ```
@@ -275,11 +275,13 @@ Use Clockify MCP tools only; never invent project/task ids.
 - Install a background daemon
 - Skip init when config or ignore defaults are missing
 - Skip the runaway wizard on a fresh automate (or after unautomate)
-- Re-wizard after `/clockify-automate-disable` when forge settings are already present (resume like enable unless the user asks to reconfigure)
-- Skip installing runaway hooks when `runaway.enabled` is true
-- Leave orphan Clockify runaway hooks/script when `runaway.enabled` is false
+- Re-wizard after `/clockify-automate-disable` when any `forge.*.enabled` is already true (resume like enable unless the user asks to reconfigure)
+- Skip installing runaway hooks when `settings.runaway.enabled` is true
+- Leave orphan Clockify runaway hooks/script when `settings.runaway.enabled` is false
 - Silently stop a timer past the runaway ceiling — always AskQuestion first
 - Prefix client-picker options with numbers (`None` and `Create Client` are enough; AskQuestion adds A/B/C)
 - Use AskQuestion for the **new client name** after **Create Client** — chat only
 - Write client into `config.yml`
-- Offer GitLab/Bitbucket as working forge options (enum stubs only)
+- Offer GitLab/Bitbucket as working forge options (map stubs only; leave `forge.gitlab` / `forge.bitbucket` at `enabled: false`)
+- Write `forge: github` / `forge: none` enum strings — use the forge map (`forge.github.enabled`, etc.)
+- Write rounding `mode` — use `start_mode` / `stop_mode` only under `settings.rounding`

@@ -34,7 +34,7 @@ Decision maps for skills. Agent procedures stay in each `SKILL.md`; field lists 
 ```mermaid
 flowchart TD
   init["clockify-init"]
-  baseYaml["v3 base\nforge none, platforms off"]
+  baseYaml["v4 base\nforges off, platforms off"]
   manualUse["Timer / enter-time / stop"]
   automate["clockify-automate"]
   forgeWiz["Forge wizard\nGitHub"]
@@ -53,7 +53,7 @@ flowchart TD
 
 | Stage | Skill | User gets |
 |-------|-------|-----------|
-| Base | `/clockify-init` | Workspace pin, prompt descriptions, timer task none, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off |
+| Base | `/clockify-init` | Workspace pin, prompt descriptions, timer task none, `entry.automated.enabled: false`, all forges off, empty triggers, Cursor platforms off |
 | Automated | `/clockify-automate` | Forge wizard (GitHub), Cursor Plan/Debug, runaway enable + minutes, ensure project/tasks, Cursor rules, runaway hooks when enabled |
 | Pause | `/clockify-automate-disable` / `enable` | Temporary off/on; keep forge / triggers / modes; remove/restore Cursor glue |
 
@@ -63,7 +63,7 @@ flowchart TD
 
 ## clockify-init
 
-`/clockify-init` pins **where** time goes (`scope.workspace_id`) and writes the v3 base contract. It does **not** ensure projects/tasks or enable automation. Skill steps: [clockify-init](../skills/clockify-init/SKILL.md).
+`/clockify-init` pins **where** time goes (`scope.workspace_id`) and writes the v4 base contract. It does **not** ensure projects/tasks or enable automation. Skill steps: [clockify-init](../skills/clockify-init/SKILL.md).
 
 ### Why workspace is required
 
@@ -81,14 +81,14 @@ Choose the Clockify workspace for this repo:
 2 - Workspace B Name (def456...)
 ```
 
-Then write `.clockify/config.yml` from the plugin example (`plugin` / `scope` / `entry`), set `workspace_id`, leave `entry.automated` off (`forge: none`, empty triggers, Cursor platforms off). Write ignore markers. End: timer and enter-time are ready; run `/clockify-automate` for forge + Cursor automation.
+Then write `.clockify/config.yml` from the plugin example (`plugin` / `scope` / `entry`), set `workspace_id`, leave `entry.automated` off (all forges `enabled: false`, empty triggers, Cursor platforms off). Write ignore markers. End: timer and enter-time are ready; run `/clockify-automate` for forge + Cursor automation.
 
 ### Data in / out (init)
 
 | Direction | What |
 |-----------|------|
 | In | `clockify_list_workspaces`, git toplevel / folder name for `local_folder` |
-| Out (yaml) | `plugin.version: 3`, `scope.workspace_id`, `scope.project.from: local_folder`, `entry.timer` / `manual` / `automated` base scaffold |
+| Out (yaml) | `plugin.version: 4`, `scope.workspace_id`, `scope.project.from: local_folder`, `entry.timer` / `manual` / `automated` base scaffold |
 | Out (Clockify) | None — no project/task ensure |
 
 ---
@@ -101,16 +101,16 @@ Mode on. If config is missing, run init first. Then forge + Cursor + runaway wiz
 
 ### Forge wizard
 
-Skip when `entry.automated.forge` is already a real forge, unless the user asks to reconfigure. After `/clockify-unautomate`, forge is `none` — always ask. After `/clockify-automate-disable`, forge stays set — skip (resume like enable) unless they ask to reconfigure.
+Skip when one forge under `entry.automated.forge` is already enabled, unless the user asks to reconfigure. After `/clockify-unautomate`, all forges are off — always ask. After `/clockify-automate-disable`, the forge stays enabled — skip (resume like enable) unless they ask to reconfigure.
 
-1. **Forge** — AskQuestion. Only **GitHub** is implemented. Set `entry.automated.forge: github`.
+1. **Forge** — AskQuestion. Only **GitHub** is implemented. Set `entry.automated.forge.github.enabled: true` (gitlab/bitbucket remain `false`; at most one may be true).
 2. **Project** — how `scope.project` resolves: `local_folder`, `fixed` (+ name), or `prompt` (ask each time; skip ensure).
-3. **on_start description** — `prompt` or `template` (preset `{issue_number} - {issue_title}` or custom).
-4. **on_start task** — `template` / `local_folder` / `fixed` / `none` / `prompt`.
+3. **on_start description** — `prompt` or `template` under `settings.on_start` (preset `{issue_number} - {issue_title}` or custom).
+4. **on_start task** — `template` / `local_folder` / `fixed` / `none` / `prompt` under `settings.on_start.task`.
 5. **when_multiple_labels** — only if a chosen template contains `{label}`: `first` or `prompt`. Default if skipped: `first`.
 6. **Client when ensuring** — see below (not stored in yaml).
 
-Then set forge triggers:
+Then set root forge `triggers`:
 
 ```yaml
 triggers:
@@ -161,12 +161,12 @@ Plan/Debug detection is **rule-first** (`.cursor/rules/clockify.mdc`). Mode hook
 
 ### Runaway wizard
 
-Skip when `entry.automated.forge` is already a real forge unless the user asks to reconfigure runaway. After `/clockify-unautomate`, always ask. After `/clockify-automate-disable`, keep existing `runaway` values unless they ask to reconfigure.
+Skip when one forge under `entry.automated.forge` is already enabled unless the user asks to reconfigure runaway. After `/clockify-unautomate`, always ask. After `/clockify-automate-disable`, keep existing `settings.runaway` values unless they ask to reconfigure.
 
 1. **Enable?** AskQuestion (default **yes**): warn when a running timer exceeds a runaway ceiling?
 2. **Minutes** — only if yes: AskQuestion with presets (suggested default **45**) or a custom positive int.
 
-Patch `entry.automated.runaway`. When `enabled` is true, automate **must** install `.cursor/hooks/clockify-runaway.sh`, register it under `sessionStart` / `sessionEnd` / `stop` in `.cursor/hooks.json` (fail-open; instruct AskQuestion when `pastCeiling`), and add the script path to the managed `.gitignore` stanza (do **not** ignore `hooks.json`). When false, remove those Clockify-owned entries, the script, and its gitignore line. `/clockify-unautomate` removes them surgically by script path.
+Patch `entry.automated.settings.runaway`. When `enabled` is true, automate **must** install `.cursor/hooks/clockify-runaway.sh`, register it under `sessionStart` / `sessionEnd` / `stop` in `.cursor/hooks.json` (fail-open; instruct AskQuestion when `pastCeiling`), and add the script path to the managed `.gitignore` stanza (do **not** ignore `hooks.json`). When false, remove those Clockify-owned entries, the script, and its gitignore line. `/clockify-unautomate` removes them surgically by script path.
 
 ### Project client (Clockify only)
 
@@ -207,7 +207,7 @@ flowchart TD
 
 ### on_start resolution
 
-Forge starts honor `entry.automated.on_start`. Expand templates with `{issue_number}`, `{issue_title}`, `{label}`, `{local_folder}`.
+Forge starts honor `entry.automated.settings.on_start`. Expand templates with `{issue_number}`, `{issue_title}`, `{label}`, `{local_folder}`.
 
 ```mermaid
 flowchart TD
@@ -229,14 +229,14 @@ flowchart TD
   task --> resolve --> mcp
 ```
 
-When `cursor_mode` is set, the matching `platforms.cursor.modes.<mode>` block overrides this forge `on_start` path.
+When `cursor_mode` is set, the matching `platforms.cursor.modes.<mode>` block overrides this forge `settings.on_start` path.
 
 ### Data in / out (automate)
 
 | Direction | What |
 |-----------|------|
 | In | Existing config (or init first), `clockify_list_projects`, `clockify_list_clients`, optional `gh label list`, folder name |
-| Out (yaml) | `entry.automated.enabled: true`, `forge`, `on_start`, forge `triggers`, `platforms.cursor`, `runaway`; may patch `scope.project` |
+| Out (yaml) | `entry.automated.enabled: true`, `forge` map, `settings` (on_start / rounding / overlap / runaway), root forge `triggers`, `platforms.cursor`; may patch `scope.project` |
 | Out (Clockify) | `ensure_project` / `set_project_client` / `create_client` as needed; `ensure_task` for `{label}` labels, `local_folder`/`fixed` on_start tasks, Cursor fixed task names |
 | Out (Cursor) | `.cursor/rules/clockify.mdc` from declared triggers + platforms; when runaway enabled, `.cursor/hooks/clockify-runaway.sh` + `hooks.json` entries |
 
@@ -254,11 +254,11 @@ Temporary pause without wiping automate-owned settings. Skills: [clockify-automa
 | Full rollback of automate settings | `/clockify-unautomate` |
 | Remove all local Clockify files | `/clockify-uninit` |
 
-**Disable:** confirm → remove Cursor rule + Clockify-owned runaway hooks → set `entry.automated.enabled: false` and `platforms.cursor.enabled: false` → keep forge / `on_start` / triggers / runaway prefs / `modes`.
+**Disable:** confirm → remove Cursor rule + Clockify-owned runaway hooks → set `entry.automated.enabled: false` and `platforms.cursor.enabled: false` → keep one forge enabled / `settings.on_start` / triggers / `settings.runaway` prefs / `modes`.
 
-**Enable:** confirm → set `enabled: true`, restore `platforms.cursor.enabled` when modes warrant it → rewrite rule from preserved config → reinstall runaway hooks only if `runaway.enabled` is still true. Skip wizards unless `forge` is `none` (then redirect to `/clockify-automate`).
+**Enable:** confirm → set `enabled: true`, restore `platforms.cursor.enabled` when modes warrant it → rewrite rule from preserved config → reinstall runaway hooks only if `settings.runaway.enabled` is still true. Skip wizards unless all forges are off (then redirect to `/clockify-automate`).
 
-Re-running `/clockify-automate` while paused also skips wizards when forge is already set (same resume path) unless the user asks to reconfigure.
+Re-running `/clockify-automate` while paused also skips wizards when a forge is already enabled (same resume path) unless the user asks to reconfigure.
 
 ---
 

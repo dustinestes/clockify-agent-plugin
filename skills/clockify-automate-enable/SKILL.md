@@ -4,9 +4,9 @@ description: >-
   Resume agent-mediated Clockify tracking after clockify-automate-disable:
   set entry.automated.enabled true, restore platforms.cursor.enabled from
   preserved modes, rewrite .cursor/rules/clockify.mdc, and reinstall runaway
-  hooks when runaway.enabled is still true. Skips forge/Cursor/runaway wizards
-  unless settings are missing — then redirect to clockify-automate. Use when
-  the user wants to turn automation back on without a full re-wizard.
+  hooks when settings.runaway.enabled is still true. Skips forge/Cursor/runaway
+  wizards unless settings are missing — then redirect to clockify-automate. Use
+  when the user wants to turn automation back on without a full re-wizard.
 disable-model-invocation: true
 ---
 
@@ -23,14 +23,14 @@ Pass `config_root` on Clockify MCP calls. If it is already known this session an
 ## Prerequisites
 
 1. Load config (`clockify_get_config` with `config_root`). If missing, run [`clockify-init`](../clockify-init/SKILL.md) is not enough for automate — tell the user to run `/clockify-automate` (full wizards). Stop.
-2. **Init / after unautomate** (`forge: none`, typically empty triggers / empty modes): settings were never kept. Chat that enable cannot restore what was rolled back; redirect to `/clockify-automate`. Do not invent forge/triggers/modes.
-3. **Paused** (`enabled: false` and `forge` is a real forge): normal enable path below.
-4. **Already active** (`enabled: true` and real forge): still confirm; refresh rule (and runaway hooks if `runaway.enabled`) from current yaml — idempotent, no wizards unless the user asks to reconfigure (then hand off to `/clockify-automate`).
+2. **Init / after unautomate** (all `forge.*.enabled` false, typically empty triggers / empty modes): settings were never kept. Chat that enable cannot restore what was rolled back; redirect to `/clockify-automate`. Do not invent forge/triggers/modes.
+3. **Paused** (`enabled: false` and any `forge.*.enabled` is true): normal enable path below.
+4. **Already active** (`enabled: true` and any `forge.*.enabled` is true): still confirm; refresh rule (and runaway hooks if `settings.runaway.enabled`) from current yaml — idempotent, no wizards unless the user asks to reconfigure (then hand off to `/clockify-automate`).
 
 ## Confirm
 
 1. Inventory with tools if needed, then **repeat the result in a normal chat message** (markdown list). Do not rely on tool snippets as the only listing.
-2. Chat list: what will be restored — `entry.automated.enabled: true`, `platforms.cursor.enabled` when modes warrant it, rewrite `.cursor/rules/clockify.mdc`, and reinstall runaway hooks **only if** `runaway.enabled` is true. Note forge / triggers / modes already on disk (not re-asked).
+2. Chat list: what will be restored — `entry.automated.enabled: true`, `platforms.cursor.enabled` when modes warrant it, rewrite `.cursor/rules/clockify.mdc`, and reinstall runaway hooks **only if** `settings.runaway.enabled` is true. Note forge / triggers / modes already on disk (not re-asked).
 3. Then AskQuestion with **only** a short confirm, e.g. “Resume Clockify automate from saved settings?” — do **not** put the inventory in the question box.
 4. Do **not** re-run forge / Cursor / runaway AskQuestion wizards on this path.
 
@@ -40,12 +40,12 @@ Patch `.clockify/config.yml` (do not wipe unrelated keys):
 
 - `entry.automated.enabled: true`
 - If `platforms.cursor.modes` has any mode with `enabled: true` (or any mode block present that should be live): set `platforms.cursor.enabled: true`. If modes is `{}` or every mode is explicitly off, leave `platforms.cursor.enabled: false`.
-- Do **not** change forge, `on_start`, `triggers`, `runaway`, or mode block contents unless the user asks to reconfigure (then use `/clockify-automate`).
+- Do **not** change forge, `settings.on_start`, `triggers`, `settings.runaway`, or mode block contents unless the user asks to reconfigure (then use `/clockify-automate`).
 - Do **not** touch `plugin`, `scope`, `entry.timer`, or `entry.manual`.
 
 ## Write Cursor rules
 
-Add or update `.cursor/rules/clockify.mdc` from the **declared** config (triggers + platforms) using the same contract and rule snippet as [`clockify-automate`](../clockify-automate/SKILL.md) (**Write Cursor rules** + **Rule snippet** sections). Honor preserved `on_start`, forge triggers, Plan/Debug modes, and runaway AskQuestion behavior.
+Add or update `.cursor/rules/clockify.mdc` from the **declared** config (triggers + platforms) using the same contract and rule snippet as [`clockify-automate`](../clockify-automate/SKILL.md) (**Write Cursor rules** + **Rule snippet** sections). Honor preserved `settings.on_start`, forge triggers, Plan/Debug modes, and runaway AskQuestion behavior.
 
 Also:
 
@@ -56,8 +56,8 @@ Also:
 
 Follow [`clockify-automate`](../clockify-automate/SKILL.md) **Runaway hooks**:
 
-- When `entry.automated.runaway.enabled` is **true**: copy [`../clockify-automate/hooks/clockify-runaway.sh`](../clockify-automate/hooks/clockify-runaway.sh) to `.cursor/hooks/clockify-runaway.sh`, `chmod +x`, merge `sessionStart` / `sessionEnd` / `stop` entries in `.cursor/hooks.json`, add the script path to the managed gitignore stanza.
-- When `runaway.enabled` is **false**: ensure Clockify-owned runaway hooks/script are absent (same cleanup as automate when runaway is off).
+- When `entry.automated.settings.runaway.enabled` is **true**: copy [`../clockify-automate/hooks/clockify-runaway.sh`](../clockify-automate/hooks/clockify-runaway.sh) to `.cursor/hooks/clockify-runaway.sh`, `chmod +x`, merge `sessionStart` / `sessionEnd` / `stop` entries in `.cursor/hooks.json`, add the script path to the managed gitignore stanza.
+- When `settings.runaway.enabled` is **false**: ensure Clockify-owned runaway hooks/script are absent (same cleanup as automate when runaway is off).
 
 Do not fork a second copy of the runaway script under this skill folder.
 
@@ -71,11 +71,11 @@ Only when needed for consistency with preserved config (skip if already done thi
 
 ## Do not
 
-- Re-run forge / Cursor / runaway wizards when forge settings are already present
-- Invent forge/triggers/modes when `forge` is `none` — redirect to `/clockify-automate`
+- Re-run forge / Cursor / runaway wizards when any `forge.*.enabled` is already true
+- Invent forge/triggers/modes when all `forge.*.enabled` are false — redirect to `/clockify-automate`
 - Reset yaml toward unautomate defaults
-- Install runaway hooks when `runaway.enabled` is false
-- Leave orphan Clockify runaway hooks when `runaway.enabled` is false
+- Install runaway hooks when `settings.runaway.enabled` is false
+- Leave orphan Clockify runaway hooks when `settings.runaway.enabled` is false
 - Duplicate `clockify-init` or full `clockify-automate` wizard steps here
 - Treat tool output as the user-visible inventory (always restate in chat before AskQuestion)
 

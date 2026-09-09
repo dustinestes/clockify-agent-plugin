@@ -44,40 +44,47 @@ const cfg = clockifyConfigSchema.parse({
   scope: { workspace_id: "ws_test" },
   entry: {
     timer: {
-      rounding: { enabled: true, increment_minutes: 15, mode: "nearest" },
+      rounding: {
+        enabled: true,
+        increment_minutes: 15,
+        start_mode: "nearest",
+        stop_mode: "nearest",
+      },
     },
     automated: {
       enabled: true,
-      forge: "github",
+      forge: { github: { enabled: true } },
       triggers: [{ event: "issue_start", action: "start_timer" }],
-      runaway: { enabled: true, stop_after_minutes: 45 },
-      on_start: {
-        description: {
-          from: "template",
-          template: "{issue_number} - {issue_title}",
+      settings: {
+        runaway: { enabled: true, stop_after_minutes: 45 },
+        on_start: {
+          description: {
+            from: "template",
+            template: "{issue_number} - {issue_title}",
+          },
         },
       },
     },
   },
 });
-assert.equal(cfg.plugin.version, 3);
+assert.equal(cfg.plugin.version, 4);
 assert.equal(cfg.entry.timer.rounding.increment_minutes, 15);
 assert.equal(
   cfg.entry.timer.description.template,
   "{issue_number} - {issue_title}",
 );
 assert.equal(cfg.entry.timer.description.from, "prompt");
-assert.equal(cfg.entry.automated.on_start.description.from, "template");
+assert.equal(cfg.entry.automated.settings.on_start.description.from, "template");
 assert.equal(cfg.entry.timer.task.if_missing, "none");
 assert.equal(cfg.entry.timer.task.from, "none");
-assert.equal(cfg.entry.automated.on_start.task.if_missing, "none");
+assert.equal(cfg.entry.automated.settings.on_start.task.if_missing, "none");
 assert.equal(cfg.entry.timer.overlap.on_conflict, "prompt");
 assert.equal(cfg.scope.project.from, "local_folder");
 assert.equal(defaultConfig().scope.project.from, "local_folder");
 assert.equal(defaultConfig().scope.workspace_id, "unconfigured");
 assert.equal(defaultConfig().entry.timer.task.from, "none");
 assert.equal(defaultConfig().entry.automated.enabled, false);
-assert.equal(defaultConfig().entry.automated.forge, "none");
+assert.equal(defaultConfig().entry.automated.forge.github.enabled, false);
 assert.deepEqual(defaultConfig().entry.automated.triggers, []);
 assert.equal(isAutomationConfigured(defaultConfig()), false);
 assert.equal(isAutomationConfigured(cfg), true);
@@ -87,7 +94,12 @@ assert.equal(
   isAutomationPaused(
     clockifyConfigSchema.parse({
       scope: { workspace_id: "ws_test" },
-      entry: { automated: { enabled: false, forge: "github" } },
+      entry: {
+        automated: {
+          enabled: false,
+          forge: { github: { enabled: true } },
+        },
+      },
     }),
   ),
   true,
@@ -109,7 +121,7 @@ assert.equal(
   undefined,
 );
 assert.equal(
-  resolveEntryDescription(cfg.entry.automated.on_start.description, {
+  resolveEntryDescription(cfg.entry.automated.settings.on_start.description, {
     issue_number: 42,
     issue_title: "Login bug",
   }),
@@ -164,7 +176,7 @@ assert.equal(
   true,
 );
 assert.equal(
-  onStartUsesLabel(defaultConfig().entry.automated.on_start),
+  onStartUsesLabel(defaultConfig().entry.automated.settings.on_start),
   false,
 );
 
@@ -245,12 +257,12 @@ assert.equal(billingFloor.end, "2026-08-09T19:00:00.000Z");
 
 const started = new Date(Date.now() - 50 * 60 * 1000).toISOString();
 assert.equal(
-  isTimerPastRunawayCeiling(started, cfg.entry.automated.runaway),
+  isTimerPastRunawayCeiling(started, cfg.entry.automated.settings.runaway),
   true,
 );
 
 const sampleYaml = `plugin:
-  version: 3
+  version: 4
 scope:
   workspace_id: ws_from_yaml
   project:
@@ -261,7 +273,8 @@ entry:
     rounding:
       enabled: true
       increment_minutes: 15
-      mode: nearest
+      start_mode: nearest
+      stop_mode: nearest
 `;
 
 function withFixture(run: (dir: string) => void): void {
@@ -301,7 +314,7 @@ withFixture((dir) => {
     "{issue_number} - {issue_title}",
   );
   assert.equal(loaded.config.entry.timer.rounding.enabled, true);
-  assert.equal(loaded.config.plugin.version, 3);
+  assert.equal(loaded.config.plugin.version, 4);
   assert.equal(resolveConfigPathInRoot(dir), loaded.path);
 });
 
@@ -347,7 +360,9 @@ const localFolderTaskCfg = parseClockifyConfig({
     timer: { task: { from: "local_folder", if_missing: "create" } },
     manual: { task: { from: "local_folder", if_missing: "create" } },
     automated: {
-      on_start: { task: { from: "local_folder", if_missing: "create" } },
+      settings: {
+        on_start: { task: { from: "local_folder", if_missing: "create" } },
+      },
     },
   },
 });
@@ -355,7 +370,7 @@ assert.equal(resolveRepoName(null), null);
 assert.equal(localFolderTaskCfg.entry.timer.task.from, "local_folder");
 assert.equal(localFolderTaskCfg.entry.manual.task.from, "local_folder");
 assert.equal(
-  localFolderTaskCfg.entry.automated.on_start.task.from,
+  localFolderTaskCfg.entry.automated.settings.on_start.task.from,
   "local_folder",
 );
 assert.throws(
@@ -387,7 +402,9 @@ assert.throws(
     parseClockifyConfig({
       scope: { workspace_id: "ws_x" },
       entry: {
-        automated: { on_start: { task: { from: "repo" } } },
+        automated: {
+          settings: { on_start: { task: { from: "repo" } } },
+        },
       },
     }),
   /repo is renamed to local_folder/,
@@ -422,7 +439,7 @@ assert.throws(
     entry: {
       automated: {
         enabled: false,
-        forge: "github",
+        forge: { github: { enabled: true } },
         triggers: [{ event: "issue_start", action: "start_timer" }],
         platforms: {
           cursor: {
@@ -443,7 +460,7 @@ assert.throws(
     },
   });
   assert.equal(paused.entry.automated.enabled, false);
-  assert.equal(paused.entry.automated.forge, "github");
+  assert.equal(paused.entry.automated.forge.github.enabled, true);
   assert.equal(paused.entry.automated.triggers.length, 1);
   assert.equal(paused.entry.automated.platforms.cursor.enabled, false);
   assert.ok(paused.entry.automated.platforms.cursor.modes.plan);
@@ -456,12 +473,12 @@ assert.throws(
       entry: {
         automated: {
           enabled: true,
-          forge: "none",
+          forge: { github: { enabled: false } },
           triggers: [{ event: "issue_start", action: "start_timer" }],
         },
       },
     }),
-  /forge triggers require entry\.automated\.forge/,
+  /forge triggers require an enabled forge/,
 );
 
 assert.throws(
@@ -471,12 +488,12 @@ assert.throws(
       entry: {
         automated: {
           enabled: false,
-          forge: "none",
+          forge: { github: { enabled: false } },
           triggers: [{ event: "issue_start", action: "start_timer" }],
         },
       },
     }),
-  /forge triggers require entry\.automated\.forge/,
+  /forge triggers require an enabled forge/,
 );
 
 withFixture((dir) => {
@@ -523,7 +540,7 @@ withFixture((dir) => {
   mkdirSync(join(rootDir, ".clockify"), { recursive: true });
   writeFileSync(
     join(cwdDir, ".clockify", "config.yml"),
-    `plugin:\n  version: 3\nscope:\n  workspace_id: ws_from_cwd\n`,
+    `plugin:\n  version: 4\nscope:\n  workspace_id: ws_from_cwd\n`,
   );
   writeFileSync(join(rootDir, ".clockify", "config.yml"), sampleYaml);
   const loaded = loadClockifyConfig(cwdDir, { configRoot: rootDir });
@@ -539,7 +556,7 @@ withFixture((dir) => {
   mkdirSync(join(argDir, ".clockify"), { recursive: true });
   writeFileSync(
     join(envDir, ".clockify", "config.yml"),
-    `plugin:\n  version: 3\nscope:\n  workspace_id: ws_from_env\n`,
+    `plugin:\n  version: 4\nscope:\n  workspace_id: ws_from_env\n`,
   );
   writeFileSync(join(argDir, ".clockify", "config.yml"), sampleYaml);
   process.env.CLOCKIFY_CONFIG_ROOT = envDir;
@@ -562,7 +579,7 @@ withFixture((dir) => {
   writeFileSync(configPath, sampleYaml);
   writeFileSync(
     join(argDir, ".clockify", "config.yml"),
-    `plugin:\n  version: 3\nscope:\n  workspace_id: ws_ignored_arg\n`,
+    `plugin:\n  version: 4\nscope:\n  workspace_id: ws_ignored_arg\n`,
   );
   process.env.CLOCKIFY_CONFIG_PATH = configPath;
   const loaded = loadClockifyConfig("/tmp", { configRoot: argDir });
@@ -578,11 +595,11 @@ withFixture((dir) => {
   mkdirSync(join(repoB, ".clockify"), { recursive: true });
   writeFileSync(
     join(repoA, ".clockify", "config.yml"),
-    `plugin:\n  version: 3\nscope:\n  workspace_id: ws_repo_a\n`,
+    `plugin:\n  version: 4\nscope:\n  workspace_id: ws_repo_a\n`,
   );
   writeFileSync(
     join(repoB, ".clockify", "config.yml"),
-    `plugin:\n  version: 3\nscope:\n  workspace_id: ws_repo_b\n`,
+    `plugin:\n  version: 4\nscope:\n  workspace_id: ws_repo_b\n`,
   );
   const loadedA = loadClockifyConfig("/tmp", { configRoot: repoA });
   const loadedB = loadClockifyConfig("/tmp", { configRoot: repoB });
@@ -601,12 +618,12 @@ const examplePath = join(
 const exampleCfg = clockifyConfigSchema.parse(
   parseYaml(readFileSync(examplePath, "utf8")),
 );
-assert.equal(exampleCfg.plugin.version, 3);
+assert.equal(exampleCfg.plugin.version, 4);
 assert.equal(exampleCfg.scope.project.from, "local_folder");
 assert.equal(exampleCfg.entry.timer.task.from, "none");
-assert.equal(exampleCfg.entry.automated.forge, "none");
+assert.equal(exampleCfg.entry.automated.forge.github.enabled, false);
 assert.equal("task" in exampleCfg.entry.automated, false);
-assert.equal(exampleCfg.entry.automated.on_start.task.from, "none");
+assert.equal(exampleCfg.entry.automated.settings.on_start.task.from, "none");
 
 assert.equal(
   floorToMinute("2026-08-15T21:07:32.500Z"),
@@ -704,7 +721,7 @@ assert.equal(stopped.end, "2026-08-09T13:15:00.000Z");
 const customMinutes = parseClockifyConfig(
   parseYaml(`
 plugin:
-  version: 3
+  version: 4
 scope:
   workspace_id: ws_x
 entry:
@@ -712,26 +729,31 @@ entry:
     rounding:
       enabled: true
       increment_minutes: 15
-      mode: down
+      start_mode: down
+      stop_mode: down
   automated:
     enabled: true
-    forge: github
-    runaway:
-      enabled: true
-      stop_after_minutes: 15
+    forge:
+      github:
+        enabled: true
+    settings:
+      runaway:
+        enabled: true
+        stop_after_minutes: 15
     triggers:
       - event: pr_closed
         action: stop_timer
 `),
 );
-assert.equal(customMinutes.entry.timer.rounding.mode, "down");
-assert.equal(customMinutes.entry.automated.runaway.stop_after_minutes, 15);
+assert.equal(customMinutes.entry.timer.rounding.start_mode, "down");
+assert.equal(customMinutes.entry.timer.rounding.stop_mode, "down");
+assert.equal(customMinutes.entry.automated.settings.runaway.stop_after_minutes, 15);
 assert.equal(customMinutes.entry.automated.triggers[0]?.event, "pr_closed");
 
 const quotedMinutes = parseClockifyConfig(
   parseYaml(`
 plugin:
-  version: 3
+  version: 4
 scope:
   workspace_id: ws_x
 entry:
@@ -740,13 +762,14 @@ entry:
       increment_minutes: "30"
       minimum_minutes: "20"
   automated:
-    runaway:
-      stop_after_minutes: "15"
+    settings:
+      runaway:
+        stop_after_minutes: "15"
 `),
 );
 assert.equal(quotedMinutes.entry.timer.rounding.increment_minutes, 30);
 assert.equal(quotedMinutes.entry.timer.rounding.minimum_minutes, 20);
-assert.equal(quotedMinutes.entry.automated.runaway.stop_after_minutes, 15);
+assert.equal(quotedMinutes.entry.automated.settings.runaway.stop_after_minutes, 15);
 
 const shortRunaway = {
   enabled: true,
@@ -795,7 +818,7 @@ assertInvalidConfig(
     entry: {
       automated: {
         enabled: true,
-        forge: "github",
+        forge: { github: { enabled: true } },
         triggers: [{ event: "pr_merged", action: "stop_timer" }],
       },
     },
@@ -810,7 +833,7 @@ assertInvalidConfig(
     entry: {
       automated: {
         enabled: true,
-        forge: "github",
+        forge: { github: { enabled: true } },
         triggers: [{ event: "nope", action: "stop_timer" }],
       },
     },
@@ -824,7 +847,7 @@ try {
     entry: {
       automated: {
         enabled: true,
-        forge: "github",
+        forge: { github: { enabled: true } },
         triggers: [{ event: "nope", action: "stop_timer" }],
       },
     },
@@ -839,7 +862,7 @@ withFixture((dir) => {
   mkdirSync(join(dir, ".clockify"), { recursive: true });
   writeFileSync(
     join(dir, ".clockify", "config.yml"),
-    `plugin:\n  version: 3\nscope:\n  workspace_id: ws_x\nentry:\n  automated:\n    enabled: true\n    forge: github\n    triggers:\n      - event: pr_merged\n        action: stop_timer\n`,
+    `plugin:\n  version: 4\nscope:\n  workspace_id: ws_x\nentry:\n  automated:\n    enabled: true\n    forge:\n      github:\n        enabled: true\n    triggers:\n      - event: pr_merged\n        action: stop_timer\n`,
   );
   try {
     loadClockifyConfig(dir);
@@ -852,5 +875,46 @@ withFixture((dir) => {
     assert.ok(error.message.includes(join(dir, ".clockify", "config.yml")));
   }
 });
+
+
+assert.throws(
+  () =>
+    parseClockifyConfig({
+      plugin: { version: 3 },
+      scope: { workspace_id: "ws_x" },
+    }),
+  /plugin\.version 3/,
+);
+
+assert.throws(
+  () =>
+    parseClockifyConfig({
+      scope: { workspace_id: "ws_x" },
+      entry: {
+        automated: {
+          forge: {
+            github: { enabled: true },
+            gitlab: { enabled: true },
+          },
+        },
+      },
+    }),
+  /at most one forge may be enabled/,
+);
+
+assert.throws(
+  () =>
+    parseClockifyConfig({
+      scope: { workspace_id: "ws_x" },
+      entry: {
+        automated: {
+          enabled: true,
+          forge: { gitlab: { enabled: true } },
+          triggers: [{ event: "issue_start", action: "start_timer" }],
+        },
+      },
+    }),
+  /forge gitlab triggers are not implemented/,
+);
 
 console.log("OK: config unit checks");

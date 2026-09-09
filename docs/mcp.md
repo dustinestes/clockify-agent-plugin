@@ -41,8 +41,8 @@ Clockify Agent Plugin MCP tools and other configuration information.
 
 **`clockify_start_timer` notes**
 
-- `entry_method`: `timer` (default) or `automated` — selects which yaml block for include_seconds, rounding, overlap, and description/task resolution.
-- `cursor_mode`: `plan` or `debug` — when `entry_method` is `automated`, resolve description/task from `platforms.cursor.modes.<mode>` instead of forge `on_start`.
+- `entry_method`: `timer` (default) or `automated` — selects which yaml block for include_seconds, rounding, overlap, and description/task resolution (`automated` reads under `entry.automated.settings`).
+- `cursor_mode`: `plan` or `debug` — when `entry_method` is `automated`, resolve description/task from `platforms.cursor.modes.<mode>` instead of forge `settings.on_start`.
 - Template fields when description/task use templates: `issue_number`, `issue_title`, `label` (deprecated alias `github_label`), plus `plan_title` / `debug_title` for `{planTitle}` / `{debugTitle}` on Cursor mode templates.
 - Pass `config_root` so user-scoped MCP finds `.clockify/config.yml` ([config.md](./config.md#which-repo-config_root)).
 

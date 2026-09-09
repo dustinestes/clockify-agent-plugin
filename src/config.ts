@@ -28,9 +28,8 @@ const roundingSchema = z
   .object({
     enabled: z.boolean().default(false),
     increment_minutes: positiveInt.default(15),
-    mode: roundingModeSchema.default("nearest"),
-    start_mode: roundingModeSchema.optional(),
-    stop_mode: roundingModeSchema.optional(),
+    start_mode: roundingModeSchema.default("nearest"),
+    stop_mode: roundingModeSchema.default("nearest"),
     minimum_minutes: positiveInt.optional(),
   })
   .default({});
@@ -168,16 +167,38 @@ const platformsSchema = z
   })
   .default({});
 
-const forgeSchema = z.enum(["none", "github", "gitlab", "bitbucket"]);
+const forgeNameSchema = z.enum(["github", "gitlab", "bitbucket"]);
+export type ForgeName = z.infer<typeof forgeNameSchema>;
 
-const automatedMethodSchema = z
+const forgeEntrySchema = z
   .object({
     enabled: z.boolean().default(false),
-    forge: forgeSchema.default("none"),
+  })
+  .default({});
+
+const forgeMapSchema = z
+  .object({
+    github: forgeEntrySchema,
+    gitlab: forgeEntrySchema,
+    bitbucket: forgeEntrySchema,
+  })
+  .default({});
+
+const automatedSettingsSchema = z
+  .object({
     include_seconds: z.boolean().default(false),
     on_start: onStartSchema,
     rounding: roundingSchema,
     overlap: overlapSchema,
+    runaway: runawaySchema,
+  })
+  .default({});
+
+const automatedMethodSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    settings: automatedSettingsSchema,
+    forge: forgeMapSchema,
     triggers: z
       .array(
         z.object({
@@ -186,7 +207,6 @@ const automatedMethodSchema = z
         }),
       )
       .default([]),
-    runaway: runawaySchema,
     platforms: platformsSchema,
   })
   .default({});
@@ -195,7 +215,7 @@ export const clockifyConfigSchema = z
   .object({
     plugin: z
       .object({
-        version: z.literal(3).default(3),
+        version: z.literal(4).default(4),
       })
       .default({}),
     scope: z
@@ -220,31 +240,42 @@ export const clockifyConfigSchema = z
     rejectLegacyTaskFrom(cfg.entry.timer.task, ["entry", "timer", "task"], ctx);
     rejectLegacyTaskFrom(cfg.entry.manual.task, ["entry", "manual", "task"], ctx);
     rejectLegacyTaskFrom(
-      automated.on_start.task,
-      ["entry", "automated", "on_start", "task"],
+      automated.settings.on_start.task,
+      ["entry", "automated", "settings", "on_start", "task"],
       ctx,
     );
 
+    const enabled = enabledForgeNames(automated.forge);
+    if (enabled.length > 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["entry", "automated", "forge"],
+        message:
+          "at most one forge may be enabled (github, gitlab, or bitbucket)",
+      });
+    }
+
     // Triggers may remain when enabled is false (paused automate). Init /
-    // unautomate keep forge: none and empty triggers.
-    if (automated.forge === "none" && automated.triggers.length > 0) {
+    // unautomate keep all forges off and empty triggers.
+    if (enabled.length === 0 && automated.triggers.length > 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["entry", "automated", "triggers"],
         message:
-          "forge triggers require entry.automated.forge to be github (or another forge), not none",
+          "forge triggers require an enabled forge under entry.automated.forge (e.g. github.enabled: true)",
       });
     }
 
+    const active = enabled[0];
     if (
-      automated.forge !== "github" &&
-      automated.forge !== "none" &&
+      active &&
+      active !== "github" &&
       automated.triggers.length > 0
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["entry", "automated", "forge"],
-        message: `forge ${automated.forge} triggers are not implemented yet; use github or clear triggers`,
+        path: ["entry", "automated", "forge", active],
+        message: `forge ${active} triggers are not implemented yet; use github or clear triggers`,
       });
     }
   });
@@ -273,14 +304,68 @@ function rejectLegacyTaskFrom(
 
 export type ClockifyConfig = z.infer<typeof clockifyConfigSchema>;
 export type RoundingConfig = ClockifyConfig["entry"]["timer"]["rounding"];
-export type RunawayConfig = ClockifyConfig["entry"]["automated"]["runaway"];
+export type RunawayConfig =
+  ClockifyConfig["entry"]["automated"]["settings"]["runaway"];
 export type DescriptionConfig =
   | ClockifyConfig["entry"]["timer"]["description"]
   | ClockifyConfig["entry"]["manual"]["description"]
-  | ClockifyConfig["entry"]["automated"]["on_start"]["description"];
-export type OnStartConfig = ClockifyConfig["entry"]["automated"]["on_start"];
+  | ClockifyConfig["entry"]["automated"]["settings"]["on_start"]["description"];
+export type OnStartConfig =
+  ClockifyConfig["entry"]["automated"]["settings"]["on_start"];
 export type CursorModeConfig = z.infer<typeof cursorModeSchema>;
-export type Forge = z.infer<typeof forgeSchema>;
+export type ForgeMap = ClockifyConfig["entry"]["automated"]["forge"];
+/** @deprecated Use ForgeName; kept as alias for call sites expecting a forge id. */
+export type Forge = ForgeName;
+
+export type EntryMethod = "timer" | "manual" | "automated";
+export type TimerEntryMethod = "timer" | "automated";
+
+export type TimerMethodBlock = {
+  include_seconds: boolean;
+  rounding: RoundingConfig;
+  overlap: ClockifyConfig["entry"]["timer"]["overlap"];
+};
+
+export function enabledForgeNames(forge: ForgeMap): ForgeName[] {
+  return (["github", "gitlab", "bitbucket"] as const).filter(
+    (name) => forge[name].enabled,
+  );
+}
+
+export function activeForge(forge: ForgeMap): ForgeName | null {
+  const enabled = enabledForgeNames(forge);
+  return enabled.length === 1 ? enabled[0] : null;
+}
+
+export function hasActiveForge(forge: ForgeMap): boolean {
+  return enabledForgeNames(forge).length === 1;
+}
+
+/** Timer or automated settings used for start/stop rounding and overlap. */
+export function resolveTimerMethodBlock(
+  config: ClockifyConfig,
+  method: TimerEntryMethod,
+): TimerMethodBlock {
+  if (method === "timer") {
+    return config.entry.timer;
+  }
+  const settings = config.entry.automated.settings;
+  return {
+    include_seconds: settings.include_seconds,
+    rounding: settings.rounding,
+    overlap: settings.overlap,
+  };
+}
+
+export function resolveOverlapOnConflict(
+  config: ClockifyConfig,
+  method: EntryMethod,
+): "prompt" | "override" {
+  if (method === "automated") {
+    return config.entry.automated.settings.overlap.on_conflict;
+  }
+  return config.entry[method].overlap.on_conflict;
+}
 
 export type LoadedConfig = {
   found: boolean;
@@ -447,7 +532,7 @@ export function formatClockifyConfigError(error: z.ZodError): string {
     .join("\n");
 }
 
-const V3_REINIT =
+const V4_REINIT =
   "Re-run /clockify-init (then /clockify-automate if you need forge or Cursor automation), or replace .clockify/config.yml from the plugin example.";
 
 export function parseClockifyConfig(
@@ -458,22 +543,26 @@ export function parseClockifyConfig(
     const obj = raw as Record<string, unknown>;
     if ("version" in obj && !("plugin" in obj) && !("plugin_internal" in obj)) {
       throw new Error(
-        `Invalid Clockify config (${source}): old root shape (version at file root). ${V3_REINIT}`,
+        `Invalid Clockify config (${source}): old root shape (version at file root). ${V4_REINIT}`,
       );
     }
     if ("plugin_internal" in obj || "entry_methods" in obj) {
       throw new Error(
-        `Invalid Clockify config (${source}): v2 keys (plugin_internal / entry_methods). v3 uses plugin / entry. ${V3_REINIT}`,
+        `Invalid Clockify config (${source}): v2 keys (plugin_internal / entry_methods). v4 uses plugin / entry. ${V4_REINIT}`,
       );
     }
-    if (
-      obj.plugin &&
-      typeof obj.plugin === "object" &&
-      (obj.plugin as { version?: unknown }).version === 2
-    ) {
-      throw new Error(
-        `Invalid Clockify config (${source}): plugin.version 2 is not supported. ${V3_REINIT}`,
-      );
+    if (obj.plugin && typeof obj.plugin === "object") {
+      const version = (obj.plugin as { version?: unknown }).version;
+      if (version === 2) {
+        throw new Error(
+          `Invalid Clockify config (${source}): plugin.version 2 is not supported. ${V4_REINIT}`,
+        );
+      }
+      if (version === 3) {
+        throw new Error(
+          `Invalid Clockify config (${source}): plugin.version 3 is not supported. ${V4_REINIT}`,
+        );
+      }
     }
   }
   const result = clockifyConfigSchema.safeParse(raw ?? {});
@@ -610,12 +699,18 @@ export function onStartUsesLabel(onStart: OnStartConfig): boolean {
 }
 
 export function isAutomationConfigured(config: ClockifyConfig): boolean {
-  return config.entry.automated.enabled && config.entry.automated.forge !== "none";
+  return (
+    config.entry.automated.enabled &&
+    hasActiveForge(config.entry.automated.forge)
+  );
 }
 
 /** Prior automate settings kept while live automation is off (disable, not unautomate). */
 export function isAutomationPaused(config: ClockifyConfig): boolean {
-  return !config.entry.automated.enabled && config.entry.automated.forge !== "none";
+  return (
+    !config.entry.automated.enabled &&
+    hasActiveForge(config.entry.automated.forge)
+  );
 }
 
 export function resolveCursorModeBlock(
@@ -686,8 +781,8 @@ export function applyRoundingToInterval(
     return { start: startIso, end: endIso, raw, applied: false };
   }
 
-  const startMode = rounding.start_mode ?? rounding.mode;
-  const stopMode = rounding.stop_mode ?? rounding.mode;
+  const startMode = rounding.start_mode;
+  const stopMode = rounding.stop_mode;
 
   let start = roundDate(
     new Date(startIso),
@@ -734,9 +829,6 @@ export function runawayCeilingEndIso(
   const startMs = new Date(startedAtIso).getTime();
   return new Date(startMs + stopAfterMinutes * 60 * 1000).toISOString();
 }
-
-export type EntryMethod = "timer" | "manual" | "automated";
-export type TimerEntryMethod = "timer" | "automated";
 
 export function floorToMinute(iso: string): string {
   const d = new Date(iso);
@@ -821,7 +913,7 @@ export function prepareStartInstant(
   }
   let roundingApplied = false;
   if (rounding.enabled) {
-    const startMode = rounding.start_mode ?? rounding.mode;
+    const startMode = rounding.start_mode;
     start = roundDate(
       new Date(start),
       rounding.increment_minutes,
@@ -841,7 +933,7 @@ export function applyStopRounding(
   if (!rounding.enabled) {
     return { end: rawEndIso, rawEnd: rawEndIso, applied: false };
   }
-  const stopMode = rounding.stop_mode ?? rounding.mode;
+  const stopMode = rounding.stop_mode;
   let end = roundDate(
     new Date(rawEndIso),
     rounding.increment_minutes,

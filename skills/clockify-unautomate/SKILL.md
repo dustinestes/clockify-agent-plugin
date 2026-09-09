@@ -3,9 +3,9 @@ name: clockify-unautomate
 description: >-
   Full rollback of agent-mediated Clockify tracking: remove the clockify Cursor
   rule and Clockify-owned hooks, and reset entry.automated in .clockify/config.yml
-  to init/example defaults (forge none, empty triggers, platforms.cursor off,
-  modes cleared). Does not change plugin, scope, timer, or manual. Use when the
-  user wants to undo automate — not a temporary pause (use
+  to init/example defaults (all forge.*.enabled false, empty triggers,
+  platforms.cursor off, modes cleared). Does not change plugin, scope, timer, or
+  manual. Use when the user wants to undo automate — not a temporary pause (use
   clockify-automate-disable / clockify-automate-enable for that).
 disable-model-invocation: true
 ---
@@ -21,7 +21,7 @@ To remove `.clockify/` entirely, use [`clockify-uninit`](../clockify-uninit/SKIL
 ## Confirm
 
 1. Inventory with tools if needed, then **repeat the result in a normal chat message** (markdown list of paths). Do not rely on tool snippets as the only listing.
-2. Chat list: rule + Clockify-owned hooks (including `.cursor/hooks/clockify-runaway.sh` when present), and note empty dirs that will be removed if they become empty after cleanup. Note that `entry.automated` in `.clockify/config.yml` will be **reset to example defaults** (forge/on_start/modes wiped). The managed `.clockify/` gitignore line stays. `plugin` / `scope` / `entry.timer` / `entry.manual` are not touched.
+2. Chat list: rule + Clockify-owned hooks (including `.cursor/hooks/clockify-runaway.sh` when present), and note empty dirs that will be removed if they become empty after cleanup. Note that `entry.automated` in `.clockify/config.yml` will be **reset to example defaults** (forge/`settings.on_start`/modes wiped). The managed `.clockify/` gitignore line stays. `plugin` / `scope` / `entry.timer` / `entry.manual` are not touched.
 3. Then AskQuestion with **only** a short confirm, e.g. “Roll back Clockify automate in this repo?” — do **not** put the inventory in the question box.
 4. Do **not** delete `.clockify/` or the managed `.clockify/` gitignore line.
 5. Do **not** uninstall the Clockify Agent Plugin unless the user explicitly asks.
@@ -44,35 +44,41 @@ To remove `.clockify/` entirely, use [`clockify-uninit`](../clockify-uninit/SKIL
    ```yaml
    automated:
      enabled: false
-     forge: none
-     include_seconds: false
-     on_start:
-       when_multiple_labels: first
-       description:
-         from: prompt
-       task:
-         from: none
-         if_missing: none
-     rounding:
-       enabled: true
-       increment_minutes: 15
-       mode: nearest
-       start_mode: nearest
-       stop_mode: nearest
-       minimum_minutes: 15
-     overlap:
-       on_conflict: prompt
+     settings:
+       include_seconds: false
+       on_start:
+         when_multiple_labels: first
+         description:
+           from: prompt
+         task:
+           from: none
+           if_missing: none
+       rounding:
+         enabled: false
+         increment_minutes: 15
+         start_mode: nearest
+         stop_mode: nearest
+         minimum_minutes: 15
+       overlap:
+         on_conflict: prompt
+       runaway:
+         enabled: false
+         stop_after_minutes: 45
+     forge:
+       github:
+         enabled: false
+       gitlab:
+         enabled: false
+       bitbucket:
+         enabled: false
      triggers: []
-     runaway:
-       enabled: true
-       stop_after_minutes: 45
      platforms:
        cursor:
          enabled: false
          modes: {}
    ```
 
-   Prefer replacing the whole `entry.automated` mapping with the example defaults above so leftover forge/`on_start`/`modes` keys cannot linger. If the user’s timer/manual rounding differs from the example, still only touch `entry.automated` — do not copy automated rounding onto timer/manual.
+   Prefer replacing the whole `entry.automated` mapping with the example defaults above so leftover forge/`settings.on_start`/`modes` keys cannot linger. If the user’s timer/manual rounding differs from the example, still only touch `entry.automated` — do not copy automated rounding onto timer/manual.
 
 ## Do not
 
@@ -80,7 +86,7 @@ To remove `.clockify/` entirely, use [`clockify-uninit`](../clockify-uninit/SKIL
 - Delete a non-empty `.cursor/hooks/` or `.cursor/rules/` directory
 - Delete `.cursor/` wholesale
 - Delete `.clockify/` or a non-empty `.gitignore`
-- Leave forge / `on_start` / `platforms.cursor.modes` in place “for convenience”
+- Leave forge / `settings.on_start` / `platforms.cursor.modes` in place “for convenience”
 - Invent retain-vs-reask rules for a later `/clockify-automate` — the next automate run is a full wizard again
 - Change `scope.project` (even if automate set `fixed`) unless the user asks — project pin is shared with timer/manual
 - Uninstall Directory / local plugin or clear `CLOCKIFY_API_KEY`
