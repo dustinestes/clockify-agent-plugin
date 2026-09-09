@@ -5,8 +5,8 @@ description: >-
   rule and Clockify-owned hooks, and reset entry.automated in .clockify/config.yml
   to init/example defaults (forge none, empty triggers, platforms.cursor off,
   modes cleared). Does not change plugin, scope, timer, or manual. Use when the
-  user wants to undo automate — not a temporary pause (that is a future
-  disable/enable skill).
+  user wants to undo automate — not a temporary pause (use
+  clockify-automate-disable / clockify-automate-enable for that).
 disable-model-invocation: true
 ---
 
@@ -14,7 +14,7 @@ disable-model-invocation: true
 
 **Rollback**, not a pause. Confirm, then remove Cursor glue and reset **only** automate-owned yaml to the plugin example defaults. Everything outside `entry.automated` stays (workspace pin, project, timer, manual).
 
-Temporary disable while keeping forge/platform settings is **out of scope** here — that is [`clockify-automate-disable` / `enable`](https://github.com/dustinestes/clockify-agent-plugin/issues/87) (future).
+Temporary disable while keeping forge/platform settings: [`clockify-automate-disable`](../clockify-automate-disable/SKILL.md) / [`clockify-automate-enable`](../clockify-automate-enable/SKILL.md).
 
 To remove `.clockify/` entirely, use [`clockify-uninit`](../clockify-uninit/SKILL.md).
 

@@ -225,18 +225,8 @@ export const clockifyConfigSchema = z
       ctx,
     );
 
-    if (!automated.enabled) {
-      if (automated.triggers.length > 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["entry", "automated", "triggers"],
-          message:
-            "triggers must be empty when entry.automated.enabled is false",
-        });
-      }
-      return;
-    }
-
+    // Triggers may remain when enabled is false (paused automate). Init /
+    // unautomate keep forge: none and empty triggers.
     if (automated.forge === "none" && automated.triggers.length > 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -621,6 +611,11 @@ export function onStartUsesLabel(onStart: OnStartConfig): boolean {
 
 export function isAutomationConfigured(config: ClockifyConfig): boolean {
   return config.entry.automated.enabled && config.entry.automated.forge !== "none";
+}
+
+/** Prior automate settings kept while live automation is off (disable, not unautomate). */
+export function isAutomationPaused(config: ClockifyConfig): boolean {
+  return !config.entry.automated.enabled && config.entry.automated.forge !== "none";
 }
 
 export function resolveCursorModeBlock(

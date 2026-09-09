@@ -24,9 +24,11 @@ If `.clockify/config.yml` is missing (`clockify_get_config` with `config_root` r
 
 If config already exists, do not overwrite the whole file — patch only the `entry.automated` (and `scope.project` when the forge wizard sets it) fields below.
 
+**Paused resume:** If `forge` is already a real forge and `enabled` is false (after `/clockify-automate-disable`), skip the wizards below unless the user asks to reconfigure. Set `enabled: true`, restore `platforms.cursor.enabled` when modes warrant it, rewrite Cursor rules, and install/remove runaway hooks per `runaway.enabled` — same as [`clockify-automate-enable`](../clockify-automate-enable/SKILL.md). Temporary pause without wizards: that skill pair.
+
 ## Forge wizard
 
-Skip this wizard only when `entry.automated.forge` is already a real forge (`github` / `gitlab` / `bitbucket`) **and** `entry.automated.enabled` is true, unless the user asks to reconfigure forge settings. After `/clockify-unautomate`, forge is `none` and enabled is false — always run the full wizard.
+Skip this wizard only when `entry.automated.forge` is already a real forge (`github` / `gitlab` / `bitbucket`), unless the user asks to reconfigure forge settings. After `/clockify-unautomate`, forge is `none` — always run the full wizard. After `/clockify-automate-disable`, forge stays set — skip and treat like enable (flip `enabled` on + refresh glue) unless they ask to reconfigure.
 
 1. **Forge** — AskQuestion. Only **GitHub** is implemented; present it as the choice (other forges are stubs — do not offer them as working options). Set `entry.automated.forge: github`.
 
@@ -107,7 +109,7 @@ Skip this wizard only when `entry.automated.forge` is already a real forge (`git
 
 ## Cursor platforms wizard
 
-Skip only when `platforms.cursor.enabled` is true and mode blocks already exist, unless the user asks to reconfigure. After `/clockify-unautomate`, `modes` is `{}` — always ask.
+Skip only when `platforms.cursor.modes` already has mode blocks (even if `platforms.cursor.enabled` is false after a pause), unless the user asks to reconfigure. After `/clockify-unautomate`, `modes` is `{}` — always ask.
 
 Otherwise ask whether to enable Cursor Plan and Debug mode timers (defaults: **yes** for both). Optionally ask to rename the fixed task names (defaults: `agent_planning`, `agent_debug`).
 
@@ -138,7 +140,7 @@ If the user declines both modes, leave `platforms.cursor.enabled: false` and `mo
 
 ## Runaway wizard
 
-Skip only when `entry.automated.enabled` is already true **and** the user did not ask to reconfigure runaway. After `/clockify-unautomate`, always ask (example defaults restored).
+Skip only when `entry.automated.forge` is already a real forge **and** the user did not ask to reconfigure runaway. After `/clockify-unautomate`, always ask (example defaults restored). After `/clockify-automate-disable`, forge stays set — keep existing `runaway` values (do not re-ask) unless they ask to reconfigure.
 
 This is **Clockify readiness**, not IDE idle detection: when the plugin next sees a running timer past `stop_after_minutes`, AskQuestion what to do so automations have a clean state. Same check for in-session resume and for a preexisting timer started outside the plugin.
 
@@ -273,6 +275,7 @@ Use Clockify MCP tools only; never invent project/task ids.
 - Install a background daemon
 - Skip init when config or ignore defaults are missing
 - Skip the runaway wizard on a fresh automate (or after unautomate)
+- Re-wizard after `/clockify-automate-disable` when forge settings are already present (resume like enable unless the user asks to reconfigure)
 - Skip installing runaway hooks when `runaway.enabled` is true
 - Leave orphan Clockify runaway hooks/script when `runaway.enabled` is false
 - Silently stop a timer past the runaway ceiling — always AskQuestion first

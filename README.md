@@ -52,7 +52,7 @@ Two modes. Both use the same Clockify project for a given repo config (when auto
 | Mode | How time gets in | Skills |
 |------|------------------|--------|
 | **Manual** | You (or the agent, when you ask) start/stop a timer or log a completed range | `/clockify-start-timer`, `clockify-stop-timer`, `/clockify-enter-time` |
-| **Automated** | Agent follows Cursor rules from `entry.automated` (forge issue/PR triggers + optional Plan/Debug) | `/clockify-automate` on; `/clockify-unautomate` revert to manual |
+| **Automated** | Agent follows Cursor rules from `entry.automated` (forge issue/PR triggers + optional Plan/Debug) | `/clockify-automate` on; `/clockify-automate-disable` pause (keep settings); `/clockify-unautomate` full rollback |
 
 ---
 
@@ -101,13 +101,15 @@ To undo a repo without uninstalling the plugin: [docs/use.md](docs/use.md#remove
 
 You talk to the agent in plain language (or run a `/skill`). The agent calls MCP tools; you do not.
 
-> Setup skills (`init`, `uninit`, `automate`, `unautomate`) are slash-only so they do not fire by accident.
+> Setup skills (`init`, `uninit`, `automate`, `automate-disable`, `automate-enable`, `unautomate`) are slash-only so they do not fire by accident.
 
 | Group | Skill | Purpose | Example |
 |-------|-------|---------|---------|
 | Repo | [`clockify-init`](skills/clockify-init/SKILL.md) | Pin workspace; write v3 base config + ignore defaults (no project ensure) | `/clockify-init` |
 | Repo | [`clockify-uninit`](skills/clockify-uninit/SKILL.md) | Full local teardown (keep plugin unless asked) | `/clockify-uninit` |
 | Mode | [`clockify-automate`](skills/clockify-automate/SKILL.md) | Agent mode on: forge + Cursor Plan/Debug + runaway, ensure, rules, hooks when runaway enabled | `/clockify-automate` |
+| Mode | [`clockify-automate-disable`](skills/clockify-automate-disable/SKILL.md) | Pause automate: remove rule/hooks; keep forge/triggers/modes (`enabled: false`) | `/clockify-automate-disable` |
+| Mode | [`clockify-automate-enable`](skills/clockify-automate-enable/SKILL.md) | Resume after disable: flip flags on, rewrite rule/hooks from preserved settings | `/clockify-automate-enable` |
 | Mode | [`clockify-unautomate`](skills/clockify-unautomate/SKILL.md) | Agent mode off: remove rule/hooks; reset `entry.automated` to example defaults | `/clockify-unautomate` |
 | Timer | [`clockify-start-timer`](skills/clockify-start-timer/SKILL.md) | Start a running timer (`entry_method: timer`) | `/clockify-start-timer` or “start a timer on this issue” |
 | Timer | [`clockify-stop-timer`](skills/clockify-stop-timer/SKILL.md) | Stop the running timer | `/clockify-stop-timer` or “stop my Clockify timer” |

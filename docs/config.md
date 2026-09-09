@@ -54,10 +54,13 @@ Two stages. Init writes a usable base yaml for timer and enter-time. Automate tu
 |-------|-------|----------------|
 | Base | `/clockify-init` | Workspace pin, prompt descriptions, timer task none, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off |
 | Automated | `/clockify-automate` | Forge wizard (GitHub), Cursor Plan/Debug platforms, ensure project/tasks, Cursor rules |
+| Pause | `/clockify-automate-disable` / `enable` | Temporary off/on without wiping forge / triggers / modes |
 
 **Workspace:** required pin (`scope.workspace_id`) chosen at `/clockify-init`. The plugin does **not** follow Clockify’s UI active workspace.
 
 **Clients:** optional Clockify project metadata, not stored in yaml. Assigned during `/clockify-automate` when ensuring a project (never written to `config.yml`).
+
+**Pause vs rollback:** disable keeps automate-owned settings and removes Cursor glue; unautomate resets `entry.automated` to example defaults. Details: [schema — Automated](./schema/config.yml.md#automated-entryautomated).
 
 ### Base (`/clockify-init`)
 
@@ -143,7 +146,7 @@ Full field list: [schema/config.yml.md](./schema/config.yml.md). Wizard maps: [f
 - **Default:** do not commit `.clockify/`. Init writes a directory self-ignore and a managed stanza in the repo `.gitignore`.
 - **Team opt-in:** delete the managed ignore block and commit `.clockify/` on purpose if the team wants shared standards. Still never commit API keys.
 - **Cursor glue:** `.cursor/rules/clockify.mdc` is listed in the managed stanza when automate writes rules; `.cursor/hooks/clockify-runaway.sh` is listed when runaway hooks are installed. Do **not** ignore `.cursor/hooks.json` (shared) or all of `.cursor/`.
-- **Cleanup:** run `clockify-unautomate` to drop Cursor glue and **reset** `entry.automated` to example defaults (full rollback — not a pause). Temporary disable/enable without losing settings: [#87](https://github.com/dustinestes/clockify-agent-plugin/issues/87). Or `clockify-uninit` for full local teardown. Uninit removes the managed gitignore stanza; if `.gitignore` is then empty (or whitespace-only), it deletes the file. A non-empty `.gitignore` is never deleted.
+- **Cleanup:** run `clockify-automate-disable` to pause (keep forge/triggers/modes; remove Cursor glue). Run `clockify-unautomate` to drop Cursor glue and **reset** `entry.automated` to example defaults (full rollback). Or `clockify-uninit` for full local teardown. Uninit removes the managed gitignore stanza; if `.gitignore` is then empty (or whitespace-only), it deletes the file. A non-empty `.gitignore` is never deleted.
 - A global `core.excludesfile` can ignore Clockify files in every repo; it is an extra option, not a substitute for init’s repo-local default.
 
 ---

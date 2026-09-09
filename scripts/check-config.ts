@@ -19,6 +19,7 @@ import {
   gapFitStart,
   intervalsOverlap,
   isAutomationConfigured,
+  isAutomationPaused,
   isTimerPastRunawayCeiling,
   runawayCeilingEndIso,
   latestCompletedEnd,
@@ -80,6 +81,17 @@ assert.equal(defaultConfig().entry.automated.forge, "none");
 assert.deepEqual(defaultConfig().entry.automated.triggers, []);
 assert.equal(isAutomationConfigured(defaultConfig()), false);
 assert.equal(isAutomationConfigured(cfg), true);
+assert.equal(isAutomationPaused(defaultConfig()), false);
+assert.equal(isAutomationPaused(cfg), false);
+assert.equal(
+  isAutomationPaused(
+    clockifyConfigSchema.parse({
+      scope: { workspace_id: "ws_test" },
+      entry: { automated: { enabled: false, forge: "github" } },
+    }),
+  ),
+  true,
+);
 
 assert.equal(
   applyDescriptionTemplate(cfg.entry.timer.description.template, {
@@ -403,19 +415,39 @@ assert.throws(
   /Invalid Clockify config/,
 );
 
-assert.throws(
-  () =>
-    parseClockifyConfig({
-      scope: { workspace_id: "ws_x" },
-      entry: {
-        automated: {
-          enabled: false,
-          triggers: [{ event: "issue_start", action: "start_timer" }],
+{
+  // Paused automate: enabled false but forge/triggers/modes retained.
+  const paused = parseClockifyConfig({
+    scope: { workspace_id: "ws_x" },
+    entry: {
+      automated: {
+        enabled: false,
+        forge: "github",
+        triggers: [{ event: "issue_start", action: "start_timer" }],
+        platforms: {
+          cursor: {
+            enabled: false,
+            modes: {
+              plan: {
+                enabled: true,
+                triggers: [
+                  { event: "start", action: "start_timer" },
+                  { event: "stop", action: "stop_timer" },
+                ],
+                task: { from: "fixed", name: "agent_planning", if_missing: "create" },
+              },
+            },
+          },
         },
       },
-    }),
-  /triggers must be empty when entry\.automated\.enabled is false/,
-);
+    },
+  });
+  assert.equal(paused.entry.automated.enabled, false);
+  assert.equal(paused.entry.automated.forge, "github");
+  assert.equal(paused.entry.automated.triggers.length, 1);
+  assert.equal(paused.entry.automated.platforms.cursor.enabled, false);
+  assert.ok(paused.entry.automated.platforms.cursor.modes.plan);
+}
 
 assert.throws(
   () =>
@@ -424,6 +456,21 @@ assert.throws(
       entry: {
         automated: {
           enabled: true,
+          forge: "none",
+          triggers: [{ event: "issue_start", action: "start_timer" }],
+        },
+      },
+    }),
+  /forge triggers require entry\.automated\.forge/,
+);
+
+assert.throws(
+  () =>
+    parseClockifyConfig({
+      scope: { workspace_id: "ws_x" },
+      entry: {
+        automated: {
+          enabled: false,
           forge: "none",
           triggers: [{ event: "issue_start", action: "start_timer" }],
         },

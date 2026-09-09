@@ -130,7 +130,8 @@ The Directory / npx **plugin stays installed**. These skills only change the cur
 
 | Want | Skill | What it does |
 |------|-------|----------------|
-| Back to **manual** entry (full automate rollback) | `/clockify-unautomate` | Removes Cursor rule/hooks and resets `entry.automated` to example defaults (`forge: none`, empty triggers, Cursor modes cleared). Keeps `plugin` / `scope` / timer / manual. Next `/clockify-automate` runs the wizards again. Temporary pause without losing settings: [#87](https://github.com/dustinestes/clockify-agent-plugin/issues/87). |
+| Temporary **pause**, keep forge/platform settings | `/clockify-automate-disable` → `/clockify-automate-enable` | Removes Cursor rule/hooks; sets `entry.automated.enabled: false` and `platforms.cursor.enabled: false` without clearing forge / `on_start` / triggers / runaway prefs / `modes`. Enable restores flags + glue from preserved config (no full re-wizard). |
+| Back to **manual** entry (full automate rollback) | `/clockify-unautomate` | Removes Cursor rule/hooks and resets `entry.automated` to example defaults (`forge: none`, empty triggers, Cursor modes cleared). Keeps `plugin` / `scope` / timer / manual. Next `/clockify-automate` runs the wizards again. |
 | **All** Clockify files gone from this repo | `/clockify-uninit` | Unautomate, then deletes `.clockify/` and the managed gitignore stanza (and `.gitignore` itself if that left the file empty). Does not uninstall the plugin or clear `CLOCKIFY_API_KEY` unless you ask. |
 
 Uninstalling the plugin itself is Cursor → remove Clockify Agent Plugin (or drop the npx MCP server). That is separate from uninit.
