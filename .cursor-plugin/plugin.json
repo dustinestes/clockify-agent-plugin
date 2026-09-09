@@ -1,7 +1,7 @@
 {
   "name": "clockify-agent-plugin",
   "displayName": "Clockify Agent Plugin",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "description": "Unofficial Clockify time tracking for coding sessions - MCP tools plus workflow skills. Not affiliated with Clockify/Cake.com.",
   "author": {
     "name": "Dustin Estes",
@@ -10,7 +10,12 @@
   "homepage": "https://github.com/dustinestes/clockify-agent-plugin",
   "repository": "https://github.com/dustinestes/clockify-agent-plugin",
   "license": "MIT",
-  "keywords": ["clockify", "mcp", "time-tracking", "productivity"],
+  "keywords": [
+    "clockify",
+    "mcp",
+    "time-tracking",
+    "productivity"
+  ],
   "logo": "assets/logo.svg",
   "skills": "./skills/",
   "mcpServers": ".mcp.json",
@@ -22,6 +27,8 @@
         "description": "Clockify API key from Profile Settings"
       }
     },
-    "required": ["CLOCKIFY_API_KEY"]
+    "required": [
+      "CLOCKIFY_API_KEY"
+    ]
   }
 }
