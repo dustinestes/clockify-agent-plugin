@@ -26,8 +26,10 @@ import {
   resolveConfiguredWorkspaceId,
   resolveCursorModeBlock,
   resolveEntryDescription,
+  resolveOverlapOnConflict,
   resolveProjectName,
   resolveRepoName,
+  resolveTimerMethodBlock,
   type LoadedConfig,
   type EntryMethod,
   type TimerEntryMethod,
@@ -207,7 +209,7 @@ function resolveDescription(
 
   if (method === "automated") {
     return resolveEntryDescription(
-      loaded.config.entry.automated.on_start.description,
+      loaded.config.entry.automated.settings.on_start.description,
       fields,
     );
   }
@@ -633,7 +635,7 @@ registerClockifyTool(
       const running = await client(config_root).getRunningTimer(workspace_id);
       if (!running) return textResult({ running: false });
       const loaded = loadConfig(config_root);
-      const runaway = loaded.config.entry.automated.runaway;
+      const runaway = loaded.config.entry.automated.settings.runaway;
       const pastCeiling = isTimerPastRunawayCeiling(
         running.timeInterval.start,
         runaway,
@@ -742,7 +744,7 @@ registerClockifyTool(
         return configMissResult(loaded, config_root);
       }
       const method: TimerEntryMethod = entry_method ?? "timer";
-      const block = loaded.config.entry[method];
+      const block = resolveTimerMethodBlock(loaded.config, method);
       const resolvedDescription = resolveDescription(
         method,
         {
@@ -865,8 +867,8 @@ registerClockifyTool(
       }
 
       const method: TimerEntryMethod = entry_method ?? "timer";
-      const block = loaded.config.entry[method];
-      const runaway = loaded.config.entry.automated.runaway;
+      const block = resolveTimerMethodBlock(loaded.config, method);
+      const runaway = loaded.config.entry.automated.settings.runaway;
       const useRunawayCeiling = Boolean(runaway_stop) && runaway.enabled;
 
       let stopped: { end: string; rawEnd: string; applied: boolean };
@@ -923,7 +925,8 @@ registerClockifyTool(
         runaway_stop: useRunawayCeiling,
         rounding: {
           applied: stopped.applied,
-          mode: rounding.stop_mode ?? rounding.mode,
+          start_mode: rounding.start_mode,
+          stop_mode: rounding.stop_mode,
           increment_minutes: rounding.increment_minutes,
           minimum_minutes: rounding.minimum_minutes,
           rawEnd: stopped.rawEnd,
@@ -990,7 +993,7 @@ registerClockifyTool(
         return configMissResult(loaded, config_root);
       }
       const method = (entry_method ?? "manual") as EntryMethod;
-      const onConflict = loaded.config.entry[method].overlap.on_conflict;
+      const onConflict = resolveOverlapOnConflict(loaded.config, method);
       const resolvedDescription = resolveDescription(
         method,
         {

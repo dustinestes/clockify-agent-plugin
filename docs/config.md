@@ -33,7 +33,7 @@ How `.clockify/config.yml` gets on disk, how git treats it, and how the server f
 
 The API key lives in **user** MCP (`~/.cursor/mcp.json`). Each git repo keeps its own `.clockify/config.yml` (workspace, project, rounding, templates, triggers). Do not put API keys in the yaml.
 
-Root keys are `plugin` (version **3**), `scope`, and `entry` (`timer` / `manual` / `automated`). Preferred: `/clockify-init` in the repo (workspace picker + ignore defaults). Decision map: [flows.md](./flows.md). Or copy by hand:
+Root keys are `plugin` (version **4**), `scope`, and `entry` (`timer` / `manual` / `automated`). Preferred: `/clockify-init` in the repo (workspace picker + ignore defaults). Decision map: [flows.md](./flows.md). Or copy by hand:
 
 ```bash
 mkdir -p .clockify
@@ -52,7 +52,7 @@ Two stages. Init writes a usable base yaml for timer and enter-time. Automate tu
 
 | Stage | Skill | What you get |
 |-------|-------|----------------|
-| Base | `/clockify-init` | Workspace pin, prompt descriptions, timer task none, `entry.automated.enabled: false`, `forge: none`, empty triggers, Cursor platforms off |
+| Base | `/clockify-init` | Workspace pin, prompt descriptions, timer task none, `entry.automated.enabled: false`, all forges off, empty triggers, Cursor platforms off |
 | Automated | `/clockify-automate` | Forge wizard (GitHub), Cursor Plan/Debug platforms, ensure project/tasks, Cursor rules |
 | Pause | `/clockify-automate-disable` / `enable` | Temporary off/on without wiping forge / triggers / modes |
 
@@ -64,13 +64,15 @@ Two stages. Init writes a usable base yaml for timer and enter-time. Automate tu
 
 ### Base (`/clockify-init`)
 
-Pins the workspace and writes v3 yaml from [`.clockify/config.yml.example`](../.clockify/config.yml.example):
+Pins the workspace and writes v4 yaml from [`.clockify/config.yml.example`](../.clockify/config.yml.example):
 
-- `plugin.version: 3`
+- `plugin.version: 4`
 - `scope.project.from: local_folder`
 - `entry.timer` — description `from: prompt`; task `from: none` (start without blocking on a task name)
 - `entry.manual` — description and task `from: prompt`
-- `entry.automated.enabled: false`, `forge: none`, empty `triggers`, runaway ceiling 45 minutes, `platforms.cursor` off
+- `entry.automated.enabled: false`, all `forge.*.enabled: false`, empty `triggers`, `settings.runaway` ceiling 45 minutes, `platforms.cursor` off
+
+v1/v2/v3 configs fail closed — re-run `/clockify-init` (then `/clockify-automate` if needed).
 
 Does **not** create Clockify projects or tasks. Timer and enter-time work after init; run `/clockify-automate` when you want agent automation.
 
@@ -78,10 +80,10 @@ Does **not** create Clockify projects or tasks. Timer and enter-time work after 
 
 If config is missing, runs init first. Then:
 
-1. **Forge wizard** — GitHub (`entry.automated.forge: github`), how `scope.project` resolves, `on_start` description/task (and `when_multiple_labels` when `{label}` is used), optional client on ensure
+1. **Forge wizard** — GitHub (`entry.automated.forge.github.enabled: true`; at most one forge), how `scope.project` resolves, `settings.on_start` description/task (and `when_multiple_labels` when `{label}` is used), optional client on ensure
 2. **Cursor platforms wizard** — Plan/Debug mode timers (`platforms.cursor.modes.plan` / `debug`)
-3. **Runaway wizard** — enable + `stop_after_minutes` (suggested default 45)
-4. Patches `entry.automated` (enabled, forge triggers, platforms, runaway), ensures project/tasks, writes `.cursor/rules/clockify.mdc`, and when runaway is enabled installs Clockify-owned runaway hooks (`.cursor/hooks/clockify-runaway.sh`)
+3. **Runaway wizard** — enable + `stop_after_minutes` under `settings.runaway` (suggested default 45)
+4. Patches `entry.automated` (enabled, forge map, root `triggers`, platforms, `settings`), ensures project/tasks, writes `.cursor/rules/clockify.mdc`, and when runaway is enabled installs Clockify-owned runaway hooks (`.cursor/hooks/clockify-runaway.sh`)
 
 Plan/Debug detection is **rule-first** (the Cursor rule tells the agent when to start/stop). Work outside configured automate scenarios is timer / enter-time. Runaway hooks are **required** when the runaway wizard enables them (not optional).
 
@@ -89,7 +91,7 @@ Plan/Debug detection is **rule-first** (the Cursor rule tells the agent when to 
 
 These are what you get after automate — not separate init pickers.
 
-**Folder as project, label as task** — project name = git toplevel / folder name; forge labels become Clockify tasks via `on_start.task` template `{label}`:
+**Folder as project, label as task** — project name = git toplevel / folder name; forge labels become Clockify tasks via `settings.on_start.task` template `{label}`:
 
 ```yaml
 scope:
@@ -100,16 +102,19 @@ scope:
 entry:
   automated:
     enabled: true
-    forge: github
-    on_start:
-      when_multiple_labels: first
-      description:
-        from: template
-        template: "{issue_number} - {issue_title}"
-      task:
-        from: template
-        template: "{label}"
-        if_missing: create
+    forge:
+      github:
+        enabled: true
+    settings:
+      on_start:
+        when_multiple_labels: first
+        description:
+          from: template
+          template: "{issue_number} - {issue_title}"
+        task:
+          from: template
+          template: "{label}"
+          if_missing: create
 ```
 
 **Fixed project, folder as task** — many sibling repos under one Clockify project; each repo is a task:
@@ -124,15 +129,18 @@ scope:
 entry:
   automated:
     enabled: true
-    forge: github
-    on_start:
-      when_multiple_labels: first
-      description:
-        from: template
-        template: "{issue_number} - {issue_title}"
-      task:
-        from: local_folder
-        if_missing: create
+    forge:
+      github:
+        enabled: true
+    settings:
+      on_start:
+        when_multiple_labels: first
+        description:
+          from: template
+          template: "{issue_number} - {issue_title}"
+        task:
+          from: local_folder
+          if_missing: create
 ```
 
 Full field list: [schema/config.yml.md](./schema/config.yml.md). Wizard maps: [flows.md](./flows.md).

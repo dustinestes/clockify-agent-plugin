@@ -14,6 +14,6 @@ Read-only check so the user does not need the Clockify UI.
 
 1. If `config_root` is already known this session and still this repo, reuse it. Otherwise resolve once with `git rev-parse --show-toplevel` from the working directory (open tabs are not required; multi-root: focused path only as a tie-breaker; non-git: Cursor window folder). Re-resolve when the folder or focused root changes. Pass that string on Clockify MCP calls — do not run git before every tool.
 2. `clockify_get_running_timer` with `config_root`.
-3. If running: report description, project, task, start time, duration so far, and runaway (`pastCeiling`) when `entry.automated.runaway` is enabled. If `pastCeiling`, AskQuestion before stopping: keep running, stop and cap (`runaway_stop: true`), or stop at now.
+3. If running: report description, project, task, start time, duration so far, and runaway (`pastCeiling`) when `entry.automated.settings.runaway` is enabled. If `pastCeiling`, AskQuestion before stopping: keep running, stop and cap (`runaway_stop: true`), or stop at now.
 4. If nothing is running, say so clearly.
 5. Do **not** start, stop, or create entries. Offer `clockify-start-timer`, `clockify-stop-timer`, or `clockify-enter-time` if they want to act.

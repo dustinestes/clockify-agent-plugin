@@ -1,7 +1,7 @@
 ---
 name: clockify-init
 description: >-
-  Bootstrap Clockify for a repo: AskQuestion for workspace only, write v3
+  Bootstrap Clockify for a repo: AskQuestion for workspace only, write v4
   .clockify/config.yml from the plugin example (plugin / scope / entry), and
   default-ignore personal time-tracking files. Use when setting up time
   tracking (timer or enter-time). Safe to re-run: does not overwrite existing
@@ -12,7 +12,7 @@ disable-model-invocation: true
 
 # Clockify init
 
-Pin a workspace and write the v3 base contract so timer and enter-time share one yaml. Config is **personal by default** (gitignored). Decision map: [flows.md](../../docs/flows.md).
+Pin a workspace and write the v4 base contract so timer and enter-time share one yaml. Config is **personal by default** (gitignored). Decision map: [flows.md](../../docs/flows.md).
 
 Next mode: [`clockify-automate`](../clockify-automate/SKILL.md) runs the forge + Cursor platforms wizards and writes rules. Do not write those here.
 
@@ -52,7 +52,7 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
    2 - Workspace B Name (def456...)
    ```
 
-2. Write `.clockify/config.yml`: copy the plugin’s `.clockify/config.yml.example` as the base scaffold, then set `scope.workspace_id` from step 1. Leave everything else as in the example (`plugin.version: 3`, `scope.project.from: local_folder`, `entry.timer` description prompt / task none, `entry.manual` prompt defaults, `entry.automated.enabled: false`, `forge: none`, empty `triggers`, Cursor platforms off). Do **not** store a client in yaml — clients live on the Clockify project only (set later by automate when ensuring).
+2. Write `.clockify/config.yml`: copy the plugin’s `.clockify/config.yml.example` as the base scaffold, then set `scope.workspace_id` from step 1. Leave everything else as in the example (`plugin.version: 4`, `scope.project.from: local_folder`, `entry.timer` description prompt / task none, `entry.manual` prompt defaults, `entry.automated.enabled: false`, all `forge.*.enabled: false`, empty `triggers`, Cursor platforms off). Do **not** store a client in yaml — clients live on the Clockify project only (set later by automate when ensuring).
 
 3. Write `.clockify/.managed-by-init` (empty marker).
 4. Write `.clockify/.gitignore` with a single line: `*` (directory self-ignore so even `git add .` skips personal files).
@@ -84,4 +84,4 @@ Re-runs are expected (including from `clockify-automate`). Treat existing setup 
 
 ## Default yaml (unless user overrides)
 
-Copy the plugin `.clockify/config.yml.example` as the base scaffold. Roots are `plugin`, `scope`, and `entry` (`timer` / `manual` / `automated`): required workspace pin, project from `local_folder`, timer description prompt with task none (do not block starts on a task name), manual prompt defaults, `entry.automated.enabled: false` with `forge: none`, empty triggers, runaway ceiling 45 minutes, Cursor platforms off.
+Copy the plugin `.clockify/config.yml.example` as the base scaffold. Roots are `plugin`, `scope`, and `entry` (`timer` / `manual` / `automated`): required workspace pin, project from `local_folder`, timer description prompt with task none (do not block starts on a task name), manual prompt defaults, `entry.automated.enabled: false` with all `forge.*.enabled: false`, empty triggers, `settings.runaway` off with `stop_after_minutes: 45`, Cursor platforms off.

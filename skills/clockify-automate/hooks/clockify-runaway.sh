@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Clockify Agent Plugin — runaway ceiling check (owned entry).
-# Installed by /clockify-automate when entry.automated.runaway.enabled is true.
+# Installed by /clockify-automate when entry.automated.settings.runaway.enabled is true.
 # Removed by /clockify-unautomate (and when runaway is disabled on re-run).
 # Fail-open: never block coding if Clockify/MCP is down or this script errors.
 
