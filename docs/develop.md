@@ -31,10 +31,12 @@ How to change this plugin. Edit and build in this checkout. Validate against tho
 
 Also meet [Getting started](../README.md#getting-started) (Node 18+, Cursor, Clockify API key) prerequisites. Skip this section if this checkout already builds.
 
+**Maintainer tooling** (CI / publish / local install of this repo): **Node 22.22.2+** and **npm 12.0.2** (`packageManager` in `package.json`). Enable with Corepack (`corepack enable && corepack prepare`) or `npm install -g npm@12.0.2`. Consumer runtime for the published package remains Node 18+.
+
 | Name | Description | Command |
 |------|-------------|---------|
 | Clone | Local checkout of this repo | `git clone https://github.com/dustinestes/clockify-agent-plugin.git` |
-| npm install | Install dependencies (including TypeScript) | `npm install` |
+| npm install | Install dependencies (including TypeScript). npm 12 blocks dependency install scripts unless listed in `allowScripts` (this repo already allows `esbuild` / `fsevents`). | `npm install` |
 | Checkout `.env` | Optional `CLOCKIFY_API_KEY_SANDBOX` seed for sandbox MCP / `smoke:live`. Copied into sandbox mcp.json at create time. The MCP server does not read `.env`. Do not put consumer `CLOCKIFY_API_KEY` here. | See [`.env.example`](../.env.example) |
 
 Pin the Clockify workspace ID in each test repo’s `.clockify/config.yml` (via `/clockify-init`), not in this checkout’s `.env`.
