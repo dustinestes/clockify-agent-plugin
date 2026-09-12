@@ -10,8 +10,10 @@ One-time machine setup: MCP tools + Agent Skills. Per-repo setup: [`/clockify-in
 ## Recommended: install script
 
 ```bash
-npx -y -p @dustinestes/clockify-agent-plugin clockify-install-cursor
+npx -y -p @dustinestes/clockify-agent-plugin@latest clockify-install-cursor
 ```
+
+Use `@latest` so npx does not reuse a stale cache from an older publish (pre-1.0 packages only shipped `clockify-cursor-install`, which makes the new bin name fail with `not found`).
 
 This writes **user-global** Cursor config:
 
@@ -88,7 +90,7 @@ Add to `~/.cursor/mcp.json`:
   "mcpServers": {
     "clockify-agent-plugin": {
       "command": "npx",
-      "args": ["-y", "@dustinestes/clockify-agent-plugin"],
+      "args": ["-y", "@dustinestes/clockify-agent-plugin@latest"],
       "env": {
         "CLOCKIFY_API_KEY": "your_key_here"
       }

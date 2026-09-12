@@ -5,8 +5,8 @@
  *   - Default: symlink skills → ~/.cursor/skills/; merge MCP → ~/.cursor/mcp.json
  *   - --sandbox: disposable temp repo with project MCP → dist/index.js
  *
- *   npx -y -p @dustinestes/clockify-agent-plugin clockify-install-cursor
- *   npx -y -p @dustinestes/clockify-agent-plugin clockify-install-cursor --help
+ *   npx -y -p @dustinestes/clockify-agent-plugin@latest clockify-install-cursor
+ *   npx -y -p @dustinestes/clockify-agent-plugin@latest clockify-install-cursor --help
  *
  * Deprecated alias (same script): clockify-cursor-install
  */
@@ -53,7 +53,7 @@ Options:
 
 Installs (user-global):
   • Skills  → ~/.cursor/skills/clockify-*
-  • MCP     → ~/.cursor/mcp.json (npx @dustinestes/clockify-agent-plugin)
+  • MCP     → ~/.cursor/mcp.json (npx @dustinestes/clockify-agent-plugin@latest)
 
 Sandbox (maintainer; does not touch ~/.cursor/mcp.json):
   • Repo    → $TMPDIR/clockify-agent-plugin-sandbox
@@ -66,7 +66,7 @@ After install: reload Cursor, enable MCP under Customize → MCP, then
 /clockify-init in each repo (workspace and shape are chosen per repo there).
 
 Examples:
-  npx -y -p @dustinestes/clockify-agent-plugin ${binName}
+  npx -y -p @dustinestes/clockify-agent-plugin@latest ${binName}
   ${binName} --dry-run
   CLOCKIFY_API_KEY=... ${binName} --dry-run
   ${binName} --sandbox
@@ -322,7 +322,7 @@ function readDotEnvValue(filePath, key) {
 function buildMcpEntry(apiKey) {
   return {
     command: "npx",
-    args: ["-y", "@dustinestes/clockify-agent-plugin"],
+    args: ["-y", "@dustinestes/clockify-agent-plugin@latest"],
     env: {
       CLOCKIFY_API_KEY: apiKey,
     },

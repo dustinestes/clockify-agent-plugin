@@ -45,7 +45,7 @@ Also meet [Getting started](../README.md#getting-started) and [develop prerequis
 
 ## How a change ships
 
-Two channels. MCP tools ride **unpinned npx** after a GitHub Release. Skills and listing copy are a **Directory snapshot** of GitHub `HEAD` — merge does not refresh the catalog; there is no publisher API.
+Two channels. MCP tools ride **`npx …@latest`** after a GitHub Release. Skills and listing copy are a **Directory snapshot** of GitHub `HEAD` — merge does not refresh the catalog; there is no publisher API.
 
 ```mermaid
 flowchart TD
@@ -80,7 +80,7 @@ People who already clicked Add still have the old skill snapshot until they Add 
 
 Public repo: [dustinestes/clockify-agent-plugin](https://github.com/dustinestes/clockify-agent-plugin). Tags are `v` plus the shared version (`v0.1.0`). GitHub redirects the old `clockify-mcp-server` URL.
 
-Leave `.mcp.json` as unpinned npx. Do not point it at `dist/`.
+Leave `.mcp.json` as `npx …@latest`. Do not point it at `dist/`.
 
 ### Topics
 
@@ -96,11 +96,11 @@ One shared version: `package.json`, `plugin.json`, and `.cursor-plugin/plugin.js
 
 `@dustinestes/clockify-mcp-server@0.1.0` is leftover on npm under the old name. Do **not** npx that. First CI publish of **`@dustinestes/clockify-agent-plugin`** can be `0.1.0` (this tree) via GitHub Release `v0.1.0`.
 
-1. Confirm `.mcp.json` is still the unpinned npx shape.
+1. Confirm `.mcp.json` is still `npx …@latest` (not a fixed version, not `dist/`).
 2. Bump the three manifests (and lockfile) together. Merge to `main`.
 3. `gh release create vX.Y.Z --generate-notes` (not a draft, not a prerelease).
 4. [`.github/workflows/publish.yml`](../.github/workflows/publish.yml) runs on `release: published` and publishes npm (next section).
-5. Confirm `npx -y @dustinestes/clockify-agent-plugin` starts over stdio.
+5. Confirm `npx -y @dustinestes/clockify-agent-plugin@latest` starts over stdio.
 
 Do not auto-bump on merge. Do not publish from tag-push alone (a tag without a published Release does nothing).
 
@@ -112,14 +112,14 @@ Do not auto-bump on merge. Do not publish from tag-push alone (a tag without a p
 
 Package: [`@dustinestes/clockify-agent-plugin`](https://www.npmjs.com/package/@dustinestes/clockify-agent-plugin). This is what Directory users actually run.
 
-Keep `.mcp.json` **unpinned** (`npx -y @dustinestes/clockify-agent-plugin`, no `@1.2.3`) so each Cursor start resolves latest npm. Do not rewrite it to a local `dist/` path. Play against a checkout build with `clockify-install-cursor --sandbox` ([develop.md](./develop.md#sandbox)).
+Keep `.mcp.json` on **`@latest`** (`npx -y @dustinestes/clockify-agent-plugin@latest`, not a fixed `@1.2.3`) so each Cursor start resolves current npm and avoids a stale npx cache. Do not rewrite it to a local `dist/` path. Play against a checkout build with `clockify-install-cursor --sandbox` ([develop.md](./develop.md#sandbox)).
 
 ```json
 {
   "mcpServers": {
     "clockify-agent-plugin": {
       "command": "npx",
-      "args": ["-y", "@dustinestes/clockify-agent-plugin"],
+      "args": ["-y", "@dustinestes/clockify-agent-plugin@latest"],
       "env": {
         "CLOCKIFY_API_KEY": "${CLOCKIFY_API_KEY}"
       }
@@ -164,7 +164,7 @@ Platforms scan **paths**, not the README.
 
 | File | Role |
 |------|------|
-| `.mcp.json` | Directory MCP discovery + Cursor plugin MCP (`mcpServers` in `.cursor-plugin/plugin.json`; unpinned `npx`) |
+| `.mcp.json` | Directory MCP discovery + Cursor plugin MCP (`mcpServers` in `.cursor-plugin/plugin.json`; `npx …@latest`) |
 | `skills/*/SKILL.md` | Directory skill snapshot |
 | `.cursor-plugin/plugin.json` | Cursor plugin manifest (local install + variables; points at `.mcp.json`) |
 | `plugin.json` | [Agent Plugins](https://agent-plugins.org) portable manifest |
