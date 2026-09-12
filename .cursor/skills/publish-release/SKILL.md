@@ -19,13 +19,13 @@ Never bump versions, create tags, or open GitHub Releases unless the user asked 
 ## Steps
 
 1. Confirm `main` is the intended tree (docs / product work merged as requested).
-2. Confirm `.mcp.json` is still the unpinned npx shape (never a local `dist/` path).
+2. Confirm `.mcp.json` is still `npx …@latest` (never a local `dist/` path, never a fixed `@1.2.3`).
 3. Bump the **same** version in `package.json` (and the lockfile), `plugin.json`, and `.cursor-plugin/plugin.json`. Tag will be `v` plus that version. `@dustinestes/clockify-mcp-server@0.1.0` is leftover under the old npm name — do not republish it. First publish of `@dustinestes/clockify-agent-plugin` may be `0.1.0`.
 4. `npm run check:versions`
 5. Commit, open a PR if not already on `main`, merge.
 6. After merge: `gh release create vX.Y.Z --generate-notes` (not a draft, not a prerelease).
 7. Wait for [`.github/workflows/publish.yml`](../../../.github/workflows/publish.yml). Verify `npm view @dustinestes/clockify-agent-plugin version`.
-8. Handshake: `npx -y @dustinestes/clockify-agent-plugin` (stdio; idle until Ctrl+C).
+8. Handshake: `npx -y @dustinestes/clockify-agent-plugin@latest` (stdio; idle until Ctrl+C).
 
 ## Owner-only (stop)
 

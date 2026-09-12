@@ -2,7 +2,7 @@
   "mcpServers": {
     "clockify-agent-plugin": {
       "command": "npx",
-      "args": ["-y", "@dustinestes/clockify-agent-plugin"],
+      "args": ["-y", "@dustinestes/clockify-agent-plugin@latest"],
       "env": {
         "CLOCKIFY_API_KEY": "${CLOCKIFY_API_KEY}"
       }

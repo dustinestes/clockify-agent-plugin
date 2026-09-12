@@ -104,7 +104,7 @@ Host permission systems differ; see that host's docs. For Cursor, use [Pre-enabl
 ```json
 {
   "command": "npx",
-  "args": ["-y", "@dustinestes/clockify-agent-plugin"],
+  "args": ["-y", "@dustinestes/clockify-agent-plugin@latest"],
   "env": {
     "CLOCKIFY_API_KEY": "your_key_here"
   }
